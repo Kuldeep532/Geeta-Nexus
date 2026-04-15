@@ -31,11 +31,10 @@ jobs:
 
       - name: Build APK
         run: flutter build apk --release
-        continue-on-error: true
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/*.apk
-          if-no-files-found: warn
+        if-no-files-found: warn
