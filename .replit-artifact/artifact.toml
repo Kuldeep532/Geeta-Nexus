@@ -1,0 +1,28 @@
+kind = "mobile"
+previewPath = "/"
+title = "Bhagavad Gita AI"
+version = "1.0.0"
+id = "artifacts/gita-ai"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+name = "expo"
+paths = [ "/" ]
+localPort = 3001
+
+[services.development]
+run = "cd artifacts/gita-ai && flutter run -d web-server --web-port 3001 --web-hostname 0.0.0.0"
+
+[services.production.build]
+args = [ "sh", "-c", "cd artifacts/gita-ai && flutter build web --release" ]
+
+[services.production.run]
+args = [ "sh", "-c", "cd artifacts/gita-ai && flutter run -d web-server --web-port 3001 --web-hostname 0.0.0.0" ]
+
+[services.env]
+PORT = "3001"
+BASE_PATH = "/"

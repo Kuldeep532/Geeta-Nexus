@@ -1,0 +1,548 @@
+export interface Verse {
+  id: string;
+  chapter: number;
+  verse: number;
+  sanskrit: string;
+  transliteration: string;
+  translation: string;
+  meaning: string;
+  keywords: string[];
+}
+
+export interface Chapter {
+  number: number;
+  name: string;
+  nameSanskrit: string;
+  summary: string;
+  verseCount: number;
+  theme: string;
+  verses: Verse[];
+}
+
+export const chapters: Chapter[] = [
+  {
+    number: 1,
+    name: "Arjuna's Dilemma",
+    nameSanskrit: "Arjuna Vishada Yoga",
+    summary: "Arjuna sees his relatives and teachers arrayed on both sides of the battlefield and is overwhelmed with grief and compassion, refusing to fight.",
+    verseCount: 47,
+    theme: "Despondency & Duty",
+    verses: [
+      {
+        id: "1.1",
+        chapter: 1,
+        verse: 1,
+        sanskrit: "धृतराष्ट्र उवाच\nधर्मक्षेत्रे कुरुक्षेत्रे समवेता युयुत्सवः।\nमामकाः पाण्डवाश्चैव किमकुर्वत सञ्जय॥",
+        transliteration: "dhṛtarāṣṭra uvāca\ndharma-kṣetre kuru-kṣetre samavetā yuyutsavaḥ\nmāmakāḥ pāṇḍavāś caiva kim akurvata sañjaya",
+        translation: "Dhritarashtra said: O Sanjaya, after my sons and the sons of Pandu assembled in the place of pilgrimage at Kurukshetra, desiring to fight, what did they do?",
+        meaning: "The blind king Dhritarashtra anxiously inquires from his secretary Sanjaya about the battle between his sons and the Pandavas. The use of 'dharma-kshetra' (field of righteousness) indicates the moral dimension of the conflict.",
+        keywords: ["dharma", "duty", "war", "Kurukshetra"]
+      },
+      {
+        id: "1.28",
+        chapter: 1,
+        verse: 28,
+        sanskrit: "अर्जुन उवाच\ndṛṣṭvemaṁ svajanāṁ kṛṣṇa yuyutsuṁ samupasthitam\nsīdanti mama gātrāṇi mukhaṁ ca pariśuṣyati",
+        transliteration: "arjuna uvāca\ndṛṣṭvemaṁ sva-janaṁ kṛṣṇa yuyutsuṁ samupasthitam\nsīdanti mama gātrāṇi mukhaṁ ca pariśuṣyati",
+        translation: "Arjuna said: My dear Krishna, seeing my friends and relatives present before me in such a fighting spirit, I feel the limbs of my body quivering and my mouth drying up.",
+        meaning: "Arjuna's physical symptoms of distress — trembling limbs and dry mouth — reflect the overwhelming emotional turmoil caused by the prospect of fighting his own kin.",
+        keywords: ["grief", "attachment", "relatives", "compassion"]
+      },
+      {
+        id: "1.47",
+        chapter: 1,
+        verse: 47,
+        sanskrit: "एवमुक्त्वार्जुनः संख्ये रथोपस्थ उपाविशत्।\nविसृज्य सशरं चापं शोकसंविग्नमानसः॥",
+        transliteration: "evam uktvārjunaḥ saṅkhye rathopastha upāviśat\nvisṛjya sa-śaraṁ cāpaṁ śoka-saṁvigna-mānasaḥ",
+        translation: "Sanjaya said: Arjuna, having thus spoken on the battlefield, cast aside his bow and arrows and sat down on the chariot, his mind overwhelmed with grief.",
+        meaning: "Arjuna's decision to sit down on the battlefield, overcome by grief, sets the stage for the divine teachings that follow. His surrender marks the beginning of spiritual inquiry.",
+        keywords: ["surrender", "grief", "despondency", "bow"]
+      }
+    ]
+  },
+  {
+    number: 2,
+    name: "The Path of Knowledge",
+    nameSanskrit: "Sankhya Yoga",
+    summary: "Krishna consoles Arjuna and begins his divine teachings about the eternal soul, duty, and the philosophy of action without attachment.",
+    verseCount: 72,
+    theme: "Soul & Immortality",
+    verses: [
+      {
+        id: "2.11",
+        chapter: 2,
+        verse: 11,
+        sanskrit: "श्रीभगवानुवाच\nअशोच्यानन्वशोचस्त्वं प्रज्ञावादांश्च भाषसे।\nगतासूनगतासूंश्च नानुशोचन्ति पण्डिताः॥",
+        transliteration: "śrī-bhagavān uvāca\naśocyān anvaśocas tvaṁ prajñā-vādāṁś ca bhāṣase\ngatāsūn agatāsūṁś ca nānuśocanti paṇḍitāḥ",
+        translation: "The Supreme Personality of Godhead said: While speaking learned words, you are mourning for what is not worthy of grief. Those who are wise lament neither for the living nor for the dead.",
+        meaning: "Krishna begins his teaching by pointing out that Arjuna's grief, though expressed in philosophical terms, is misplaced. True wisdom transcends attachment to the physical body.",
+        keywords: ["wisdom", "grief", "soul", "knowledge"]
+      },
+      {
+        id: "2.19",
+        chapter: 2,
+        verse: 19,
+        sanskrit: "य एनं वेत्ति हन्तारं यश्चैनं मन्यते हतम्।\nउभौ तौ न विजानीतो नायं हन्ति न हन्यते॥",
+        transliteration: "ya enaṁ vetti hantāraṁ yaś cainaṁ manyate hatam\nubhau tau na vijānīto nāyaṁ hanti na hanyate",
+        translation: "He who thinks that this [soul] is a slayer and he who thinks that this [soul] is slain — both of them fail to perceive the truth. This [soul] neither slays, nor is it slain.",
+        meaning: "The eternal soul (Atman) is beyond physical death. It can neither kill nor be killed, as it exists beyond the realm of action and reaction.",
+        keywords: ["soul", "atman", "immortal", "eternal"]
+      },
+      {
+        id: "2.20",
+        chapter: 2,
+        verse: 20,
+        sanskrit: "न जायते म्रियते वा कदाचिन्नायं भूत्वा भविता वा न भूयः।\nअजो नित्यः शाश्वतोऽयं पुराणो न हन्यते हन्यमाने शरीरे॥",
+        transliteration: "na jāyate mriyate vā kadācin nāyaṁ bhūtvā bhavitā vā na bhūyaḥ\najo nityaḥ śāśvato 'yaṁ purāṇo na hanyate hanyamāne śarīre",
+        translation: "For the soul there is never birth nor death at any time. It has not come into being, does not come into being, and will not come into being. It is unborn, eternal, ever-existing, and primeval. It is not slain when the body is slain.",
+        meaning: "This famous verse proclaims the immortality of the soul. The Atman is beyond the cycle of birth and death, eternal and ever-present.",
+        keywords: ["immortal", "eternal", "soul", "rebirth", "atman"]
+      },
+      {
+        id: "2.47",
+        chapter: 2,
+        verse: 47,
+        sanskrit: "कर्मण्येवाधिकारस्ते मा फलेषु कदाचन।\nमा कर्मफलहेतुर्भूर्मा ते सङ्गोऽस्त्वकर्मणि॥",
+        transliteration: "karmaṇy evādhikāras te mā phaleṣu kadācana\nmā karma-phala-hetur bhūr mā te saṅgo 'stv akarmaṇi",
+        translation: "You have a right to perform your prescribed duties, but you are not entitled to the fruits of your actions. Never consider yourself the cause of the results of your activities, and never be attached to not doing your duty.",
+        meaning: "This is the essence of Karma Yoga — perform your duty without attachment to results. This teaching liberates us from the cycle of desire and disappointment.",
+        keywords: ["karma", "duty", "action", "detachment", "yoga"]
+      },
+      {
+        id: "2.48",
+        chapter: 2,
+        verse: 48,
+        sanskrit: "योगस्थः कुरु कर्माणि संगं त्यक्त्वा धनञ्जय।\nसिद्ध्यसिद्ध्योः समो भूत्वा समत्वं योग उच्यते॥",
+        transliteration: "yoga-sthaḥ kuru karmāṇi saṅgaṁ tyaktvā dhanañjaya\nsiddhya-siddhyoḥ samo bhūtvā samatvaṁ yoga ucyate",
+        translation: "O Arjuna, perform your duty equipoised, abandoning all attachment to success or failure. Such equanimity is called yoga.",
+        meaning: "True yoga is not just physical postures but an equanimous state of mind that remains balanced in success and failure, gain and loss.",
+        keywords: ["yoga", "equanimity", "balance", "action", "karma"]
+      }
+    ]
+  },
+  {
+    number: 3,
+    name: "The Path of Action",
+    nameSanskrit: "Karma Yoga",
+    summary: "Krishna explains the importance of selfless action and fulfilling one's duty without attachment to results, showing how action leads to liberation.",
+    verseCount: 43,
+    theme: "Selfless Action",
+    verses: [
+      {
+        id: "3.16",
+        chapter: 3,
+        verse: 16,
+        sanskrit: "एवं प्रवर्तितं चक्रं नानुवर्तयतीह यः।\nअघायुरिन्द्रियारामो मोघं पार्थ स जीवति॥",
+        transliteration: "evaṁ pravartitaṁ cakraṁ nānuvartayatīha yaḥ\naghāyur indriyārāmo moghaṁ pārtha sa jīvati",
+        translation: "O Arjuna, one who does not follow in human life the cycle of sacrifice thus established by the Vedas certainly leads a life full of sin. Living only for the satisfaction of the senses, such a person lives in vain.",
+        meaning: "Life gains meaning only when lived in the spirit of yagna (sacrifice/service). A life lived solely for sensory pleasure is spiritually empty.",
+        keywords: ["sacrifice", "yagna", "duty", "senses", "sin"]
+      },
+      {
+        id: "3.21",
+        chapter: 3,
+        verse: 21,
+        sanskrit: "यद्यदाचरति श्रेष्ठस्तत्तदेवेतरो जनः।\nस यत्प्रमाणं कुरुते लोकस्तदनुवर्तते॥",
+        transliteration: "yad yad ācarati śreṣṭhas tat tad evetaro janaḥ\nsa yat pramāṇaṁ kurute lokas tad anuvartate",
+        translation: "Whatever action a great man performs, common men follow. And whatever standards he sets by exemplary acts, all the world pursues.",
+        meaning: "Leaders carry a special responsibility — their actions set the standard for others. This verse calls upon us to live exemplary lives.",
+        keywords: ["leadership", "example", "society", "dharma", "action"]
+      }
+    ]
+  },
+  {
+    number: 4,
+    name: "The Path of Wisdom",
+    nameSanskrit: "Jnana Karma Sanyasa Yoga",
+    summary: "Krishna reveals his divine incarnations and the path of knowledge, explaining how wisdom purifies and liberates the soul.",
+    verseCount: 42,
+    theme: "Divine Knowledge",
+    verses: [
+      {
+        id: "4.7",
+        chapter: 4,
+        verse: 7,
+        sanskrit: "यदा यदा हि धर्मस्य ग्लानिर्भवति भारत।\nअभ्युत्थानमधर्मस्य तदात्मानं सृजाम्यहम्॥",
+        transliteration: "yadā yadā hi dharmasya glānir bhavati bhārata\nabhyutthānam adharmasya tadātmānaṁ sṛjāmy aham",
+        translation: "Whenever and wherever there is a decline in religious practice, O descendant of Bharata, and a predominant rise of irreligion — at that time I descend Myself.",
+        meaning: "This verse reveals the divine principle of avatara — God's descent into the material world whenever righteousness declines. It assures us that divine guidance is always available.",
+        keywords: ["avatar", "dharma", "god", "divine", "incarnation"]
+      },
+      {
+        id: "4.8",
+        chapter: 4,
+        verse: 8,
+        sanskrit: "परित्राणाय साधूनां विनाशाय च दुष्कृताम्।\nधर्मसंस्थापनार्थाय सम्भवामि युगे युगे॥",
+        transliteration: "paritrāṇāya sādhūnāṁ vināśāya ca duṣkṛtām\ndharma-saṁsthāpanārthāya sambhavāmi yuge yuge",
+        translation: "To deliver the pious and to annihilate the miscreants, as well as to reestablish the principles of religion, I Myself appear, millennium after millennium.",
+        meaning: "Krishna declares his eternal purpose: to protect the righteous, destroy evil, and restore dharma in every age. This is the cosmic promise of divine justice.",
+        keywords: ["avatar", "protection", "dharma", "yugas", "divine purpose"]
+      },
+      {
+        id: "4.38",
+        chapter: 4,
+        verse: 38,
+        sanskrit: "न हि ज्ञानेन सदृशं पवित्रमिह विद्यते।\nतत्स्वयं योगसंसिद्धः कालेनात्मनि विन्दति॥",
+        transliteration: "na hi jñānena sadṛśaṁ pavitram iha vidyate\ntat svayaṁ yoga-saṁsiddhaḥ kālenātmani vindati",
+        translation: "In this world, there is nothing so sublime and pure as transcendental knowledge. Such knowledge is the mature fruit of all mysticism. And one who has become accomplished in the practice of devotional service enjoys this knowledge within himself in due course of time.",
+        meaning: "Spiritual knowledge is the highest purifier. Through dedicated practice, this knowledge gradually reveals itself from within.",
+        keywords: ["knowledge", "wisdom", "yoga", "purification", "meditation"]
+      }
+    ]
+  },
+  {
+    number: 5,
+    name: "The Path of Renunciation",
+    nameSanskrit: "Karma Sanyasa Yoga",
+    summary: "Krishna reconciles the paths of action and renunciation, teaching that true renunciation is inner detachment while continuing outward action.",
+    verseCount: 29,
+    theme: "Inner Renunciation",
+    verses: [
+      {
+        id: "5.18",
+        chapter: 5,
+        verse: 18,
+        sanskrit: "विद्याविनयसम्पन्ने ब्राह्मणे गवि हस्तिनि।\nशुनि चैव श्वपाके च पण्डिताः समदर्शिनः॥",
+        transliteration: "vidyā-vinaya-sampanne brāhmaṇe gavi hastini\nśuni caiva śva-pāke ca paṇḍitāḥ sama-darśinaḥ",
+        translation: "The humble sages, by virtue of true knowledge, see with equal vision a learned and gentle brāhmaṇa, a cow, an elephant, a dog, and a dog-eater [outcast].",
+        meaning: "True wisdom sees the divine spark in all beings equally, regardless of outward form, species, or social status. This equal vision is the hallmark of enlightenment.",
+        keywords: ["equality", "wisdom", "compassion", "vision", "universal"]
+      }
+    ]
+  },
+  {
+    number: 6,
+    name: "The Path of Meditation",
+    nameSanskrit: "Dhyana Yoga",
+    summary: "Krishna describes the practice of meditation, the qualities of a true yogi, and how to still the restless mind through disciplined practice.",
+    verseCount: 47,
+    theme: "Meditation & Mind",
+    verses: [
+      {
+        id: "6.5",
+        chapter: 6,
+        verse: 5,
+        sanskrit: "उद्धरेदात्मनात्मानं नात्मानमवसादयेत्।\nआत्मैव ह्यात्मनो बन्धुरात्मैव रिपुरात्मनः॥",
+        transliteration: "uddhared ātmanātmānaṁ nātmānam avasādayet\nātmaiva hy ātmano bandhur ātmaiva ripur ātmanaḥ",
+        translation: "One must deliver himself with the help of his mind, and not degrade himself. The mind is the friend of the conditioned soul, and his enemy as well.",
+        meaning: "The mind can be your greatest ally or worst enemy. Through discipline and spiritual practice, we transform the restless mind into a steady friend that guides us toward liberation.",
+        keywords: ["mind", "meditation", "self", "discipline", "liberation"]
+      },
+      {
+        id: "6.34",
+        chapter: 6,
+        verse: 34,
+        sanskrit: "चञ्चलं हि मनः कृष्ण प्रमाथि बलवद्दृढम्।\nतस्याहं निग्रहं मन्ये वायोरिव सुदुष्करम्॥",
+        transliteration: "cañcalaṁ hi manaḥ kṛṣṇa pramāthi balavad dṛḍham\ntasyāhaṁ nigrahaṁ manye vāyor iva su-duṣkaram",
+        translation: "For the mind is restless, turbulent, obstinate and very strong, O Krishna, and to subdue it, I think, is more difficult than controlling the wind.",
+        meaning: "Arjuna honestly acknowledges the difficulty of controlling the mind. Krishna's subsequent teaching reveals that steady practice and detachment gradually tame the restless mind.",
+        keywords: ["mind", "control", "meditation", "restlessness", "practice"]
+      }
+    ]
+  },
+  {
+    number: 7,
+    name: "The Path of Knowledge of the Absolute",
+    nameSanskrit: "Jnana Vijnana Yoga",
+    summary: "Krishna reveals his divine nature as the source of all creation and explains how to recognize the divine in everything.",
+    verseCount: 30,
+    theme: "Divine Knowledge",
+    verses: [
+      {
+        id: "7.8",
+        chapter: 7,
+        verse: 8,
+        sanskrit: "रसोऽहमप्सु कौन्तेय प्रभास्मि शशिसूर्ययोः।\nप्रणवः सर्ववेदेषु शब्दः खे पौरुषं नृषु॥",
+        transliteration: "raso 'ham apsu kaunteya prabhāsmi śaśi-sūryayoḥ\npraṇavaḥ sarva-vedeṣu śabdaḥ khe pauruṣaṁ nṛṣu",
+        translation: "O son of Kunti, I am the taste of water, the light of the sun and the moon, the syllable Om in the Vedic mantras; I am the sound in ether and ability in man.",
+        meaning: "Krishna reveals his omnipresence — the divine is manifest as the essence of all natural phenomena. The taste of water, the warmth of sunlight, the sacred Om — all are expressions of the divine.",
+        keywords: ["omnipresence", "divine", "nature", "om", "manifestation"]
+      }
+    ]
+  },
+  {
+    number: 8,
+    name: "The Path to the Supreme",
+    nameSanskrit: "Akshara Brahma Yoga",
+    summary: "Krishna explains what happens at the moment of death and how one's final thoughts determine the next life, teaching the path to the eternal realm.",
+    verseCount: 28,
+    theme: "Death & Liberation",
+    verses: [
+      {
+        id: "8.7",
+        chapter: 8,
+        verse: 7,
+        sanskrit: "तस्मात्सर्वेषु कालेषु मामनुस्मर युध्य च।\nमय्यर्पितमनोबुद्धिर्मामेवैष्यस्यसंशयः॥",
+        transliteration: "tasmāt sarveṣu kāleṣu mām anusmara yudhya ca\nmayyarpita-mano-buddhir mām evaiṣyasy asaṁśayaḥ",
+        translation: "Therefore, Arjuna, you should always think of Me in the form of Krishna and at the same time carry out your prescribed duty of fighting. With your activities dedicated to Me and your mind and intelligence fixed on Me, you will attain Me without doubt.",
+        meaning: "Constant remembrance of God while performing our duties is the most effective spiritual practice. When the mind is fixed on the divine, all actions become worship.",
+        keywords: ["remembrance", "devotion", "duty", "mind", "liberation"]
+      }
+    ]
+  },
+  {
+    number: 9,
+    name: "The Path of Royal Knowledge",
+    nameSanskrit: "Raja Vidya Raja Guhya Yoga",
+    summary: "Krishna reveals the most confidential knowledge — his universal form, his relationship with all creation, and the supreme path of devotion.",
+    verseCount: 34,
+    theme: "Devotion & Love",
+    verses: [
+      {
+        id: "9.22",
+        chapter: 9,
+        verse: 22,
+        sanskrit: "अनन्याश्चिन्तयन्तो मां ये जनाः पर्युपासते।\nतेषां नित्याभियुक्तानां योगक्षेमं वहाम्यहम्॥",
+        transliteration: "ananyāś cintayanto māṁ ye janāḥ paryupāsate\nteṣāṁ nityābhiyuktānāṁ yoga-kṣemaṁ vahāmy aham",
+        translation: "But those who always worship Me with exclusive devotion, meditating on My transcendental form — to them I carry what they lack, and I preserve what they have.",
+        meaning: "God himself takes responsibility for the welfare of those who are completely devoted to him. This is the profound promise of divine grace to the sincere devotee.",
+        keywords: ["devotion", "grace", "bhakti", "worship", "protection"]
+      },
+      {
+        id: "9.27",
+        chapter: 9,
+        verse: 27,
+        sanskrit: "यत्करोषि यदश्नासि यज्जुहोषि ददासि यत्।\nयत्तपस्यसि कौन्तेय तत्कुरुष्व मदर्पणम्॥",
+        transliteration: "yat karoṣi yad aśnāsi yaj juhoṣi dadāsi yat\nyat tapasyasi kaunteya tat kuruṣva mad-arpaṇam",
+        translation: "Whatever you do, whatever you eat, whatever you offer or give away, and whatever austerities you perform — do that, O son of Kunti, as an offering to Me.",
+        meaning: "Every act of daily life can be transformed into an act of worship by offering it to God. This is the complete yoga of devotion — turning life itself into a prayer.",
+        keywords: ["offering", "devotion", "worship", "daily life", "surrender"]
+      }
+    ]
+  },
+  {
+    number: 10,
+    name: "The Divine Glories",
+    nameSanskrit: "Vibhuti Yoga",
+    summary: "Krishna describes his divine manifestations throughout creation, helping Arjuna understand how to see the divine in all things.",
+    verseCount: 42,
+    theme: "Divine Manifestations",
+    verses: [
+      {
+        id: "10.20",
+        chapter: 10,
+        verse: 20,
+        sanskrit: "अहमात्मा गुडाकेश सर्वभूताशयस्थितः।\nअहमादिश्च मध्यं च भूतानामन्त एव च॥",
+        transliteration: "aham ātmā guḍākeśa sarva-bhūtāśaya-sthitaḥ\naham ādiś ca madhyaṁ ca bhūtānām anta eva ca",
+        translation: "I am the Supersoul, O Arjuna, seated in the hearts of all living entities. I am the beginning, the middle and the end of all beings.",
+        meaning: "God dwells in the heart of every living being as the Supersoul (Paramatma). He is present at the beginning, sustains throughout, and is present at the end of all existence.",
+        keywords: ["God", "soul", "heart", "omnipresence", "creation"]
+      }
+    ]
+  },
+  {
+    number: 11,
+    name: "The Vision of the Cosmic Form",
+    nameSanskrit: "Vishvarupa Darshana Yoga",
+    summary: "Krishna reveals his cosmic universal form to Arjuna, showing the entirety of creation within himself, filling Arjuna with awe and devotion.",
+    verseCount: 55,
+    theme: "Cosmic Vision",
+    verses: [
+      {
+        id: "11.33",
+        chapter: 11,
+        verse: 33,
+        sanskrit: "तस्मात्त्वमुत्तिष्ठ यशो लभस्व\nजित्वा शत्रून्भुंक्ष्व राज्यं समृद्धम्।\nमयैवैते निहताः पूर्वमेव\nनिमित्तमात्रं भव सव्यसाचिन्॥",
+        transliteration: "tasmāt tvam uttiṣṭha yaśo labhasva\njitvā śatrūn bhuṅkṣva rājyaṁ samṛddham\nmayaivāite nihatāḥ pūrvam eva\nnimitta-mātraṁ bhava savyasācin",
+        translation: "Therefore get up. Prepare to fight and win glory. Conquer your enemies and enjoy a flourishing kingdom. They are already put to death by My arrangement, and you, O Savyasacin, can be but an instrument in the fight.",
+        meaning: "God reveals that the outcome of events is already determined. Our role is to act as instruments of the divine will, performing our duty without ego.",
+        keywords: ["instrument", "divine will", "duty", "cosmic", "action"]
+      }
+    ]
+  },
+  {
+    number: 12,
+    name: "The Path of Devotion",
+    nameSanskrit: "Bhakti Yoga",
+    summary: "Krishna glorifies the path of devotion (Bhakti) as the highest and most accessible path to union with God, describing qualities of a true devotee.",
+    verseCount: 20,
+    theme: "Pure Devotion",
+    verses: [
+      {
+        id: "12.13",
+        chapter: 12,
+        verse: 13,
+        sanskrit: "अद्वेष्टा सर्वभूतानां मैत्रः करुण एव च।\nनिर्ममो निरहंकारः समदुःखसुखः क्षमी॥",
+        transliteration: "adveṣṭā sarva-bhūtānāṁ maitraḥ karuṇa eva ca\nnirmamo nirahaṅkāraḥ sama-duḥkha-sukhaḥ kṣamī",
+        translation: "One who is not envious but is a kind friend to all living entities, who does not think himself a proprietor and is free from false ego, who is equal in both happiness and distress, who is tolerant...",
+        meaning: "Krishna describes the qualities of his dearest devotee: compassion for all beings, freedom from ego, equanimity in pleasure and pain, and patience. These are the fruits of genuine devotion.",
+        keywords: ["devotee", "compassion", "humility", "equanimity", "bhakti"]
+      }
+    ]
+  },
+  {
+    number: 13,
+    name: "The Field and the Knower",
+    nameSanskrit: "Kshetra Kshetrajna Vibhaga Yoga",
+    summary: "Krishna distinguishes between the material body (field) and the conscious self (knower of the field), revealing the ultimate non-dual reality.",
+    verseCount: 35,
+    theme: "Self & Nature",
+    verses: [
+      {
+        id: "13.28",
+        chapter: 13,
+        verse: 28,
+        sanskrit: "समं सर्वेषु भूतेषु तिष्ठन्तं परमेश्वरम्।\nविनश्यत्स्वविनश्यन्तं यः पश्यति स पश्यति॥",
+        transliteration: "samaṁ sarveṣu bhūteṣu tiṣṭhantaṁ parameśvaram\nvinaśyatsv avinaśyantaṁ yaḥ paśyati sa paśyati",
+        translation: "One who sees the Supersoul equally present everywhere, in every living being, does not degrade himself by his mind. Thus he approaches the transcendental destination.",
+        meaning: "True spiritual vision sees the divine Supersoul present equally in all beings. This equal vision is the path to spiritual liberation and transcendence.",
+        keywords: ["equal vision", "divine", "liberation", "consciousness", "supersoul"]
+      }
+    ]
+  },
+  {
+    number: 14,
+    name: "The Three Modes of Nature",
+    nameSanskrit: "Gunatraya Vibhaga Yoga",
+    summary: "Krishna explains the three modes (gunas) of material nature — goodness, passion, and ignorance — and how they bind the soul and can be transcended.",
+    verseCount: 27,
+    theme: "Three Gunas",
+    verses: [
+      {
+        id: "14.6",
+        chapter: 14,
+        verse: 6,
+        sanskrit: "तत्र सत्त्वं निर्मलत्वात्प्रकाशकमनामयम्।\nसुखसङ्गेन बध्नाति ज्ञानसङ्गेन चानघ॥",
+        transliteration: "tatra sattvaṁ nirmalatvāt prakāśakam anāmayam\nsukha-saṅgena badhnāti jñāna-saṅgena cānagha",
+        translation: "O sinless one, the mode of goodness, being purer than the others, is illuminating, and it frees one from all sinful reactions. Those situated in that mode become conditioned by a sense of happiness and knowledge.",
+        meaning: "Sattva (goodness) brings clarity, health, and wisdom, but even it can bind us through attachment to happiness and knowledge. True liberation transcends all three gunas.",
+        keywords: ["sattva", "goodness", "gunas", "purity", "knowledge"]
+      }
+    ]
+  },
+  {
+    number: 15,
+    name: "The Yoga of the Supreme Person",
+    nameSanskrit: "Purushottama Yoga",
+    summary: "Krishna uses the metaphor of an eternal cosmic tree and reveals himself as the Supreme Person, beyond both the perishable and imperishable.",
+    verseCount: 20,
+    theme: "Supreme Being",
+    verses: [
+      {
+        id: "15.15",
+        chapter: 15,
+        verse: 15,
+        sanskrit: "सर्वस्य चाहं हृदि संनिविष्टो\nमत्तः स्मृतिर्ज्ञानमपोहनं च।\nवेदैश्च सर्वैरहमेव वेद्यो\nवेदान्तकृद्वेदविदेव चाहम्॥",
+        transliteration: "sarvasya cāhaṁ hṛdi sanniviṣṭo mattaḥ smṛtir jñānam apohanaṁ ca\nvedaiś ca sarvair aham eva vedyo vedānta-kṛd veda-vid eva cāham",
+        translation: "I am seated in everyone's heart, and from Me come remembrance, knowledge and forgetfulness. By all the Vedas, I am to be known. Indeed, I am the compiler of Vedānta, and I am the knower of the Vedas.",
+        meaning: "God dwells in the heart as the source of memory, knowledge, and the power to forget. He is both the subject and the student of all sacred knowledge.",
+        keywords: ["God", "heart", "knowledge", "Vedas", "omniscience"]
+      }
+    ]
+  },
+  {
+    number: 16,
+    name: "The Divine and Demonic Natures",
+    nameSanskrit: "Daiva Asura Sampad Vibhaga Yoga",
+    summary: "Krishna distinguishes between divine and demoniac qualities, guiding us to cultivate virtuous qualities that lead to liberation.",
+    verseCount: 24,
+    theme: "Virtue & Vice",
+    verses: [
+      {
+        id: "16.1",
+        chapter: 16,
+        verse: 1,
+        sanskrit: "अभयं सत्त्वसंशुद्धिर्ज्ञानयोगव्यवस्थितिः।\nदानं दमश्च यज्ञश्च स्वाध्यायस्तप आर्जवम्॥",
+        transliteration: "abhayaṁ sattva-saṁśuddhir jñāna-yoga-vyavasthitiḥ\ndānaṁ damaś ca yajñaś ca svādhyāyas tapa ārjavam",
+        translation: "Fearlessness; purification of one's existence; cultivation of spiritual knowledge; charity; control of the senses; performance of sacrifice; study of the Vedas; austerity; simplicity...",
+        meaning: "These divine qualities — courage, purity, wisdom, generosity, self-control — form the foundation of a life aligned with dharma and leading to liberation.",
+        keywords: ["divine qualities", "virtue", "fearlessness", "charity", "purity"]
+      }
+    ]
+  },
+  {
+    number: 17,
+    name: "The Three Divisions of Faith",
+    nameSanskrit: "Shraddhatraya Vibhaga Yoga",
+    summary: "Krishna classifies faith, food, sacrifice, austerity and charity according to the three modes of nature, emphasizing the importance of sincere faith.",
+    verseCount: 28,
+    theme: "Faith & Practice",
+    verses: [
+      {
+        id: "17.3",
+        chapter: 17,
+        verse: 3,
+        sanskrit: "सत्त्वानुरूपा सर्वस्य श्रद्धा भवति भारत।\nश्रद्धामयोऽयं पुरुषो यो यच्छ्रद्धः स एव सः॥",
+        transliteration: "sattvānurūpā sarvasya śraddhā bhavati bhārata\nśraddhā-mayo 'yaṁ puruṣo yo yac-chraddhaḥ sa eva saḥ",
+        translation: "O son of Bharata, according to one's existence under the various modes of nature, one evolves a particular kind of faith. The living being is said to be of a particular faith according to the modes he has acquired.",
+        meaning: "Our faith reflects our inner nature. A person is defined by what they believe and worship. By elevating our faith to the mode of goodness, we transform our entire being.",
+        keywords: ["faith", "shraddha", "belief", "nature", "transformation"]
+      }
+    ]
+  },
+  {
+    number: 18,
+    name: "The Path of Liberation",
+    nameSanskrit: "Moksha Sanyasa Yoga",
+    summary: "The final chapter summarizes all paths and reveals the highest teaching — complete surrender to God as the supreme secret leading to liberation.",
+    verseCount: 78,
+    theme: "Supreme Liberation",
+    verses: [
+      {
+        id: "18.65",
+        chapter: 18,
+        verse: 65,
+        sanskrit: "मन्मना भव मद्भक्तो मद्याजी मां नमस्कुरु।\nमामेवैष्यसि सत्यं ते प्रतिजाने प्रियोऽसि मे॥",
+        transliteration: "man-manā bhava mad-bhakto mad-yājī māṁ namaskuru\nmām evaiṣyasi satyaṁ te pratijāne priyo 'si me",
+        translation: "Always think of Me, become My devotee, worship Me and offer your homage unto Me. Thus you will come to Me without fail. I promise you this because you are My very dear friend.",
+        meaning: "Krishna's personal promise to Arjuna — the path is simple: think of God, be devoted, worship, bow. God himself guarantees liberation to the sincere seeker. This is love.",
+        keywords: ["devotion", "surrender", "promise", "liberation", "love"]
+      },
+      {
+        id: "18.66",
+        chapter: 18,
+        verse: 66,
+        sanskrit: "सर्वधर्मान्परित्यज्य मामेकं शरणं व्रज।\nअहं त्वां सर्वपापेभ्यो मोक्षयिष्यामि मा शुचः॥",
+        transliteration: "sarva-dharmān parityajya mām ekaṁ śaraṇaṁ vraja\nahaṁ tvāṁ sarva-pāpebhyo mokṣayiṣyāmi mā śucaḥ",
+        translation: "Abandon all varieties of religion and just surrender unto Me. I shall deliver you from all sinful reactions. Do not fear.",
+        meaning: "This is the ultimate teaching of the Gita — complete surrender to God. All religious obligations are subsumed in this one act. God promises complete liberation and dispels all fear.",
+        keywords: ["surrender", "liberation", "moksha", "grace", "fearlessness"]
+      },
+      {
+        id: "18.78",
+        chapter: 18,
+        verse: 78,
+        sanskrit: "यत्र योगेश्वरः कृष्णो यत्र पार्थो धनुर्धरः।\nतत्र श्रीर्विजयो भूतिर्ध्रुवा नीतिर्मतिर्मम॥",
+        transliteration: "yatra yogeśvaraḥ kṛṣṇo yatra pārtho dhanur-dharaḥ\ntatra śrīr vijayo bhūtir dhruvā nītir matir mama",
+        translation: "Wherever there is Krishna, the master of all mystics, and wherever there is Arjuna, the supreme archer, there will also certainly be opulence, victory, extraordinary power, and morality. That is my opinion.",
+        meaning: "The final verse affirms that wherever divine wisdom (Krishna) meets sincere practice (Arjuna), all blessings follow — prosperity, victory, power, and righteousness.",
+        keywords: ["victory", "wisdom", "divine", "prosperity", "final verse"]
+      }
+    ]
+  }
+];
+
+export const getAllVerses = (): Verse[] => {
+  return chapters.flatMap(ch => ch.verses);
+};
+
+export const getVerseById = (id: string): Verse | undefined => {
+  return getAllVerses().find(v => v.id === id);
+};
+
+export const getDailyVerse = (): Verse => {
+  const allVerses = getAllVerses();
+  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+  return allVerses[dayOfYear % allVerses.length];
+};
+
+export const searchVerses = (query: string): Verse[] => {
+  const q = query.toLowerCase();
+  return getAllVerses().filter(v =>
+    v.translation.toLowerCase().includes(q) ||
+    v.meaning.toLowerCase().includes(q) ||
+    v.keywords.some(k => k.toLowerCase().includes(q)) ||
+    v.transliteration.toLowerCase().includes(q)
+  );
+};
+
+export const getVersesByKeyword = (keyword: string): Verse[] => {
+  const k = keyword.toLowerCase();
+  return getAllVerses().filter(v => v.keywords.some(kw => kw.toLowerCase().includes(k)));
+};
+
+export const SPIRITUAL_TOPICS = [
+  "karma", "dharma", "yoga", "bhakti", "soul", "meditation",
+  "devotion", "knowledge", "liberation", "duty", "surrender",
+  "equanimity", "wisdom", "divine", "action"
+];

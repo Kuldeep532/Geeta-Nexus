@@ -1,0 +1,31 @@
+# Files to exclude from EAS build uploads
+# (keeps uploads fast and avoids sending unnecessary files to EAS servers)
+
+# Replit-specific
+.replit-artifact/
+.replit
+.local/
+
+# Dev build artifacts
+dist/
+web-build/
+static-build/
+.expo/
+.metro-cache/
+node_modules/.cache/
+
+# Logs
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# OS files
+.DS_Store
+*.orig.*
+
+# Local env
+.env*.local
+
+# TypeScript build info
+*.tsbuildinfo
