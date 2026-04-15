@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../theme.dart';
 import '../state/app_state.dart';
 import '../main.dart';
@@ -21,36 +22,31 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       emoji: '🕉️',
       title: 'Bhagavad Gita AI',
       subtitle: 'The Song of God',
-      body:
-          'Discover the timeless wisdom of the Bhagavad Gita — 700 verses of divine knowledge that have guided seekers for thousands of years.',
+      body: 'Discover the timeless wisdom of the Bhagavad Gita — 700 verses of divine knowledge that have guided seekers for thousands of years.',
     ),
     _OnboardPage(
       emoji: '📖',
       title: 'Read & Reflect',
       subtitle: '18 Chapters of Wisdom',
-      body:
-          'Explore all 18 chapters with Sanskrit verses, transliterations, translations, and deep meanings. Earn XP as you journey through the teachings.',
+      body: 'Explore all 18 chapters with Sanskrit verses, transliterations, translations, and deep meanings. Earn XP as you journey through the teachings.',
     ),
     _OnboardPage(
       emoji: '🤖',
       title: 'Ask Krishna',
       subtitle: 'Your Divine Guide',
-      body:
-          'Have conversations with Lord Krishna, Radha, or your Gita Guide. Ask any question about dharma, karma, devotion, or the nature of reality.',
+      body: 'Have conversations with Lord Krishna, Radha, or your Gita Guide. Ask any question about dharma, karma, devotion, or the nature of reality.',
     ),
     _OnboardPage(
       emoji: '🧘',
       title: 'Practice Daily',
       subtitle: 'Meditation • Breathing • Japa',
-      body:
-          'Build a daily spiritual practice with meditation timers, pranayama breathing exercises, japa mala counter, and a personal journal.',
+      body: 'Build a daily spiritual practice with meditation timers, pranayama breathing exercises, japa mala counter, and a personal journal.',
     ),
     _OnboardPage(
       emoji: '🌟',
       title: 'Grow Spiritually',
       subtitle: 'Track Your Journey',
-      body:
-          'Earn XP, level up, unlock badges, and build your streak. Quiz yourself, explore flashcards, and track your progress through all 18 chapters.',
+      body: 'Earn XP, level up, unlock badges, and build your streak. Quiz yourself, explore flashcards, and track your progress through all 18 chapters.',
     ),
   ];
 
@@ -60,12 +56,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
+  Future<void> _requestPermissions() async {
+    await [
+      Permission.microphone,
+      Permission.notification,
+      Permission.photos,
+      Permission.videos,
+      Permission.audio,
+    ].request();
+    
+    _finish();
+  }
+
   void _next() {
     if (_page < _pages.length - 1) {
       _controller.nextPage(
           duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
     } else {
-      _finish();
+      _requestPermissions();
     }
   }
 
@@ -98,15 +106,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(_pages.length, (i) => Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                          width: _page == i ? 20 : 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            color: _page == i ? kGold : kDivider,
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                        )),
+                    children: List.generate(
+                        _pages.length,
+                        (i) => Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: _page == i ? 20 : 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: _page == i ? kGold : kDivider,
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                            )),
                   ),
                   const SizedBox(height: 24),
                   SizedBox(
@@ -155,8 +165,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               border: Border.all(color: kGoldDim, width: 2),
             ),
             child: Center(
-              child: Text(page.emoji,
-                  style: const TextStyle(fontSize: 48)),
+              child: Text(page.emoji, style: const TextStyle(fontSize: 48)),
             ),
           ),
           const SizedBox(height: 32),
@@ -194,6 +203,7 @@ class _OnboardPage {
   final String title;
   final String subtitle;
   final String body;
+
   const _OnboardPage({
     required this.emoji,
     required this.title,
