@@ -1,9 +1,6 @@
-name: Flutter Build APK
+name: Geeta AI - Manual Build
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
@@ -11,7 +8,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -26,16 +24,16 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Fix Permissions
-        run: chmod +x android/gradlew
+      - name: Install Dependencies
+        run: flutter pub get
 
       - name: Build APK
         run: |
-          flutter pub get
+          chmod +x android/gradlew
           flutter build apk --release
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: release-apk
+          name: manual-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
