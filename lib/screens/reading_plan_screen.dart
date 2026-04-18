@@ -10,7 +10,7 @@ class ReadingPlanScreen extends StatelessWidget {
   const ReadingPlanScreen({super.key});
 
   static const _plan = [
-    {'day': 1, 'chapter': 1, 'focus': 'Understand Arjuna\'s crisis and why dharma matters'},
+    {'day': 1, 'chapter': 1, 'focus': "Understand Arjuna's crisis and why dharma matters"},
     {'day': 2, 'chapter': 2, 'focus': 'Learn about the eternal soul and begin karma yoga'},
     {'day': 3, 'chapter': 2, 'focus': 'Memorize verse 2.47 — the essence of karma yoga'},
     {'day': 4, 'chapter': 3, 'focus': 'Practice selfless service in daily actions'},
@@ -45,14 +45,16 @@ class ReadingPlanScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
-    final now = DateTime.now();
-    final dayOfMonth = now.day;
+    
+    // Fixed: Logic for tracking the current day of the plan
+    final currentDay = state.userCurrentDay ?? 1;
 
     return Scaffold(
       backgroundColor: kBg,
       appBar: AppBar(
         title: const Text('30-Day Reading Plan'),
         leading: const BackButton(),
+        elevation: 0,
       ),
       body: Column(
         children: [
@@ -65,113 +67,60 @@ class ReadingPlanScreen extends StatelessWidget {
                 final item = _plan[i];
                 final day = item['day'] as int;
                 final chapterNum = item['chapter'] as int;
-                final chapter =
-                    kChapters.firstWhere((c) => c.number == chapterNum);
-                final isCompleted = state.isChapterCompleted(chapterNum);
-                final isToday = day == dayOfMonth;
 
-                return GestureDetector(
-                  onTap: () => Navigator.push(
+                // Fixed: Logic to safely find chapter
+                final chapter = kChapters.firstWhere(
+                  (c) => c.number == chapterNum,
+                  orElse: () => kChapters[0],
+                );
+
+                final isCompleted = state.isChapterCompleted(chapterNum);
+                final isToday = day == currentDay;
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: InkWell(
+                    onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (_) =>
-                              ChapterDetailScreen(chapter: chapter))),
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      color: isToday
-                          ? kGold.withOpacity(0.1)
-                          : kCard,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: isToday
-                            ? kGold
-                            : isCompleted
-                                ? kGoldDim
-                                : kDivider,
-                        width: isToday ? 1.5 : 1,
+                        builder: (_) => ChapterDetailScreen(chapter: chapter),
                       ),
                     ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: isCompleted
-                                ? kGold.withOpacity(0.2)
-                                : isToday
-                                    ? kGold.withOpacity(0.15)
-                                    : kDivider,
-                            border: Border.all(
-                                color: isToday
-                                    ? kGold
-                                    : isCompleted
-                                        ? kGoldDim
-                                        : kDivider),
-                          ),
-                          child: Center(
-                            child: isCompleted
-                                ? const Icon(Icons.check,
-                                    color: kGold, size: 18)
-                                : Text(
-                                    '$day',
-                                    style: GoogleFonts.cinzel(
-                                        color: isToday ? kGold : kTextDim,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13),
-                                  ),
-                          ),
+                    borderRadius: BorderRadius.circular(14),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: isToday ? kGold.withOpacity(0.1) : kCard,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isToday ? kGold : (isCompleted ? kGoldDim : kDivider),
+                          width: isToday ? 1.5 : 1,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    'Day $day • Chapter $chapterNum',
-                                    style: TextStyle(
-                                        color: isToday ? kGold : kGoldDim,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600),
-                                  ),
-                                  if (isToday) ...[
-                                    const SizedBox(width: 6),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: kGold,
-                                        borderRadius:
-                                            BorderRadius.circular(6),
-                                      ),
-                                      child: const Text('TODAY',
-                                          style: TextStyle(
-                                              color: kBg,
-                                              fontSize: 9,
-                                              fontWeight: FontWeight.bold)),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                item['focus'] as String,
-                                style: TextStyle(
+                      ),
+                      child: Row(
+                        children: [
+                          _buildDayIndicator(day, isToday, isCompleted),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildDayTitle(day, chapterNum, isToday),
+                                const SizedBox(height: 2),
+                                Text(
+                                  item['focus'] as String,
+                                  style: TextStyle(
                                     color: isCompleted ? kTextDim : kText,
                                     fontSize: 13,
-                                    height: 1.4),
-                              ),
-                            ],
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        const Icon(Icons.chevron_right,
-                            color: kTextDim, size: 18),
-                      ],
+                          const Icon(Icons.chevron_right, color: kTextDim, size: 18),
+                        ],
+                      ),
                     ),
                   ),
                 );
@@ -180,6 +129,69 @@ class ReadingPlanScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildDayIndicator(int day, bool isToday, bool isCompleted) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isCompleted
+            ? kGold.withOpacity(0.2)
+            : isToday
+                ? kGold.withOpacity(0.15)
+                : kDivider,
+        border: Border.all(
+          color: isToday ? kGold : (isCompleted ? kGoldDim : kDivider),
+        ),
+      ),
+      child: Center(
+        child: isCompleted
+            ? const Icon(Icons.check, color: kGold, size: 18)
+            : Text(
+                '$day',
+                style: GoogleFonts.cinzel(
+                  color: isToday ? kGold : kTextDim,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildDayTitle(int day, int chapterNum, bool isToday) {
+    return Row(
+      children: [
+        Text(
+          'Day $day • Chapter $chapterNum',
+          style: TextStyle(
+            color: isToday ? kGold : kGoldDim,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        if (isToday) ...[
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+            decoration: BoxDecoration(
+              color: kGold,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Text(
+              'TODAY',
+              style: TextStyle(
+                color: kBg,
+                fontSize: 9,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -202,14 +214,17 @@ class ReadingPlanScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('30-Day Gita Journey',
-                    style: GoogleFonts.cinzel(
-                        color: kGold,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold)),
+                Text(
+                  '30-Day Gita Journey',
+                  style: GoogleFonts.cinzel(
+                    color: kGold,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 4),
                 const Text(
-                  'One chapter, one practice — every day.',
+                  'Deepen your practice daily.',
                   style: TextStyle(color: kTextDim, fontSize: 12),
                 ),
               ],
