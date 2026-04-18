@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../theme.dart';
 import '../state/app_state.dart';
 
@@ -13,44 +14,65 @@ class ChantsScreen extends StatefulWidget {
 }
 
 class _ChantsScreenState extends State<ChantsScreen> {
+  bool _isInitialized = false;
+  int _selectedMantraIndex = 0;
+
   final List<Map<String, String>> _mantras = [
     {
       'name': 'Hare Krishna Mahamantra',
       'mantra': 'Hare Krishna Hare Krishna\nKrishna Krishna Hare Hare\nHare Rama Hare Rama\nRama Rama Hare Hare',
-      'meaning': 'A call to the divine energies of Vishnu. Regular chanting of this mantra purifies the mind and awakens devotion.',
+      'meaning': 'A call to the divine energies of Vishnu. Purifies the mind and awakens devotion.',
     },
     {
       'name': 'Om Namah Shivaya',
-      'mantra': 'ॐ नमः शिवाय\nOm Namah Shivaya',
-      'meaning': 'I bow to Shiva — the inner self. This mantra invokes the universal consciousness.',
+      'mantra': 'Om Namah Shivaya',
+      'meaning': 'I bow to the inner self. Invokes universal consciousness.',
     },
     {
       'name': 'Gayatri Mantra',
-      'mantra': 'ॐ भूर्भुवः स्वः\nतत्सवितुर्वरेण्यं\nभर्गो देवस्य धीमहि\nधियो यो नः प्रचोदयात्॥',
-      'meaning': 'We meditate upon the divine light of the sun. May it illuminate our intellect and inspire our understanding.',
+      'mantra': 'Om Bhur Bhuvah Svah\nTat Savitur Varenyam\nBhargo Devasya Dhimahi\nDhiyo Yo Nah Prachodayat',
+      'meaning': 'Meditating on the divine light to illuminate our intellect.',
     },
     {
-      'name': 'So\'Ham',
-      'mantra': 'सोऽहम्\nSo\'Ham',
-      'meaning': '"I am That" — the breath mantra. Inhale with "So" and exhale with "Ham" to realize your identity with the Divine.',
-    },
-    {
-      'name': 'Om Shanti',
-      'mantra': 'ॐ शान्तिः शान्तिः शान्तिः\nOm Shanti Shanti Shanti',
-      'meaning': 'Peace to the body, mind, and spirit. Three repetitions invoke peace at all levels of existence.',
+      'name': 'So Ham',
+      'mantra': 'So Ham',
+      'meaning': '"I am That" — identifying the individual breath with the cosmic soul.',
     },
   ];
 
-  int _selectedMantraIndex = 0;
-  int get _japaCount => context.read<AppState>().japaCount;
+  @override
+  void initState() {
+    super.initState();
+    _setupJapa();
+  }
+
+  Future<void> _setupJapa() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedCount = prefs.getInt('japaCount') ?? 0;
+    if (mounted) {
+      context.read<AppState>().setJapaCount(savedCount);
+      setState(() => _isInitialized = true);
+    }
+  }
+
+  Future<void> _updateAndSave(AppState state) async {
+    state.incrementJapa();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('japaCount', state.japaCount);
+  }
 
   @override
   Widget build(BuildContext context) {
+    // If data isn't loaded yet, show a loader to prevent logic errors
+    if (!_isInitialized) {
+      return const Scaffold(backgroundColor: kBg, body: Center(child: CircularProgressIndicator(color: kGold)));
+    }
+
     final state = context.watch<AppState>();
     final japa = state.japaCount;
-    final currentMantra = _mantras[_selectedMantraIndex];
     final roundsComplete = japa ~/ 108;
     final inRound = japa % 108;
+    final currentMantra = _mantras[_selectedMantraIndex];
 
     return Scaffold(
       backgroundColor: kBg,
@@ -65,10 +87,10 @@ class _ChantsScreenState extends State<ChantsScreen> {
             _buildMantraSelector(),
             const SizedBox(height: 20),
             _buildMantraCard(currentMantra),
-            const SizedBox(height: 24),
-            _buildJapaCounter(state, japa, inRound, roundsComplete),
-            const SizedBox(height: 24),
-            _buildMalaProgress(inRound),
+            const SizedBox(height: 32),
+            _buildCounterSection(state, japa, roundsComplete),
+            const SizedBox(height: 32),
+            _buildProgressBar(inRound),
           ],
         ),
       ),
@@ -76,155 +98,102 @@ class _ChantsScreenState extends State<ChantsScreen> {
   }
 
   Widget _buildMantraSelector() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: List.generate(_mantras.length, (i) {
+    return SizedBox(
+      height: 40,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _mantras.length,
+        itemBuilder: (context, i) {
           final selected = _selectedMantraIndex == i;
-          return GestureDetector(
-            onTap: () => setState(() => _selectedMantraIndex = i),
-            child: Container(
-              margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: selected ? kGold.withOpacity(0.2) : kCard,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: selected ? kGold : kDivider),
-              ),
-              child: Text(
-                _mantras[i]['name']!.split(' ').take(2).join(' '),
-                style: TextStyle(
-                    color: selected ? kGold : kTextDim,
-                    fontSize: 12,
-                    fontWeight: selected ? FontWeight.bold : FontWeight.normal),
-              ),
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text(_mantras[i]['name']!),
+              selected: selected,
+              onSelected: (val) => setState(() => _selectedMantraIndex = i),
+              selectedColor: kGold.withOpacity(0.2),
+              backgroundColor: kCard,
+              labelStyle: TextStyle(color: selected ? kGold : kTextDim, fontSize: 12),
+              shape: StadiumBorder(side: BorderSide(color: selected ? kGold : kDivider)),
+              showCheckmark: false,
             ),
           );
-        }),
+        },
       ),
     );
   }
 
   Widget _buildMantraCard(Map<String, String> mantra) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF2A1F00), Color(0xFF1A1500)],
+        gradient: LinearGradient(
+          colors: [kCard, const Color(0xFF1A1500)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: kGoldDim.withOpacity(0.5)),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: kGoldDim.withOpacity(0.3)),
       ),
       child: Column(
         children: [
-          Text(
-            mantra['name']!,
-            style: GoogleFonts.cinzel(
-                color: kGold, fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            mantra['mantra']!,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.notoSansDevanagari(
-                color: kGoldLight, fontSize: 16, height: 1.8),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            mantra['meaning']!,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.crimsonText(
-                color: kTextDim, fontSize: 13, fontStyle: FontStyle.italic, height: 1.5),
-          ),
+          Text(mantra['name']!.toUpperCase(),
+              style: GoogleFonts.cinzel(color: kGold, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+          const SizedBox(height: 16),
+          Text(mantra['mantra']!,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.notoSans(color: kGoldLight, fontSize: 18, height: 1.6, fontWeight: FontWeight.w500)),
+          const SizedBox(height: 16),
+          Text(mantra['meaning']!,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.crimsonText(color: kTextDim, fontSize: 14, fontStyle: FontStyle.italic)),
         ],
       ),
     );
   }
 
-  Widget _buildJapaCounter(AppState state, int japa, int inRound, int rounds) {
+  Widget _buildCounterSection(AppState state, int japa, int rounds) {
     return Column(
       children: [
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: kCard,
-            shape: BoxShape.circle,
-            border: Border.all(color: kGoldDim, width: 2),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '$japa',
-                style: GoogleFonts.cinzel(
-                    color: kGold, fontSize: 48, fontWeight: FontWeight.bold),
-              ),
-              Text('Total Japa',
-                  style: const TextStyle(color: kTextDim, fontSize: 13)),
-            ],
+        Semantics(
+          label: "Total count $japa",
+          child: Container(
+            padding: const EdgeInsets.all(30),
+            decoration: BoxDecoration(
+              color: kCard,
+              shape: BoxShape.circle,
+              boxShadow: [BoxShadow(color: kGold.withOpacity(0.1), blurRadius: 30, spreadRadius: 5)],
+              border: Border.all(color: kGoldDim, width: 1),
+            ),
+            child: Column(
+              children: [
+                Text('$japa', style: GoogleFonts.cinzel(color: kGold, fontSize: 54, fontWeight: FontWeight.bold)),
+                Text('CHANTS', style: GoogleFonts.cinzel(color: kTextDim, fontSize: 12, letterSpacing: 2)),
+              ],
+            ),
           ),
         ),
-        const SizedBox(height: 8),
-        Text('$rounds malas completed (108 per mala)',
-            style: const TextStyle(color: kTextDim, fontSize: 12)),
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
+        Text('$rounds Malas Completed', style: const TextStyle(color: kGoldDim, fontSize: 14, fontWeight: FontWeight.w500)),
+        const SizedBox(height: 30),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            GestureDetector(
+            _buildCircleButton(
+              icon: Icons.add,
               onTap: () {
-                HapticFeedback.lightImpact();
-                state.incrementJapa();
+                HapticFeedback.vibrate();
+                _updateAndSave(state);
               },
-              child: Container(
-                width: 90,
-                height: 90,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const RadialGradient(
-                    colors: [Color(0xFF3A2A00), Color(0xFF2A1F00)],
-                  ),
-                  border: Border.all(color: kGold, width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: kGold.withOpacity(0.3),
-                      blurRadius: 20,
-                    )
-                  ],
-                ),
-                child: const Icon(Icons.add, color: kGold, size: 36),
-              ),
+              label: "Add chant",
             ),
-            const SizedBox(width: 24),
-            OutlinedButton.icon(
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (_) => AlertDialog(
-                    title: const Text('Reset Count?'),
-                    content: const Text(
-                        'This will reset your japa counter to zero.'),
-                    actions: [
-                      TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Cancel')),
-                      TextButton(
-                          onPressed: () {
-                            state.resetJapa();
-                            Navigator.pop(context);
-                          },
-                          child: const Text('Reset',
-                              style: TextStyle(color: Colors.red))),
-                    ],
-                  ),
-                );
-              },
-              icon: const Icon(Icons.refresh, size: 16),
-              label: const Text('Reset'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: kTextDim,
-                side: const BorderSide(color: kDivider),
-              ),
+            const SizedBox(width: 40),
+            _buildCircleButton(
+              icon: Icons.refresh,
+              onTap: () => _confirmReset(state),
+              label: "Reset counter",
+              isSmall: true,
             ),
           ],
         ),
@@ -232,44 +201,72 @@ class _ChantsScreenState extends State<ChantsScreen> {
     );
   }
 
-  Widget _buildMalaProgress(int inRound) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: kCard,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: kDivider),
+  Widget _buildCircleButton({required IconData icon, required VoidCallback onTap, required String label, bool isSmall = false}) {
+    double size = isSmall ? 60 : 90;
+    return Semantics(
+      button: true,
+      label: label,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isSmall ? Colors.transparent : kGold,
+            border: isSmall ? Border.all(color: kDivider) : null,
+            gradient: isSmall ? null : RadialGradient(colors: [kGold, kGoldDim]),
+          ),
+          child: Icon(icon, color: isSmall ? kTextDim : Colors.black, size: isSmall ? 24 : 40),
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('Current Mala Progress',
-                  style: GoogleFonts.cinzel(
-                      color: kGold, fontSize: 13, fontWeight: FontWeight.w600)),
-              Text('$inRound / 108',
-                  style: const TextStyle(color: kGoldDim, fontSize: 12)),
-            ],
-          ),
-          const SizedBox(height: 10),
-          LinearProgressIndicator(
-            value: inRound / 108,
-            backgroundColor: kDivider,
-            color: kGold,
-            minHeight: 8,
-            borderRadius: BorderRadius.circular(4),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            inRound == 0
-                ? 'Tap the button to begin your japa'
-                : '${108 - inRound} beads left to complete this mala',
-            style: const TextStyle(color: kTextDim, fontSize: 12),
+    );
+  }
+
+  void _confirmReset(AppState state) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: kCard,
+        title: Text('Reset Counter?', style: GoogleFonts.cinzel(color: kGold)),
+        content: const Text('This will set your session and total count to zero.', style: TextStyle(color: kTextDim)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
+          TextButton(
+            onPressed: () async {
+              state.resetJapa();
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setInt('japaCount', 0);
+              if (mounted) Navigator.pop(context);
+            },
+            child: const Text('RESET', style: TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildProgressBar(int inRound) {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('MALA PROGRESS', style: TextStyle(color: kTextDim, fontSize: 10, letterSpacing: 1)),
+            Text('$inRound / 108', style: const TextStyle(color: kGold, fontSize: 12, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: LinearProgressIndicator(
+            value: inRound / 108,
+            backgroundColor: kDivider,
+            color: kGold,
+            minHeight: 10,
+          ),
+        ),
+      ],
     );
   }
 }
