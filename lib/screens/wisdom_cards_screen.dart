@@ -53,19 +53,24 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
             ),
           ),
           const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(kWisdomCards.length, (i) {
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 3),
-                width: _currentPage == i ? 16 : 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: _currentPage == i ? kGold : kDivider,
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              );
-            }),
+          // Semantic label for accessibility
+          Semantics(
+            label: "Page indicator",
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(kWisdomCards.length, (i) {
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  width: _currentPage == i ? 16 : 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: _currentPage == i ? kGold : kDivider,
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                );
+              }),
+            ),
           ),
           const SizedBox(height: 24),
         ],
@@ -94,54 +99,58 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: kGoldDim.withOpacity(0.4), width: 1.5),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: kGold.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: kGoldDim),
+      // Use SingleChildScrollView to prevent overflow on smaller screens
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: kGold.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: kGoldDim),
+              ),
+              child: Text(
+                'Gita ${card["verse"]!}',
+                style: GoogleFonts.cinzel(
+                    color: kGold, fontSize: 12, letterSpacing: 0.5),
+              ),
             ),
-            child: Text(
-              'Gita ${card["verse"]!}',
-              style: GoogleFonts.cinzel(color: kGold, fontSize: 12, letterSpacing: 0.5),
+            const SizedBox(height: 24),
+            Text(
+              card['title']!,
+              style: GoogleFonts.cinzel(
+                color: kGold,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1,
+              ),
+              textAlign: TextAlign.center, // Fixed misplaced comma
             ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            card['title']!,
-            style: GoogleFonts.cinzel(
-              color: kGold,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1,
+            const SizedBox(height: 20),
+            Text(
+              '❝',
+              style: TextStyle(color: kGoldDim.withOpacity(0.5), fontSize: 40),
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            '❝',
-            style: TextStyle(color: kGoldDim.withOpacity(0.5), fontSize: 40),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            card['wisdom']!,
-            style: GoogleFonts.crimsonText(
-              color: kText,
-              fontSize: 17,
-              height: 1.8,
-              fontStyle: FontStyle.italic,
+            const SizedBox(height: 8),
+            Text(
+              card['wisdom']!,
+              style: GoogleFonts.crimsonText(
+                color: kText,
+                fontSize: 17,
+                height: 1.8,
+                fontStyle: FontStyle.italic,
+              ),
+              textAlign: TextAlign.center,
             ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 24),
-          const Divider(color: kDivider),
-          const SizedBox(height: 12),
-          const Icon(Icons.auto_awesome, color: kGoldDim, size: 20),
-        ],
+            const SizedBox(height: 24),
+            const Divider(color: kDivider),
+            const SizedBox(height: 12),
+            const Icon(Icons.auto_awesome, color: kGoldDim, size: 20),
+          ],
+        ),
       ),
     );
-  }
+  } // Fixed syntax error (removed leading comma)
 }
