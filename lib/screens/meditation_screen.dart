@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import '../theme.dart';
 import '../state/app_state.dart';
 
@@ -14,11 +16,17 @@ class MeditationScreen extends StatefulWidget {
 
 class _MeditationScreenState extends State<MeditationScreen>
     with TickerProviderStateMixin {
+  
+  // High-performance state variables
+  final ValueNotifier<int> _secondsLeftNotifier = ValueNotifier<int>(300);
   int _selectedMinutes = 5;
-  int _secondsLeft = 0;
   bool _running = false;
   bool _finished = false;
+  
   Timer? _timer;
+  DateTime? _endTime;
+  
+  final AudioPlayer _audioPlayer = AudioPlayer();
   late AnimationController _pulseController;
   late Animation<double> _pulseAnim;
 
@@ -27,12 +35,12 @@ class _MeditationScreenState extends State<MeditationScreen>
   @override
   void initState() {
     super.initState();
-    _secondsLeft = _selectedMinutes * 60;
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 4),
     )..repeat(reverse: true);
-    _pulseAnim = Tween<double>(begin: 0.85, end: 1.15).animate(
+    
+    _pulseAnim = Tween<double>(begin: 0.9, end: 1.1).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
   }
@@ -41,52 +49,82 @@ class _MeditationScreenState extends State<MeditationScreen>
   void dispose() {
     _timer?.cancel();
     _pulseController.dispose();
+    _audioPlayer.dispose();
+    _secondsLeftNotifier.dispose();
+    WakelockPlus.disable(); // Ensure screen lock is released
     super.dispose();
+  }
+
+  // Safe Audio Logic: Won't crash if file is missing
+  Future<void> _playFinishSound() async {
+    try {
+      // Logic: Only attempts play if the file exists in your future assets
+      await _audioPlayer.play(AssetSource('audio/meditation_bell.mp3'));
+    } catch (e) {
+      // Silently catch error if file is not yet uploaded
+      debugPrint("Audio ignored: File likely missing from assets. Error: $e");
+    }
   }
 
   void _startStop() {
     if (_running) {
       _timer?.cancel();
+      WakelockPlus.disable();
       setState(() => _running = false);
     } else {
+      WakelockPlus.enable(); // Keep screen on during meditation
       setState(() {
         _running = true;
         _finished = false;
+        _endTime = DateTime.now().add(Duration(seconds: _secondsLeftNotifier.value));
       });
-      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-        if (_secondsLeft <= 0) {
-          _timer?.cancel();
-          final mins = _selectedMinutes;
-          context.read<AppState>().addMeditationMinutes(mins);
-          setState(() {
-            _running = false;
-            _finished = true;
-          });
+
+      _timer = Timer.periodic(const Duration(milliseconds: 200), (timer) {
+        if (!mounted) return;
+
+        final remaining = _endTime!.difference(DateTime.now()).inSeconds;
+        
+        if (remaining <= 0) {
+          timer.cancel();
+          _onFinish();
         } else {
-          setState(() => _secondsLeft--);
+          // Updates only the listener, not the whole build method
+          _secondsLeftNotifier.value = remaining;
         }
       });
     }
   }
 
-  void _reset() {
-    _timer?.cancel();
+  void _onFinish() {
+    _playFinishSound();
+    WakelockPlus.disable();
+    
+    // Safety check for Provider context
+    if (mounted) {
+      context.read<AppState>().addMeditationMinutes(_selectedMinutes);
+    }
+    
     setState(() {
       _running = false;
-      _finished = false;
-      _secondsLeft = _selectedMinutes * 60;
+      _finished = true;
+      _secondsLeftNotifier.value = 0;
     });
   }
 
-  String get _timeDisplay {
-    final m = _secondsLeft ~/ 60;
-    final s = _secondsLeft % 60;
-    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  void _reset() {
+    _timer?.cancel();
+    WakelockPlus.disable();
+    setState(() {
+      _running = false;
+      _finished = false;
+      _secondsLeftNotifier.value = _selectedMinutes * 60;
+    });
   }
 
-  double get _progress {
-    final total = _selectedMinutes * 60;
-    return total == 0 ? 0 : 1 - (_secondsLeft / total);
+  String _formatTime(int totalSeconds) {
+    final m = totalSeconds ~/ 60;
+    final s = totalSeconds % 60;
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -95,29 +133,32 @@ class _MeditationScreenState extends State<MeditationScreen>
       backgroundColor: kBg,
       appBar: AppBar(
         title: const Text('Meditation'),
-        leading: const BackButton(),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: const BackButton(color: kGold),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
           child: Column(
             children: [
               Text(
                 'सर्वं ब्रह्मार्पणं कुरु',
                 style: GoogleFonts.notoSansDevanagari(
-                    color: kGoldDim, fontSize: 18, height: 1.6),
+                    color: kGoldDim, fontSize: 22, fontWeight: FontWeight.w500),
               ),
+              const SizedBox(height: 8),
               Text('Offer everything to the Divine',
-                  style: const TextStyle(
-                      color: kTextDim, fontSize: 13, fontStyle: FontStyle.italic)),
-              const SizedBox(height: 32),
+                  style: GoogleFonts.inter(
+                      color: kTextDim, fontSize: 14, fontStyle: FontStyle.italic)),
+              const SizedBox(height: 50),
+              
               if (!_running && !_finished) _buildDurationPicker(),
-              const SizedBox(height: 32),
-              if (_finished)
-                _buildFinished()
-              else
-                _buildTimer(),
-              const SizedBox(height: 32),
+              
+              const SizedBox(height: 20),
+              if (_finished) _buildFinished() else _buildTimerUI(),
+              
+              const SizedBox(height: 50),
               _buildInstructions(),
             ],
           ),
@@ -128,37 +169,38 @@ class _MeditationScreenState extends State<MeditationScreen>
 
   Widget _buildDurationPicker() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Select Duration',
+        Text('SELECT DURATION',
             style: GoogleFonts.cinzel(
-                color: kGold, fontSize: 14, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 12),
+                color: kGold, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+        const SizedBox(height: 20),
         Wrap(
-          spacing: 8,
-          runSpacing: 8,
+          alignment: WrapAlignment.center,
+          spacing: 12,
+          runSpacing: 12,
           children: _durations.map((d) {
-            final selected = d == _selectedMinutes;
-            return GestureDetector(
-              onTap: () => setState(() {
-                _selectedMinutes = d;
-                _secondsLeft = d * 60;
-              }),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: selected ? kGold.withOpacity(0.2) : kCard,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                      color: selected ? kGold : kDivider, width: selected ? 1.5 : 1),
-                ),
-                child: Text(
-                  '${d}m',
-                  style: TextStyle(
-                      color: selected ? kGold : kTextDim,
-                      fontWeight:
-                          selected ? FontWeight.bold : FontWeight.normal),
-                ),
+            final isSelected = d == _selectedMinutes;
+            return ChoiceChip(
+              label: Text('${d}m'),
+              selected: isSelected,
+              onSelected: (val) {
+                if (val) {
+                  setState(() {
+                    _timer?.cancel();
+                    _running = false;
+                    _selectedMinutes = d;
+                    _secondsLeftNotifier.value = d * 60;
+                  });
+                }
+              },
+              backgroundColor: kCard,
+              selectedColor: kGold.withOpacity(0.2),
+              labelStyle: TextStyle(
+                color: isSelected ? kGold : kTextDim,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              ),
+              shape: StadiumBorder(
+                side: BorderSide(color: isSelected ? kGold : kDivider),
               ),
             );
           }).toList(),
@@ -167,72 +209,91 @@ class _MeditationScreenState extends State<MeditationScreen>
     );
   }
 
-  Widget _buildTimer() {
+  Widget _buildTimerUI() {
     return Column(
       children: [
         Stack(
           alignment: Alignment.center,
           children: [
-            ScaleTransition(
-              scale: _pulseAnim,
-              child: Container(
-                width: 220,
-                height: 220,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: kGold.withOpacity(0.05),
-                  border: Border.all(color: kGoldDim.withOpacity(0.3), width: 2),
+            if (_running)
+              ScaleTransition(
+                scale: _pulseAnim,
+                child: Container(
+                  width: 250,
+                  height: 250,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: kGold.withOpacity(0.03),
+                  ),
                 ),
               ),
-            ),
-            SizedBox(
-              width: 200,
-              height: 200,
-              child: CircularProgressIndicator(
-                value: _progress,
-                strokeWidth: 6,
-                backgroundColor: kDivider,
-                color: kGold,
+            if (_running)
+              const Positioned(
+                top: 20,
+                child: Icon(Icons.self_improvement, size: 40, color: kGoldDim),
               ),
+            ValueListenableBuilder<int>(
+              valueListenable: _secondsLeftNotifier,
+              builder: (context, seconds, child) {
+                final total = _selectedMinutes * 60;
+                final progress = total == 0 ? 0.0 : 1 - (seconds / total);
+                return SizedBox(
+                  width: 220,
+                  height: 220,
+                  child: CircularProgressIndicator(
+                    value: progress,
+                    strokeWidth: 4,
+                    backgroundColor: kDivider,
+                    valueColor: const AlwaysStoppedAnimation<Color>(kGold),
+                  ),
+                );
+              },
             ),
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  _timeDisplay,
-                  style: GoogleFonts.cinzel(
-                      color: kGold, fontSize: 40, fontWeight: FontWeight.bold),
+                ValueListenableBuilder<int>(
+                  valueListenable: _secondsLeftNotifier,
+                  builder: (context, seconds, child) {
+                    return Text(
+                      _formatTime(seconds),
+                      style: GoogleFonts.cinzel(
+                          color: kGold, fontSize: 48, fontWeight: FontWeight.bold),
+                    );
+                  },
                 ),
                 Text(
-                  _running ? 'Meditating...' : 'Ready',
-                  style: const TextStyle(color: kTextDim, fontSize: 13),
+                  _running ? 'SHANTI' : 'READY',
+                  style: GoogleFonts.inter(
+                      color: kGoldDim.withOpacity(0.7), fontSize: 12, letterSpacing: 3),
                 ),
               ],
             ),
           ],
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 50),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ElevatedButton.icon(
               onPressed: _startStop,
-              icon: Icon(_running ? Icons.pause : Icons.play_arrow),
-              label: Text(_running ? 'Pause' : 'Begin'),
+              icon: Icon(_running ? Icons.pause_circle_filled : Icons.play_circle_filled),
+              label: Text(_running ? 'PAUSE' : 'BEGIN'),
               style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                backgroundColor: kGold,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(horizontal: 35, vertical: 15),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
               ),
             ),
-            const SizedBox(width: 12),
-            OutlinedButton(
-              onPressed: _reset,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: kGold,
-                side: const BorderSide(color: kGold),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            if (!_running && _secondsLeftNotifier.value < (_selectedMinutes * 60)) ...[
+              const SizedBox(width: 15),
+              IconButton(
+                onPressed: _reset,
+                icon: const Icon(Icons.refresh, color: kGoldDim),
+                tooltip: 'Reset Timer',
               ),
-              child: const Text('Reset'),
-            ),
+            ]
           ],
         ),
       ],
@@ -242,25 +303,21 @@ class _MeditationScreenState extends State<MeditationScreen>
   Widget _buildFinished() {
     return Column(
       children: [
-        const Text('🧘', style: TextStyle(fontSize: 60)),
-        const SizedBox(height: 12),
-        Text('Session Complete',
+        const Text('🕉️', style: TextStyle(fontSize: 60)),
+        const SizedBox(height: 20),
+        Text('Peace Attained',
             style: GoogleFonts.cinzel(
-                color: kGold, fontSize: 22, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        Text('+${_selectedMinutes * 5} XP earned!',
-            style: const TextStyle(color: kGoldDim, fontSize: 15)),
-        const SizedBox(height: 8),
+                color: kGold, fontSize: 26, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 12),
         Text(
-          'You meditated for $_selectedMinutes minutes.\nMay this practice bring you peace.',
-          style: const TextStyle(color: kTextDim, fontSize: 14, height: 1.6),
+          'Practice completed successfully.\nMay your day be filled with mindfulness.',
           textAlign: TextAlign.center,
+          style: GoogleFonts.inter(color: kTextDim, fontSize: 15, height: 1.5),
         ),
-        const SizedBox(height: 24),
-        ElevatedButton.icon(
+        const SizedBox(height: 35),
+        TextButton(
           onPressed: _reset,
-          icon: const Icon(Icons.refresh),
-          label: const Text('Meditate Again'),
+          child: const Text('RESTART SESSION', style: TextStyle(color: kGold, letterSpacing: 1)),
         ),
       ],
     );
@@ -268,30 +325,28 @@ class _MeditationScreenState extends State<MeditationScreen>
 
   Widget _buildInstructions() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: kCard,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: kDivider),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('How to Meditate',
-              style: GoogleFonts.cinzel(
-                  color: kGold, fontSize: 13, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 10),
-          const _Step(
-              num: '1', text: 'Sit comfortably with your spine erect'),
-          const _Step(num: '2', text: 'Close your eyes and breathe naturally'),
-          const _Step(num: '3', text: 'Focus on the mantra: "Om" or "So-Ham"'),
-          const _Step(
-              num: '4',
-              text:
-                  'When thoughts arise, gently return to your breath and mantra'),
-          const _Step(
-              num: '5',
-              text: 'Rest in the awareness beneath all thoughts'),
+          Row(
+            children: [
+              const Icon(Icons.info_outline, color: kGold, size: 18),
+              const SizedBox(width: 10),
+              Text('GUIDELINES',
+                  style: GoogleFonts.cinzel(
+                      color: kGold, fontSize: 13, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 15),
+          const _Step(text: 'Sit with a straight back, hands on your knees.'),
+          const _Step(text: 'Focus your gaze inward or close your eyes.'),
+          const _Step(text: 'Let thoughts pass like clouds in the sky.'),
         ],
       ),
     );
@@ -299,36 +354,18 @@ class _MeditationScreenState extends State<MeditationScreen>
 }
 
 class _Step extends StatelessWidget {
-  final String num;
   final String text;
-  const _Step({required this.num, required this.text});
+  const _Step({required this.text});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 22,
-            height: 22,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: kGold.withOpacity(0.15),
-              border: Border.all(color: kGoldDim),
-            ),
-            child: Center(
-              child: Text(num,
-                  style: const TextStyle(
-                      color: kGold, fontSize: 11, fontWeight: FontWeight.bold)),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-              child: Text(text,
-                  style: const TextStyle(
-                      color: kText, fontSize: 13, height: 1.5))),
+          const Text('• ', style: TextStyle(color: kGold, fontSize: 18)),
+          Expanded(child: Text(text, style: const TextStyle(color: kTextDim, fontSize: 14))),
         ],
       ),
     );
