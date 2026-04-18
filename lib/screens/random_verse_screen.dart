@@ -25,7 +25,9 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
   void initState() {
     super.initState();
     _controller = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 500));
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
     _fadeAnim = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
     _verse = _random();
     _controller.forward();
@@ -33,12 +35,19 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
 
   Verse _random() {
     final all = getAllVerses();
+    if (all.isEmpty) {
+      throw Exception("Verse data is empty");
+    }
     return all[Random().nextInt(all.length)];
   }
 
   void _refresh() {
+    if (_controller.isAnimating) return;
     _controller.reverse().then((_) {
-      setState(() => _verse = _random());
+      if (!mounted) return;
+      setState(() {
+        _verse = _random();
+      });
       _controller.forward();
     });
   }
@@ -51,25 +60,32 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
 
   @override
   Widget build(BuildContext context) {
-    final state = context.read<AppState>();
+    // Optimized: Use context.watch to rebuild only when AppState changes
+    final state = context.watch<AppState>();
+    final bool isBookmarked = state.isBookmarked(_verse.id);
+
     return Scaffold(
       backgroundColor: kBg,
       appBar: AppBar(
         title: const Text('Random Verse'),
+        centerTitle: true,
         leading: const BackButton(),
         actions: [
           IconButton(
             icon: const Icon(Icons.shuffle, color: kGold),
             onPressed: _refresh,
+            tooltip: 'Refresh Verse',
           ),
         ],
       ),
       body: FadeTransition(
         opacity: _fadeAnim,
         child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
+              // Chapter/Verse Indicator
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
@@ -77,14 +93,25 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: kGoldDim),
                 ),
-                child: Text('Bhagavad Gita ${_verse.id}',
-                    style: GoogleFonts.cinzel(color: kGold, fontSize: 13)),
+                child: Text(
+                  'Bhagavad Gita ${_verse.id}',
+                  style: GoogleFonts.cinzel(
+                    color: kGold,
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
               const SizedBox(height: 24),
+
+              // Sanskrit & Transliteration Card
               Container(
+                width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                     colors: [Color(0xFF2A1F00), Color(0xFF1A1500)],
                   ),
                   borderRadius: BorderRadius.circular(20),
@@ -96,25 +123,32 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
                       _verse.sanskrit,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.notoSansDevanagari(
-                          color: kGoldLight, fontSize: 15, height: 1.8),
+                        color: kGoldLight,
+                        fontSize: 18,
+                        height: 1.8,
+                      ),
                     ),
                     const SizedBox(height: 16),
-                    const Divider(color: kDivider),
+                    const Divider(color: kDivider, thickness: 0.5),
                     const SizedBox(height: 16),
                     Text(
                       _verse.transliteration,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.crimsonText(
-                          color: kGoldDim,
-                          fontSize: 13,
-                          fontStyle: FontStyle.italic,
-                          height: 1.6),
+                        color: kGoldDim,
+                        fontSize: 15,
+                        fontStyle: FontStyle.italic,
+                        height: 1.6,
+                      ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
+
+              // Translation & Meaning Card
               Container(
+                width: double.infinity,
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: kCard,
@@ -124,74 +158,81 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Translation',
-                        style: GoogleFonts.cinzel(
-                            color: kGold, fontSize: 13, fontWeight: FontWeight.w600)),
+                    _sectionHeader('Translation'),
                     const SizedBox(height: 10),
                     Text(
                       '"${_verse.translation}"',
                       style: GoogleFonts.crimsonText(
-                          color: kText,
-                          fontSize: 16,
-                          fontStyle: FontStyle.italic,
-                          height: 1.7),
+                        color: kText,
+                        fontSize: 17,
+                        fontStyle: FontStyle.italic,
+                        height: 1.6,
+                      ),
                     ),
-                    const SizedBox(height: 14),
-                    const Divider(color: kDivider),
-                    const SizedBox(height: 14),
-                    Text('Meaning',
-                        style: GoogleFonts.cinzel(
-                            color: kGold, fontSize: 13, fontWeight: FontWeight.w600)),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Divider(color: kDivider),
+                    ),
+                    _sectionHeader('Meaning'),
                     const SizedBox(height: 10),
-                    Text(_verse.meaning,
-                        style: const TextStyle(
-                            color: kText, fontSize: 14, height: 1.7)),
-                    const SizedBox(height: 14),
+                    Text(
+                      _verse.meaning,
+                      style: const TextStyle(
+                        color: kText,
+                        fontSize: 15,
+                        height: 1.7,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
                     Wrap(
                       spacing: 8,
-                      runSpacing: 6,
+                      runSpacing: 8,
                       children: _verse.keywords.map((k) => Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: kDivider,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(k,
-                                style: const TextStyle(
-                                    color: kGoldDim, fontSize: 12)),
-                          )).toList(),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: kGold.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: kDivider),
+                        ),
+                        child: Text(
+                          k,
+                          style: const TextStyle(color: kGoldDim, fontSize: 12),
+                        ),
+                      )).toList(),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
+
+              // Action Buttons
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () {
                         state.toggleBookmark(_verse.id);
+                        ScaffoldMessenger.of(context).clearSnackBars();
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(state.isBookmarked(_verse.id)
-                                ? 'Bookmarked! +5 XP'
-                                : 'Bookmark removed'),
+                            content: Text(!isBookmarked
+                                ? 'Bookmarked to your profile'
+                                : 'Removed from bookmarks'),
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 2),
                           ),
                         );
-                        setState(() {});
                       },
-                      icon: Icon(
-                        state.isBookmarked(_verse.id)
-                            ? Icons.bookmark
-                            : Icons.bookmark_border,
-                      ),
-                      label: Text(state.isBookmarked(_verse.id)
-                          ? 'Bookmarked'
-                          : 'Bookmark'),
+                      icon: Icon(isBookmarked ? Icons.bookmark : Icons.bookmark_border),
+                      label: Text(isBookmarked ? 'Bookmarked' : 'Bookmark'),
                       style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         foregroundColor: kGold,
                         side: const BorderSide(color: kGold),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
@@ -199,32 +240,61 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) =>
-                                  VerseDetailScreen(verse: _verse))),
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => VerseDetailScreen(verse: _verse),
+                        ),
+                      ),
                       icon: const Icon(Icons.open_in_new),
                       label: const Text('Full View'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        backgroundColor: kGold,
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 16),
+
+              // Bottom Shuffle Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: _refresh,
                   icon: const Icon(Icons.shuffle),
-                  label: const Text('Another Verse'),
+                  label: const Text('Get Another Random Verse'),
                   style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     backgroundColor: kCard,
                     foregroundColor: kGold,
+                    side: const BorderSide(color: kDivider),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
+              const SizedBox(height: 32),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _sectionHeader(String title) {
+    return Text(
+      title.toUpperCase(),
+      style: GoogleFonts.cinzel(
+        color: kGold,
+        fontSize: 12,
+        letterSpacing: 1.2,
+        fontWeight: FontWeight.bold,
       ),
     );
   }
