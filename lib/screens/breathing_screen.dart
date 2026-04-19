@@ -110,6 +110,7 @@ class _BreathingScreenState extends State<BreathingScreen>
     _countdownTimer?.cancel();
     _controller.stop();
     _controller.value = 0;
+    _secondsRemaining = 0;
   }
 
   void _startPhase() {
@@ -124,7 +125,7 @@ class _BreathingScreenState extends State<BreathingScreen>
 
     setState(() => _secondsRemaining = duration);
     
-    // Accessibility announcement
+    // Accessibility announcement for screen readers
     SemanticsService.announce("${_phase.name} for $duration seconds", TextDirection.ltr);
 
     // Visual & Haptic feedback
@@ -143,6 +144,10 @@ class _BreathingScreenState extends State<BreathingScreen>
     // Countdown logic
     _countdownTimer?.cancel();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
       if (_secondsRemaining > 1) {
         setState(() => _secondsRemaining--);
       } else {
@@ -151,16 +156,24 @@ class _BreathingScreenState extends State<BreathingScreen>
     });
 
     _phaseTimer?.cancel();
-    _phaseTimer = Timer(Duration(seconds: duration), () => _advancePhase());
+    _phaseTimer = Timer(Duration(seconds: duration), () {
+      if (mounted && _running),  _advancePhase();
+    });
   }
 
   void _advancePhase() {
     if (!mounted || !_running) return;
     setState(() {
       switch (_phase) {
-        case Phase.inhale: _phase = Phase.hold; break;
-        case Phase.hold: _phase = Phase.exhale; break;
-        case Phase.exhale: _phase = Phase.rest; break;
+        case Phase.inhale:
+          _phase = Phase.hold;
+          break;
+        case Phase.hold:
+          _phase = Phase.exhale;
+          break;
+        case Phase.exhale:
+          _phase = Phase.rest;
+          break;
         case Phase.rest:
           _phase = Phase.inhale;
           _cycles++;
@@ -215,7 +228,8 @@ class _BreathingScreenState extends State<BreathingScreen>
         return Column(
           children: [
             Semantics(
-              label: "Breathing indicator, $_secondsRemaining seconds remaining",
+              label: _running ? "Current phase: ${_phase.name}. Seconds remaining: $_secondsRemaining" : "Ready to begin",
+              value: _secondsRemaining.toString(),
               child: Container(
                 width: 240 * _anim.value,
                 height: 240 * _anim.value,
@@ -276,7 +290,7 @@ class _BreathingScreenState extends State<BreathingScreen>
               margin: const EdgeInsets.only(right: 15, bottom: 10),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: selected ? kGold.withOpacity(0.1) : kCard,
+                color:,  selected ? kGold.withOpacity(0.1) : kCard,
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                     color: selected ? kGold : Colors.white10, width: 2),
@@ -320,5 +334,5 @@ class _BreathingScreenState extends State<BreathingScreen>
         style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5),
       ),
     );
-  }
+ ,  }
 }
