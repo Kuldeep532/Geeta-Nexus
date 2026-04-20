@@ -25,11 +25,12 @@ class ChaptersScreen extends StatelessWidget {
         itemCount: kChapters.length,
         itemBuilder: (context, index) {
           final chapter = kChapters[index];
-          final isCompleted = state.isChapterCompleted(chapter.number);
+          final bool isCompleted =
+              state.isChapterCompleted(chapter.number);
 
-          // FIX: Added Semantics for Screen Readers
           return Semantics(
-            label: "Chapter ${chapter.number}: ${chapter.name}. ${isCompleted ? 'Completed' : 'Not completed'}",
+            label:
+                "Chapter ${chapter.number}: ${chapter.name}. ${isCompleted ? 'Completed' : 'Not completed'}",
             button: true,
             child: Padding(
               padding: const EdgeInsets.only(bottom: 12),
@@ -38,48 +39,66 @@ class ChaptersScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(16),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ChapterDetailScreen(chapter: chapter),
-                    ),
-                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            ChapterDetailScreen(chapter: chapter),
+                      ),
+                    );
+                  },
                   child: Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isCompleted ? kGoldDim : kDivider,
+                        color:
+                            isCompleted ? kGoldDim : kDivider,
                         width: isCompleted ? 1.5 : 1,
                       ),
                     ),
                     child: Row(
                       children: [
-                        _buildChapterIndicator(chapter.number, isCompleted),
+                        _buildChapterIndicator(
+                          chapter.number,
+                          isCompleted,
+                        ),
                         const SizedBox(width: 14),
                         Expanded(
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment:
+                                CrossAxisAlignment.start,
                             children: [
                               Text(
                                 chapter.name,
-                                maxLines: 1, // FIX: Prevents overflow
-                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                                overflow:
+                                    TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                    color: kText,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 15),
+                                  color: kText,
+                                  fontWeight:
+                                      FontWeight.w600,
+                                  fontSize: 15,
+                                ),
                               ),
                               Text(
                                 chapter.nameSanskrit,
-                                style: const TextStyle(color: kGoldDim, fontSize: 12),
+                                style: const TextStyle(
+                                  color: kGoldDim,
+                                  fontSize: 12,
+                                ),
                               ),
                               const SizedBox(height: 8),
                               _buildChapterMeta(chapter),
                             ],
                           ),
                         ),
-                        const Icon(Icons.chevron_right, color: kTextDim, size: 20),
+                        const Icon(
+                          Icons.chevron_right,
+                          color: kTextDim,
+                          size: 20,
+                        ),
                       ],
                     ),
                   ),
@@ -92,22 +111,34 @@ class ChaptersScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildChapterIndicator(int number, bool isCompleted) {
+  Widget _buildChapterIndicator(
+      int number, bool isCompleted) {
     return Container(
       width: 48,
       height: 48,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isCompleted ? kGold.withOpacity(0.1) : kDivider.withOpacity(0.3),
-        border: Border.all(color: isCompleted ? kGold : kDivider),
+        color: isCompleted
+            ? kGold.withOpacity(0.1)
+            : kDivider.withOpacity(0.3),
+        border: Border.all(
+          color: isCompleted ? kGold : kDivider,
+        ),
       ),
       child: Center(
         child: isCompleted
-            ? const Icon(Icons.check, color: kGold, size: 20)
+            ? const Icon(
+                Icons.check,
+                color: kGold,
+                size: 20,
+              )
             : Text(
                 '$number',
                 style: GoogleFonts.cinzel(
-                    color: kGold, fontWeight: FontWeight.bold, fontSize: 16),
+                  color: kGold,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
       ),
     );
@@ -116,25 +147,36 @@ class ChaptersScreen extends StatelessWidget {
   Widget _buildChapterMeta(dynamic chapter) {
     return Row(
       children: [
-        Flexible( // FIX: Prevents long theme names from pushing text off screen
+        Flexible(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 8,
+              vertical: 2,
+            ),
             decoration: BoxDecoration(
               color: kDivider,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius:
+                  BorderRadius.circular(10),
             ),
             child: Text(
               chapter.theme,
               maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: kGoldDim, fontSize: 10),
+              overflow:
+                  TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: kGoldDim,
+                fontSize: 10,
+              ),
             ),
           ),
         ),
         const SizedBox(width: 8),
         Text(
           '${chapter.verseCount} verses',
-          style: const TextStyle(color: kTextDim, fontSize: 11),
+          style: const TextStyle(
+            color: kTextDim,
+            fontSize: 11,
+          ),
         ),
       ],
     );
