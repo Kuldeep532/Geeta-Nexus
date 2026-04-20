@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+
+// Imports (Inhe apni file structure ke hisaab se check kar lein)
 import '../theme.dart';
 import '../state/app_state.dart';
 import '../data/gita_data.dart';
-// Screens import
+
+// Screens
 import 'search_screen.dart';
 import 'random_verse_screen.dart';
 import 'wisdom_cards_screen.dart';
@@ -25,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Build method ke bahar verse set karne se rebuild par data change nahi hoga
+    // Daily verse load ho raha hai
     _dailyVerse = getDailyVerse();
   }
 
@@ -57,7 +60,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildSectionTitle("Today's Wisdom"),
                   const SizedBox(height: 12),
                   _buildWisdomPreview(),
-                  const SizedBox(height: 120), // Bottom padding for scrolling
+                  // Extra space bottom ke liye takki scrolling smooth rahe
+                  const SizedBox(height: 100),
                 ],
               ),
             ),
@@ -110,7 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildStreakBar(AppState state) {
     return Semantics(
-      label: "User Progress Summary",
+      label: "Progress Overview: Level ${state.level}, Streak ${state.streak} days",
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -121,12 +125,10 @@ class _HomeScreenState extends State<HomeScreen> {
           border: Border.all(color: kDivider.withOpacity(0.5)),
         ),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             _statChip('🔥', '${state.streak}', 'Days'),
-            _statChip('⚡', '${state.xp}', 'XP'),
             _statChip('📖', '${state.readVerses.length}', 'Verses'),
-            const SizedBox(width: 8),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -138,14 +140,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
-                      value: (state.xpInLevel / 100).clamp(0.0, 1.0),
+                      value: (state.xp / 100).clamp(0.0, 1.0),
                       backgroundColor: kDivider,
                       color: kGold,
                       minHeight: 6,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text('${state.xpInLevel}/100 XP',
+                  Text('${state.xp} XP', 
                       style: const TextStyle(color: kTextDim, fontSize: 10)),
                 ],
               ),
@@ -157,20 +159,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _statChip(String emoji, String value, String label) {
-    return Semantics(
-      label: "$label: $value",
-      child: Padding(
-        padding: const EdgeInsets.only(right: 12),
-        child: Column(
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 18)),
-            const SizedBox(height: 2),
-            Text(value,
-                style: const TextStyle(
-                    color: kGold, fontWeight: FontWeight.bold, fontSize: 14)),
-            Text(label, style: const TextStyle(color: kTextDim, fontSize: 9)),
-          ],
-        ),
+    return Padding(
+      padding: const EdgeInsets.only(right: 16),
+      child: Column(
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 18)),
+          const SizedBox(height: 2),
+          Text(value,
+              style: const TextStyle(
+                  color: kGold, fontWeight: FontWeight.bold, fontSize: 14)),
+          Text(label, style: const TextStyle(color: kTextDim, fontSize: 9)),
+        ],
       ),
     );
   }
@@ -185,7 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Semantics(
         button: true,
-        label: "Verse of the Day. Chapter ${verse.chapter}. Double tap to read.",
+        label: "Daily Verse from Chapter ${verse.chapter}. Tap to read details.",
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -202,11 +201,11 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Row(
                 children: [
-                  Text('✨ VERSE OF THE DAY',
+                  Text('✨ DAILY VERSE',
                       style: GoogleFonts.cinzel(
                           color: kGold, fontSize: 11, fontWeight: FontWeight.bold)),
                   const Spacer(),
-                  Text('Chapter ${verse.chapter}',
+                  Text('Ch. ${verse.chapter}',
                       style: const TextStyle(color: kGoldDim, fontSize: 11)),
                 ],
               ),
@@ -224,17 +223,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 '"${verse.translation ?? ''}"',
                 style: GoogleFonts.crimsonText(
                   color: kText,
-                  fontSize: 16,
+                  fontSize: 15,
                   fontStyle: FontStyle.italic,
                   height: 1.4,
                 ),
-                maxLines: 4,
+                maxLines: 3,
                 overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 16),
-              const Align(
-                alignment: Alignment.centerRight,
-                child: Icon(Icons.arrow_forward, color: kGoldDim, size: 18),
               ),
             ],
           ),
@@ -244,21 +238,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSectionTitle(String title) {
-    return ExcludeSemantics(
-      child: Text(
-        title.toUpperCase(),
-        style: GoogleFonts.cinzel(
-            color: kGold, fontSize: 13, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+    return Text(
+      title.toUpperCase(),
+      style: GoogleFonts.cinzel(
+        color: kGold,
+        fontSize: 13,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.2,
       ),
     );
   }
 
   Widget _buildQuickActions(BuildContext context) {
-    final actions = [
-      {'icon': Icons.shuffle, 'label': 'Random', 'color': const Color(0xFF4A3000), 'screen': const RandomVerseScreen()},
-      {'icon': Icons.style, 'label': 'Cards', 'color': const Color(0xFF003040), 'screen': const WisdomCardsScreen()},
-      {'icon': Icons.format_quote, 'label': 'Quotes', 'color': const Color(0xFF300040), 'screen': const AffirmationsScreen()},
-      {'icon': Icons.map, 'label': 'Plan', 'color': const Color(0xFF003020), 'screen': const ReadingPlanScreen()},
+    final List<Map<String, dynamic>> actions = [
+      {'icon': Icons.shuffle, 'label': 'Random', 'color': const Color(0xFF3E2723), 'screen': const RandomVerseScreen()},
+      {'icon': Icons.style, 'label': 'Cards', 'color': const Color(0xFF1A237E), 'screen': const WisdomCardsScreen()},
+      {'icon': Icons.format_quote, 'label': 'Quotes', 'color': const Color(0xFF311B92), 'screen': const AffirmationsScreen()},
+      {'icon': Icons.map, 'label': 'Plan', 'color': const Color(0xFF1B5E20), 'screen': const ReadingPlanScreen()},
     ];
 
     return Row(
@@ -269,26 +265,22 @@ class _HomeScreenState extends State<HomeScreen> {
             child: InkWell(
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => action['screen'] as Widget)),
               borderRadius: BorderRadius.circular(12),
-              child: Semantics(
-                label: "Go to ${action['label']}",
-                button: true,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: action['color'] as Color,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: kDivider.withOpacity(0.3)),
-                  ),
-                  child: Column(
-                    children: [
-                      Icon(action['icon'] as IconData, color: kGold, size: 22),
-                      const SizedBox(height: 8),
-                      Text(
-                        action['label'] as String,
-                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: action['color'] as Color,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: Column(
+                  children: [
+                    Icon(action['icon'] as IconData, color: kGold, size: 22),
+                    const SizedBox(height: 8),
+                    Text(
+                      action['label'] as String,
+                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -300,21 +292,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildWisdomPreview() {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: kDivider.withOpacity(0.05),
+        color: kCard,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: kDivider.withOpacity(0.2)),
       ),
-      child: Column(
+      child: const Row(
         children: [
-          const Icon(Icons.AutoAwesome, color: kGoldDim, size: 24),
-          const SizedBox(height: 12),
-          Text(
-            "Wisdom is the reward for surviving our own mistakes.",
-            textAlign: TextAlign.center,
-            style: GoogleFonts.crimsonText(color: kTextDim, fontSize: 15, fontStyle: FontStyle.italic),
+          Icon(Icons.auto_awesome, color: kGoldDim, size: 24),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              "Focus on your action, not on the fruits of it.",
+              style: TextStyle(color: kText, fontSize: 14),
+            ),
           ),
         ],
       ),
