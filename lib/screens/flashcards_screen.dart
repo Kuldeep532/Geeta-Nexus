@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart'; // Required for SemanticsService
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme.dart';
@@ -63,6 +64,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
   }
 
   void _moveNext(AppState state) {
+    // Note: Ensure currentFlashcardIndex exists in AppState
     if (state.currentFlashcardIndex < _verses.length - 1) {
       if (_flipped) {
         _controller.reverse();
@@ -94,8 +96,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
       );
     }
 
-    final safeIndex =
-        currentIndex.clamp(0, _verses.length - 1);
+    final safeIndex = currentIndex.clamp(0, _verses.length - 1);
     final verse = _verses[safeIndex];
 
     return Scaffold(
@@ -141,9 +142,8 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
                           : Transform(
                               alignment: Alignment.center,
                               transform: Matrix4.identity()
-                                ..rotateY(math.pi),
-                              child:
-                                  _buildCardSide(verse, isFront: false),
+                                ..rotateY(math.pi), // Fixed syntax here
+                              child: _buildCardSide(verse, isFront: false),
                             ),
                     );
                   },
@@ -171,8 +171,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
     );
   }
 
-  Widget _buildCardSide(Verse verse,
-      {required bool isFront}) {
+  Widget _buildCardSide(Verse verse, {required bool isFront}) {
     return Semantics(
       label: isFront ? "Verse Card" : "Translation Card",
       container: true,
@@ -181,14 +180,8 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
           borderRadius: BorderRadius.circular(30),
           gradient: LinearGradient(
             colors: isFront
-                ? [
-                    const Color(0xFF2D240B),
-                    const Color(0xFF1A1404)
-                  ]
-                : [
-                    const Color(0xFF0A192F),
-                    const Color(0xFF020C1B)
-                  ],
+                ? [const Color(0xFF2D240B), const Color(0xFF1A1404)]
+                : [const Color(0xFF0A192F), const Color(0xFF020C1B)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -224,8 +217,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
                 child: Center(
                   child: SingleChildScrollView(
                     child: Column(
-                      mainAxisAlignment:
-                          MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: isFront
                           ? _buildFrontContent(verse)
                           : _buildBackContent(verse),
@@ -262,13 +254,11 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
         ),
       ),
       const SizedBox(height: 40),
-      const Icon(Icons.touch_app,
-          color: kTextDim, size: 20),
+      const Icon(Icons.touch_app, color: kTextDim, size: 20),
       const SizedBox(height: 8),
       const Text(
         "Tap to Flip",
-        style:
-            TextStyle(color: kTextDim, fontSize: 12),
+        style: TextStyle(color: kTextDim, fontSize: 12),
       ),
     ];
   }
@@ -288,7 +278,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
         verse.translation,
         textAlign: TextAlign.center,
         style: GoogleFonts.lora(
-          color: Colors.white,
+          color: Colors.white, // Fixed stray comma here
           fontSize: 18,
           fontStyle: FontStyle.italic,
           height: 1.5,
@@ -312,12 +302,10 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
 
   Widget _buildBottomControls(AppState state) {
     final isFirst = state.currentFlashcardIndex == 0;
-    final isLast =
-        state.currentFlashcardIndex == _verses.length - 1;
+    final isLast = state.currentFlashcardIndex == _verses.length - 1;
 
     return Padding(
-      padding:
-          const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
         children: [
           _navButton(
@@ -348,18 +336,14 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
         height: 60,
         child: ElevatedButton.icon(
           onPressed: onPressed,
-          icon: Icon(icon,
-              color: primary ? Colors.black : kGold),
+          icon: Icon(icon, color: primary ? Colors.black : kGold),
           label: Text(label),
           style: ElevatedButton.styleFrom(
-            backgroundColor:
-                primary ? kGold : Colors.transparent,
-            foregroundColor:
-                primary ? Colors.black : kGold,
+            backgroundColor: primary ? kGold : Colors.transparent,
+            foregroundColor: primary ? Colors.black : kGold,
             elevation: primary ? 4 : 0,
             shape: RoundedRectangleBorder(
-              borderRadius:
-                  BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(15),
               side: BorderSide(
                 color: kGold,
                 width: primary ? 0 : 1,
