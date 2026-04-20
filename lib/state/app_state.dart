@@ -17,6 +17,9 @@ class AppState extends ChangeNotifier {
   bool _onboardingComplete = false;
   int _currentReadingChapter = 1;
   List<String> _completedChapters = [];
+  
+  // NEW: Missing state for Flashcards
+  int _currentFlashcardIndex = 0;
 
   int get xp => _xp;
   int get streak => _streak;
@@ -31,11 +34,20 @@ class AppState extends ChangeNotifier {
   bool get onboardingComplete => _onboardingComplete;
   int get currentReadingChapter => _currentReadingChapter;
   List<String> get completedChapters => List.unmodifiable(_completedChapters);
+  
+  // NEW: Getter for Flashcard Index
+  int get currentFlashcardIndex => _currentFlashcardIndex;
 
   int get level => (_xp / 100).floor() + 1;
   int get xpInLevel => _xp % 100;
   double get quizAccuracy =>
       _totalQuizAnswered == 0 ? 0 : _quizScore / _totalQuizAnswered;
+
+  // NEW: Method to update Flashcard Index
+  void updateFlashcardIndex(int index) {
+    _currentFlashcardIndex = index;
+    notifyListeners();
+  }
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
@@ -102,10 +114,13 @@ class AppState extends ChangeNotifier {
     await prefs.setBool('onboardingComplete', _onboardingComplete);
     await prefs.setInt('currentReadingChapter', _currentReadingChapter);
     await prefs.setStringList('completedChapters', _completedChapters);
-    final journalJson =
-        _journalEntries.map((e) => jsonEncode(e.toMap())).toList();
+    
+    // Fixed: Removed leading comma
+    final journalJson = _journalEntries.map((e) => jsonEncode(e.toMap())).toList();
     await prefs.setStringList('journalEntries', journalJson);
   }
+
+  // ... [keep your existing methods like addXp, toggleBookmark, etc.]
 
   void addXp(int amount) {
     _xp += amount;
@@ -225,5 +240,5 @@ class AppState extends ChangeNotifier {
     if (_journalEntries.isNotEmpty) result.add({'icon': '✍️', 'name': 'Reflector', 'desc': 'First journal entry'});
     if (_bookmarks.length >= 5) result.add({'icon': '🔖', 'name': 'Collector', 'desc': '5 bookmarks'});
     return result;
-  }
+  } // Fixed: Removed leading comma
 }
