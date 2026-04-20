@@ -22,10 +22,8 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
   @override
   void initState() {
     super.initState();
-    // Initialize TabController with a listener if you need to track tab changes
     _tabs = TabController(length: 3, vsync: this);
     
-    // Using microtask or PostFrameCallback is correct for state updates during init
     Future.microtask(() {
       if (mounted) {
         context.read<AppState>().markVerseRead(widget.verse.id);
@@ -41,7 +39,6 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Selector is more efficient than watch if you only care about specific properties
     return Consumer<AppState>(
       builder: (context, state, child) {
         final verse = widget.verse;
@@ -53,7 +50,11 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
             elevation: 0,
             title: Text(
               'Verse ${verse.id}',
-              style: GoogleFonts.cinzel(color: kGold, fontSize: 18, fontWeight: FontWeight.bold),
+              style: GoogleFonts.cinzel(
+                color: kGold, 
+                fontSize: 18, 
+                fontWeight: FontWeight.bold
+              ),
             ),
             actions: [
               IconButton(
@@ -108,7 +109,8 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.separated,
+            // FIXED: Changed from .separated (which doesn't exist) to .spaceBetween
+            mainAxisAlignment: MainAxisAlignment.spaceBetween, 
             children: [
               Expanded(
                 child: Text(
@@ -125,21 +127,24 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
             ],
           ),
           const SizedBox(height: 16),
-          Text(
-            _showTransliteration ? verse.transliteration : verse.sanskrit,
-            textAlign: TextAlign.center,
-            style: _showTransliteration
-                ? GoogleFonts.crimsonText(
-                    color: kGoldLight,
-                    fontSize: 18,
-                    fontStyle: FontStyle.italic,
-                    height: 1.5,
-                  )
-                : GoogleFonts.notoSansDevanagari(
-                    color: kGoldLight,
-                    fontSize: 20,
-                    height: 1.6,
-                  ),
+          SizedBox(
+            width: double.infinity,
+            child: Text(
+              _showTransliteration ? verse.transliteration : verse.sanskrit,
+              textAlign: TextAlign.center,
+              style: _showTransliteration
+                  ? GoogleFonts.crimsonText(
+                      color: kGoldLight,
+                      fontSize: 18,
+                      fontStyle: FontStyle.italic,
+                      height: 1.5,
+                    )
+                  : GoogleFonts.notoSansDevanagari(
+                      color: kGoldLight,
+                      fontSize: 20,
+                      height: 1.6,
+                    ),
+            ),
           ),
         ],
       ),
@@ -232,7 +237,11 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
       ),
       child: Text(
         label,
-        style: const TextStyle(color: kGold, fontSize: 14, fontWeight: FontWeight.w400),
+        style: const TextStyle(
+          color: kGold, 
+          fontSize: 14, 
+          fontWeight: FontWeight.w400
+        ),
       ),
     );
   }
