@@ -8,6 +8,10 @@ class Verse {
   final String meaning;
   final List<String> keywords;
 
+  // UI Compatibility Getters
+  int get number => verse; 
+  String get text => translation;
+
   const Verse({
     required this.id,
     required this.chapter,
@@ -18,6 +22,30 @@ class Verse {
     required this.meaning,
     required this.keywords,
   });
+
+  // Convert to Map for Database/JSON
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'chapter': chapter,
+        'verse': verse,
+        'sanskrit': sanskrit,
+        'transliteration': transliteration,
+        'translation': translation,
+        'meaning': meaning,
+        'keywords': keywords,
+      };
+
+  // Create from Map
+  factory Verse.fromMap(Map<String, dynamic> m) => Verse(
+        id: m['id'] ?? '',
+        chapter: m['chapter'] ?? 0,
+        verse: m['verse'] ?? 0,
+        sanskrit: m['sanskrit'] ?? '',
+        transliteration: m['transliteration'] ?? '',
+        translation: m['translation'] ?? '',
+        meaning: m['meaning'] ?? '',
+        keywords: List<String>.from(m['keywords'] ?? []),
+      );
 }
 
 class Chapter {
@@ -38,6 +66,28 @@ class Chapter {
     required this.theme,
     required this.verses,
   });
+
+  Map<String, dynamic> toMap() => {
+        'number': number,
+        'name': name,
+        'nameSanskrit': nameSanskrit,
+        'summary': summary,
+        'verseCount': verseCount,
+        'theme': theme,
+        'verses': verses.map((v) => v.toMap()).toList(),
+      };
+
+  factory Chapter.fromMap(Map<String, dynamic> m) => Chapter(
+        number: m['number'] ?? 0,
+        name: m['name'] ?? '',
+        nameSanskrit: m['nameSanskrit'] ?? '',
+        summary: m['summary'] ?? '',
+        verseCount: m['verseCount'] ?? 0,
+        theme: m['theme'] ?? '',
+        verses: (m['verses'] as List? ?? [])
+            .map((v) => Verse.fromMap(v as Map<String, dynamic>))
+            .toList(),
+      );
 }
 
 class JournalEntry {
@@ -61,10 +111,10 @@ class JournalEntry {
       };
 
   factory JournalEntry.fromMap(Map<String, dynamic> m) => JournalEntry(
-        id: m['id'],
-        content: m['content'],
-        mood: m['mood'],
-        date: DateTime.parse(m['date']),
+        id: m['id'] ?? '',
+        content: m['content'] ?? '',
+        mood: m['mood'] ?? '',
+        date: m['date'] != null ? DateTime.parse(m['date']) : DateTime.now(),
       );
 }
 
@@ -80,4 +130,18 @@ class QuizQuestion {
     required this.correctIndex,
     required this.explanation,
   });
+
+  Map<String, dynamic> toMap() => {
+        'question': question,
+        'options': options,
+        'correctIndex': correctIndex,
+        'explanation': explanation,
+      };
+
+  factory QuizQuestion.fromMap(Map<String, dynamic> m) => QuizQuestion(
+        question: m['question'] ?? '',
+        options: List<String>.from(m['options'] ?? []),
+        correctIndex: m['correctIndex'] ?? 0,
+        explanation: m['explanation'] ?? '',
+      );
 }
