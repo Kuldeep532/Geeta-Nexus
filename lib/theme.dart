@@ -12,7 +12,7 @@ const Color kText = Color(0xFFF5E6C8);
 const Color kTextDim = Color(0xFFAA9977);
 const Color kDivider = Color(0xFF3A2E00);
 
-// ✅ Added missing semantic colors
+// Semantic colors
 const Color kError = Color(0xFFCF6679);
 const Color kSuccess = Color(0xFF4CAF50);
 const Color kWarning = Color(0xFFFFC107);
@@ -24,20 +24,17 @@ ThemeData buildTheme() {
     scaffoldBackgroundColor: kBg,
     primaryColor: kGold,
 
-    // ✅ FIXED + COMPLETE COLOR SCHEME
     colorScheme: const ColorScheme.dark(
       primary: kGold,
       secondary: kAmber,
       surface: kSurface,
       background: kBg,
       error: kError,
-
       onPrimary: kBg,
       onSecondary: kBg,
       onSurface: kText,
       onBackground: kText,
       onError: kBg,
-
       outline: kDivider,
       surfaceVariant: kCard,
     ),
@@ -120,7 +117,7 @@ ThemeData buildTheme() {
         borderSide: const BorderSide(color: kGold, width: 1.5),
       ),
       hintStyle: const TextStyle(color: kTextDim),
-      labelStyle: const TextStyle(color: kGold),
+      labelStyle: const TextStyle(color: kGold), // ✅ FIXED
     ),
 
     chipTheme: ChipThemeData(
@@ -136,7 +133,6 @@ ThemeData buildTheme() {
 
     iconTheme: const IconThemeData(color: kGold),
 
-    // ✅ FIXED (removed comma issue)
     progressIndicatorTheme: const ProgressIndicatorThemeData(
       color: kGold,
       linearTrackColor: kDivider,
