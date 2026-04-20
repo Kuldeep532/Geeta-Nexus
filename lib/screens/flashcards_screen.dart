@@ -26,10 +26,12 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
   void initState() {
     super.initState();
     _verses = getAllVerses();
+
     _controller = AnimationController(
-      vsync: this, 
+      vsync: this,
       duration: const Duration(milliseconds: 400),
     );
+
     _flipAnim = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
@@ -42,13 +44,18 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
   }
 
   void _handleFlip() {
-    HapticFeedback.mediumImpact(); 
+    if (_controller.isAnimating) return;
+
+    HapticFeedback.mediumImpact();
+
     if (_flipped) {
       _controller.reverse();
     } else {
       _controller.forward();
     }
+
     setState(() => _flipped = !_flipped);
+
     SemanticsService.announce(
       _flipped ? "Showing Translation" : "Showing Sanskrit Verse",
       TextDirection.ltr,
@@ -59,7 +66,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
     if (state.currentFlashcardIndex < _verses.length - 1) {
       if (_flipped) {
         _controller.reverse();
-        _flipped = false;
+        setState(() => _flipped = false);
       }
       state.updateFlashcardIndex(state.currentFlashcardIndex + 1);
       state.addXp(5);
@@ -70,7 +77,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
     if (state.currentFlashcardIndex > 0) {
       if (_flipped) {
         _controller.reverse();
-        _flipped = false;
+        setState(() => _flipped = false);
       }
       state.updateFlashcardIndex(state.currentFlashcardIndex - 1);
     }
@@ -82,10 +89,14 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
     final currentIndex = appState.currentFlashcardIndex;
 
     if (_verses.isEmpty) {
-      return const Scaffold(body: Center(child: Text("No verses found")));
+      return const Scaffold(
+        body: Center(child: Text("No verses found")),
+      );
     }
 
-    final verse = _verses[currentIndex];
+    final safeIndex =
+        currentIndex.clamp(0, _verses.length - 1);
+    final verse = _verses[safeIndex];
 
     return Scaffold(
       backgroundColor: kBg,
@@ -95,8 +106,13 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
           Padding(
             padding: const EdgeInsets.only(right: 20),
             child: Center(
-              child: Text('${currentIndex + 1}/${_verses.length}',
-                  style: GoogleFonts.inter(color: kGold, fontWeight: FontWeight.bold)),
+              child: Text(
+                '${safeIndex + 1}/${_verses.length}',
+                style: GoogleFonts.inter(
+                  color: kGold,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
         ],
@@ -104,7 +120,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
       body: Column(
         children: [
           const SizedBox(height: 10),
-          _buildProgressHeader(currentIndex),
+          _buildProgressHeader(safeIndex),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(24.0),
@@ -114,6 +130,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
                   animation: _flipAnim,
                   builder: (context, child) {
                     final angle = _flipAnim.value * math.pi;
+
                     return Transform(
                       alignment: Alignment.center,
                       transform: Matrix4.identity()
@@ -123,8 +140,10 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
                           ? _buildCardSide(verse, isFront: true)
                           : Transform(
                               alignment: Alignment.center,
-                              transform: Matrix4.identity()..rotateY(math.pi),
-                              child: _buildCardSide(verse, isFront: false),
+                              transform: Matrix4.identity()
+                                ..rotateY(math.pi),
+                              child:
+                                  _buildCardSide(verse, isFront: false),
                             ),
                     );
                   },
@@ -152,7 +171,8 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
     );
   }
 
-  Widget _buildCardSide(Verse verse, {required bool isFront}) {
+  Widget _buildCardSide(Verse verse,
+      {required bool isFront}) {
     return Semantics(
       label: isFront ? "Verse Card" : "Translation Card",
       container: true,
@@ -160,14 +180,22 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(30),
           gradient: LinearGradient(
-            colors: isFront 
-              ? [const Color(0xFF2D240B), const Color(0xFF1A1404)]
-              : [const Color(0xFF0A192F), const Color(0xFF020C1B)],
+            colors: isFront
+                ? [
+                    const Color(0xFF2D240B),
+                    const Color(0xFF1A1404)
+                  ]
+                : [
+                    const Color(0xFF0A192F),
+                    const Color(0xFF020C1B)
+                  ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           border: Border.all(
-            color: isFront ? kGold.withOpacity(0.3) : Colors.blue.withOpacity(0.3),
+            color: isFront
+                ? kGold.withOpacity(0.3)
+                : Colors.blue.withOpacity(0.3),
             width: 2,
           ),
           boxShadow: [
@@ -183,18 +211,24 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
           child: Stack(
             children: [
               Positioned(
-                right: -20, top: -20,
-                child: Icon(Icons.menu_book, size: 100, color: Colors.white.withOpacity(0.05)),
+                right: -20,
+                top: -20,
+                child: Icon(
+                  Icons.menu_book,
+                  size: 100,
+                  color: Colors.white.withOpacity(0.05),
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.all(30),
                 child: Center(
                   child: SingleChildScrollView(
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: isFront 
-                        ? _buildFrontContent(verse) 
-                        : _buildBackContent(verse),
+                      mainAxisAlignment:
+                          MainAxisAlignment.center,
+                      children: isFront
+                          ? _buildFrontContent(verse)
+                          : _buildBackContent(verse),
                     ),
                   ),
                 ),
@@ -208,31 +242,56 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
 
   List<Widget> _buildFrontContent(Verse verse) {
     return [
-      Text("SHLOKA", style: GoogleFonts.inter(letterSpacing: 4, color: kGoldDim, fontSize: 12)),
+      Text(
+        "SHLOKA",
+        style: GoogleFonts.inter(
+          letterSpacing: 4,
+          color: kGoldDim,
+          fontSize: 12,
+        ),
+      ),
       const SizedBox(height: 20),
       Text(
         verse.sanskrit,
         textAlign: TextAlign.center,
         style: GoogleFonts.notoSansDevanagari(
-          color: kGoldLight, fontSize: 22, height: 1.6, fontWeight: FontWeight.bold,
+          color: kGoldLight,
+          fontSize: 22,
+          height: 1.6,
+          fontWeight: FontWeight.bold,
         ),
       ),
       const SizedBox(height: 40),
-      const Icon(Icons.touch_app, color: kTextDim, size: 20),
+      const Icon(Icons.touch_app,
+          color: kTextDim, size: 20),
       const SizedBox(height: 8),
-      const Text("Tap to Flip", style: TextStyle(color: kTextDim, fontSize: 12)),
+      const Text(
+        "Tap to Flip",
+        style:
+            TextStyle(color: kTextDim, fontSize: 12),
+      ),
     ];
   }
 
   List<Widget> _buildBackContent(Verse verse) {
     return [
-      Text("TRANSLATION", style: GoogleFonts.inter(letterSpacing: 4, color: Colors.blueAccent, fontSize: 12)),
+      Text(
+        "TRANSLATION",
+        style: GoogleFonts.inter(
+          letterSpacing: 4,
+          color: Colors.blueAccent,
+          fontSize: 12,
+        ),
+      ),
       const SizedBox(height: 20),
       Text(
         verse.translation,
         textAlign: TextAlign.center,
         style: GoogleFonts.lora(
-          color: Colors.white, fontSize: 18, fontStyle: FontStyle.italic, height: 1.5,
+          color: Colors.white,
+          fontSize: 18,
+          fontStyle: FontStyle.italic,
+          height: 1.5,
         ),
       ),
       const Padding(
@@ -242,42 +301,69 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
       Text(
         verse.meaning,
         textAlign: TextAlign.center,
-        style: GoogleFonts.inter(color: kTextDim, fontSize: 14, height: 1.6),
+        style: GoogleFonts.inter(
+          color: kTextDim,
+          fontSize: 14,
+          height: 1.6,
+        ),
       ),
     ];
   }
 
   Widget _buildBottomControls(AppState state) {
     final isFirst = state.currentFlashcardIndex == 0;
-    final isLast = state.currentFlashcardIndex == _verses.length - 1;
+    final isLast =
+        state.currentFlashcardIndex == _verses.length - 1;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding:
+          const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
         children: [
-          _navButton(Icons.chevron_left, "Prev", isFirst ? null : () => _movePrev(state)),
+          _navButton(
+            Icons.chevron_left,
+            "Prev",
+            isFirst ? null : () => _movePrev(state),
+          ),
           const SizedBox(width: 16),
-          _navButton(Icons.chevron_right, isLast ? "Finish" : "Next", isLast ? null : () => _moveNext(state), primary: true),
+          _navButton(
+            Icons.chevron_right,
+            isLast ? "Finish" : "Next",
+            isLast ? null : () => _moveNext(state),
+            primary: true,
+          ),
         ],
       ),
     );
   }
 
-  Widget _navButton(IconData icon, String label, VoidCallback? onPressed, {bool primary = false}) {
+  Widget _navButton(
+    IconData icon,
+    String label,
+    VoidCallback? onPressed, {
+    bool primary = false,
+  }) {
     return Expanded(
       child: SizedBox(
         height: 60,
         child: ElevatedButton.icon(
           onPressed: onPressed,
-          icon: Icon(icon, color: primary ? Colors.black : kGold),
+          icon: Icon(icon,
+              color: primary ? Colors.black : kGold),
           label: Text(label),
           style: ElevatedButton.styleFrom(
-            backgroundColor: primary ? kGold : Colors.transparent,
-            foregroundColor: primary ? Colors.black : kGold,
+            backgroundColor:
+                primary ? kGold : Colors.transparent,
+            foregroundColor:
+                primary ? Colors.black : kGold,
             elevation: primary ? 4 : 0,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(15),
-              side: BorderSide(color: kGold, width: primary ? 0 : 1),
+              borderRadius:
+                  BorderRadius.circular(15),
+              side: BorderSide(
+                color: kGold,
+                width: primary ? 0 : 1,
+              ),
             ),
           ),
         ),
