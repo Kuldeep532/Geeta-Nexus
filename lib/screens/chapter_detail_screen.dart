@@ -12,7 +12,6 @@ class ChapterDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Logic: Agar chapter data corrupt hai ya null hai
     if (chapter.name.isEmpty) {
       return const _ErrorStateWidget(message: "Chapter data not found");
     }
@@ -31,7 +30,11 @@ class ChapterDetailScreen extends StatelessWidget {
                 header: true,
                 child: Text(
                   'Chapter ${chapter.number}',
-                  style: GoogleFonts.cinzel(color: kGold, fontSize: 16, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.cinzel(
+                    color: kGold,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
               background: _HeaderBackground(chapter: chapter),
@@ -49,7 +52,11 @@ class ChapterDetailScreen extends StatelessWidget {
                   const SizedBox(height: 24),
                   Text(
                     'Key Verses',
-                    style: GoogleFonts.cinzel(color: kGold, fontSize: 14, fontWeight: FontWeight.w600),
+                    style: GoogleFonts.cinzel(
+                      color: kGold,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   _VerseList(verses: chapter.verses),
@@ -66,7 +73,7 @@ class ChapterDetailScreen extends StatelessWidget {
   }
 }
 
-// 1. Header Background with Placeholder logic
+// Header Background
 class _HeaderBackground extends StatelessWidget {
   final Chapter chapter;
   const _HeaderBackground({required this.chapter});
@@ -88,7 +95,11 @@ class _HeaderBackground extends StatelessWidget {
             const SizedBox(height: 40),
             Text(
               chapter.name,
-              style: GoogleFonts.cinzel(color: kGold, fontSize: 22, fontWeight: FontWeight.bold),
+              style: GoogleFonts.cinzel(
+                color: kGold,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 6),
@@ -103,7 +114,7 @@ class _HeaderBackground extends StatelessWidget {
   }
 }
 
-// 2. Separate Verse List with Error Handling
+// Verse List
 class _VerseList extends StatelessWidget {
   final List<Verse> verses;
   const _VerseList({required this.verses});
@@ -115,25 +126,29 @@ class _VerseList extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 40),
         alignment: Alignment.center,
         child: Column(
-          children: [
-            const Icon(Icons. find_in_page, color: kTextDim, size: 40),
-            const SizedBox(height: 10),
-            Text("No verses found for this chapter.", style: TextStyle(color: kTextDim)),
+          children: const [
+            Icon(Icons.find_in_page, color: kTextDim, size: 40), // FIXED
+            SizedBox(height: 10),
+            Text(
+              "No verses found for this chapter.",
+              style: TextStyle(color: kTextDim),
+            ),
           ],
         ),
       );
     }
 
     return ListView.builder(
-      shrinkWrap: true,
+      shrinkWrap: true, // FIXED
       physics: const NeverScrollableScrollPhysics(),
       itemCount: verses.length,
-      itemBuilder: (context, index) => _VerseRowItem(verse: verses[index]),
+      itemBuilder: (context, index) =>
+          _VerseRowItem(verse: verses[index]),
     );
   }
 }
 
-// 3. Error UI Widget
+// Error Widget
 class _ErrorStateWidget extends StatelessWidget {
   final String message;
   const _ErrorStateWidget({required this.message});
@@ -151,7 +166,10 @@ class _ErrorStateWidget extends StatelessWidget {
             Text(message, style: const TextStyle(color: kText)),
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Go Back", style: TextStyle(color: kGold)),
+              child: const Text(
+                "Go Back",
+                style: TextStyle(color: kGold),
+              ),
             )
           ],
         ),
@@ -160,7 +178,7 @@ class _ErrorStateWidget extends StatelessWidget {
   }
 }
 
-// Stats Pill Component
+// Stats
 class _ChapterStats extends StatelessWidget {
   final Chapter chapter;
   const _ChapterStats({required this.chapter});
@@ -171,7 +189,8 @@ class _ChapterStats extends StatelessWidget {
       children: [
         _pill(chapter.theme, Icons.auto_awesome),
         const SizedBox(width: 10),
-        _pill('${chapter.verseCount} Verses', Icons.format_list_numbered),
+        _pill('${chapter.verseCount} Verses',
+            Icons.format_list_numbered),
       ],
     );
   }
@@ -188,14 +207,17 @@ class _ChapterStats extends StatelessWidget {
         children: [
           Icon(icon, color: kGold, size: 14),
           const SizedBox(width: 6),
-          Text(text, style: const TextStyle(color: kGold, fontSize: 12)),
+          Text(
+            text,
+            style: const TextStyle(color: kGold, fontSize: 12),
+          ),
         ],
       ),
     );
   }
 }
 
-// Summary Card Component
+// Summary
 class _SummaryCard extends StatelessWidget {
   final String summary;
   const _SummaryCard({required this.summary});
@@ -211,10 +233,56 @@ class _SummaryCard extends StatelessWidget {
       ),
       child: Text(
         summary,
-        style: GoogleFonts.crimsonText(color: kText, fontSize: 15, height: 1.7),
+        style: GoogleFonts.crimsonText(
+          color: kText,
+          fontSize: 15,
+          height: 1.7,
+        ),
       ),
     );
   }
 }
 
-// (Baki ke components _VerseRowItem aur _CompletionButton pehle wale code jaise hi rahenge)
+//
+// ✅ ADDED (missing in your file)
+//
+
+class _VerseRowItem extends StatelessWidget {
+  final Verse verse;
+  const _VerseRowItem({required this.verse});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      title: Text('Verse ${verse.number}'),
+      subtitle: Text(
+        verse.text,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      ),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => VerseDetailScreen(verse: verse),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _CompletionButton extends StatelessWidget {
+  final int chapterNumber;
+  const _CompletionButton({required this.chapterNumber});
+
+  @override
+  Widget build(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () {
+        context.read<AppState>().markChapterComplete(chapterNumber);
+      },
+      child: const Text("Mark as Completed"),
+    );
+  }
+}
