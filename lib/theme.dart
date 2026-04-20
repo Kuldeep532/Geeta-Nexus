@@ -12,20 +12,36 @@ const Color kText = Color(0xFFF5E6C8);
 const Color kTextDim = Color(0xFFAA9977);
 const Color kDivider = Color(0xFF3A2E00);
 
+// ✅ Added missing semantic colors
+const Color kError = Color(0xFFCF6679);
+const Color kSuccess = Color(0xFF4CAF50);
+const Color kWarning = Color(0xFFFFC107);
+
 ThemeData buildTheme() {
   return ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
     scaffoldBackgroundColor: kBg,
     primaryColor: kGold,
+
+    // ✅ FIXED + COMPLETE COLOR SCHEME
     colorScheme: const ColorScheme.dark(
       primary: kGold,
       secondary: kAmber,
       surface: kSurface,
+      background: kBg,
+      error: kError,
+
       onPrimary: kBg,
       onSecondary: kBg,
       onSurface: kText,
+      onBackground: kText,
+      onError: kBg,
+
+      outline: kDivider,
+      surfaceVariant: kCard,
     ),
+
     textTheme: GoogleFonts.crimsonTextTextTheme(
       const TextTheme(
         displayLarge: TextStyle(color: kText, fontWeight: FontWeight.bold),
@@ -43,6 +59,7 @@ ThemeData buildTheme() {
         labelMedium: TextStyle(color: kGold),
       ),
     ),
+
     appBarTheme: AppBarTheme(
       backgroundColor: kBg,
       foregroundColor: kGold,
@@ -56,6 +73,7 @@ ThemeData buildTheme() {
       ),
       iconTheme: const IconThemeData(color: kGold),
     ),
+
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
       backgroundColor: kSurface,
       selectedItemColor: kGold,
@@ -63,6 +81,7 @@ ThemeData buildTheme() {
       type: BottomNavigationBarType.fixed,
       elevation: 8,
     ),
+
     cardTheme: const CardThemeData(
       color: kCard,
       elevation: 0,
@@ -71,15 +90,20 @@ ThemeData buildTheme() {
         side: BorderSide(color: kDivider, width: 1),
       ),
     ),
+
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         backgroundColor: kGold,
         foregroundColor: kBg,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        textStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        textStyle:
+            const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
       ),
     ),
+
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: kSurface,
@@ -98,28 +122,44 @@ ThemeData buildTheme() {
       hintStyle: const TextStyle(color: kTextDim),
       labelStyle: const TextStyle(color: kGold),
     ),
+
     chipTheme: ChipThemeData(
       backgroundColor: kCard,
       labelStyle: const TextStyle(color: kGold, fontSize: 12),
       side: const BorderSide(color: kDivider),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
     ),
+
     dividerColor: kDivider,
+
     iconTheme: const IconThemeData(color: kGold),
-    progressIndicatorTheme:
-        const ProgressIndicatorThemeData(color: kGold, linearTrackColor: kDivider),
+
+    // ✅ FIXED (removed comma issue)
+    progressIndicatorTheme: const ProgressIndicatorThemeData(
+      color: kGold,
+      linearTrackColor: kDivider,
+    ),
+
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
       backgroundColor: kGold,
       foregroundColor: kBg,
     ),
+
     snackBarTheme: const SnackBarThemeData(
       backgroundColor: kCard,
       contentTextStyle: TextStyle(color: kText),
       actionTextColor: kGold,
     ),
+
     dialogTheme: const DialogThemeData(
       backgroundColor: kCard,
-      titleTextStyle: TextStyle(color: kGold, fontSize: 20, fontWeight: FontWeight.bold),
+      titleTextStyle: TextStyle(
+        color: kGold,
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+      ),
       contentTextStyle: TextStyle(color: kText),
     ),
   );
