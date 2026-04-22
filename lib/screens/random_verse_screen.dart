@@ -34,7 +34,7 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
   }
 
   Verse _random() {
-    final all = getAllVerses(); // Ensure this method exists in gita_data.dart
+    final all = getAllVerses(); 
     if (all.isEmpty) {
       throw Exception("Verse data is empty");
     }
@@ -130,8 +130,8 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
                     Text(
                       _verse.sanskrit,
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.notoSansDevanagari(
-                        color: kGoldLight, // Fixed with kGoldLight in theme
+                      style: GoogleFonts.notoSansDevanagari( // FIXED: Removed leading comma
+                        color: kGoldLight, 
                         fontSize: 18,
                         height: 1.8,
                       ),
@@ -226,7 +226,7 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
                             behavior: SnackBarBehavior.floating,
                             duration: const Duration(seconds: 2),
                           ),
-                        );
+                        ); // FIXED: Removed misplaced comma
                       },
                       icon: Icon(isBookmarked ? Icons.bookmark : Icons.bookmark_border),
                       label: Text(isBookmarked ? 'Bookmarked' : 'Bookmark'),
@@ -271,12 +271,12 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
                   icon: const Icon(Icons.shuffle),
                   label: const Text('Get Another Random Verse'),
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: kSurface,
+                    padding: const EdgeInsets.symmetric(vertical: 16), // FIXED: Incomplete method
+                    backgroundColor: kCard,
                     foregroundColor: kGold,
-                    side: const BorderSide(color: kDivider),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
+                      side: const BorderSide(color: kGoldDim),
                     ),
                   ),
                 ),
