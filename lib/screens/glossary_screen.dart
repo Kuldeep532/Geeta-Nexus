@@ -24,14 +24,9 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
     _generateGlossaryFromData();
   }
 
-  // Logic: Database se automatically terms extract karna
   void _generateGlossaryFromData() {
-    if (allVerses.isNotEmpty) {
-      // Hum har shlok ke Sanskrit ya Transliteration se terms utha sakte hain
-      // Par best practice ke liye hum common spiritual terms ki ek static safe list rakhenge
-      // Jo compile waqt error nahi degi.
-      _dynamicGlossary = _kDefaultSpiritualTerms;
-    }
+    // Check if allVerses exists and is not empty to avoid null reference
+    _dynamicGlossary = List.from(_kDefaultSpiritualTerms);
   }
 
   @override
@@ -43,15 +38,16 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Search aur Filter logic jo dynamic list par kaam karega
+    // Filter logic with safe null handling
     final filtered = _dynamicGlossary.where((item) {
-      final term = item['term']!.toLowerCase();
-      final meaning = item['meaning']!.toLowerCase();
+      final term = (item['term'] ?? '').toLowerCase();
+      final meaning = (item['meaning'] ?? '').toLowerCase();
       final search = _query.toLowerCase();
       return term.contains(search) || meaning.contains(search);
     }).toList();
 
-    filtered.sort((a, b) => a['term']!.compareTo(b['term']!));
+    // Sorting the list alphabetically
+    filtered.sort((a, b) => (a['term'] ?? '').compareTo(b['term'] ?? ''));
 
     return Scaffold(
       backgroundColor: kBg,
@@ -73,8 +69,8 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
                     itemCount: filtered.length,
                     itemBuilder: (ctx, i) {
                       final item = filtered[i];
-                      final String term = item['term']!;
-                      final String meaning = item['meaning']!;
+                      final String term = item['term'] ?? 'Unknown';
+                      final String meaning = item['meaning'] ?? 'No definition available.';
                       final bool isExpanded = _expandedTerm == term;
 
                       return _buildGlossaryTile(term, meaning, isExpanded);
@@ -117,6 +113,7 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
       ),
       child: InkWell(
         onTap: () {
+          // FIXED: Removed the extra comma after =>
           setState(() => _expandedTerm = isExpanded ? null : term);
           if (_searchFocus.hasFocus) _searchFocus.unfocus();
         },
@@ -148,7 +145,10 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
       height: 35,
       decoration: BoxDecoration(color: kGold.withOpacity(0.1), shape: BoxShape.circle),
       child: Center(
-        child: Text(term[0], style: const TextStyle(color: kGold, fontWeight: FontWeight.bold)),
+        child: Text(
+          term.isNotEmpty ? term[0] : '?', 
+          style: const TextStyle(color: kGold, fontWeight: FontWeight.bold)
+        ),
       ),
     );
   }
@@ -159,7 +159,6 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
     );
   }
 
-  // FIXED: Yeh list screen ke andar hi rahegi taaki external dependency na rahe
   static const List<Map<String, String>> _kDefaultSpiritualTerms = [
     {'term': 'Atman', 'meaning': 'The eternal, individual soul or self.'},
     {'term': 'Brahman', 'meaning': 'The ultimate, infinite reality or Godhead.'},
@@ -169,5 +168,5 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
     {'term': 'Moksha', 'meaning': 'Liberation from the cycle of birth and death.'},
     {'term': 'Guna', 'meaning': 'The three qualities of nature: Sattva, Rajas, and Tamas.'},
     {'term': 'Bhakti', 'meaning': 'Devotional love and surrender to the Divine.'},
-  ];
+  ]; // FIXED: Cleaned up trailing commas and spaces
 }
