@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// --- SABSE ZAROORI: Inhe Class ke bahar rakhein ---
+// --- INHE CLASS KE BAHAR RAKHEIN (Global Variables) ---
+// Taki poori app inhe bina "AppColors." ke pehchan sake
 const Color kBg = Color(0xFF0D0A04);
 const Color kGold = Color(0xFFFFD700);
+const Color kGoldLight = Color(0xFFFFEC6E); // Error fix: kGoldLight missing tha
+const Color kGoldDim = Color(0xFFB8960C);
 const Color kSaffron = Color(0xFFFF9933);
 const Color kVermillion = Color(0xFFE34234);
 const Color kTurmeric = Color(0xFFFAC205);
@@ -15,13 +18,14 @@ const Color kText = Color(0xFFF5E6C8);
 const Color kTextDim = Color(0xFFAA9977);
 const Color kDivider = Color(0xFF3A2E00);
 const Color kError = Color(0xFFCF6679);
-const Color kGoldDim = Color(0xFFB8960C);
+const Color kSuccess = Color(0xFF4CAF50);
 
-// Safety Engine (In case koi colour null ho jaye)
+// --- AUTOMATIC SAFETY ENGINE ---
 class AppColors {
   static Color autoDefine(Color? input, {Color fallback = kGold}) => input ?? fallback;
 }
 
+// --- MAIN THEME DATA ---
 ThemeData buildTheme() {
   return ThemeData(
     useMaterial3: true,
@@ -37,6 +41,6 @@ ThemeData buildTheme() {
       onSurface: kText,
       outline: kDivider,
     ),
-    // ... baki theme settings pehle jaisi
+    // ... baki settings pehle jaisi
   );
 }
