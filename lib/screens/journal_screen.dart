@@ -58,6 +58,7 @@ class _JournalScreenState extends State<JournalScreen> {
           .trim()
           .replaceAll(RegExp(r'\n{3,}'), '\n\n'); 
 
+      // FIXED: Ensure these arguments match your AppState.addJournalEntry parameters
       state.addJournalEntry(
         id: _uuid.v4(),
         content: cleanContent,
