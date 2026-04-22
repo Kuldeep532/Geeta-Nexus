@@ -4,9 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// Imports for data loading
-// Note: Ensure the path points to the file where loadGitaData is defined
-import 'data/constants.dart'; 
+// Sahi import path: Jo ChaptersScreen mein use ho raha hai
+import 'data/gita_data.dart'; 
 
 import 'state/app_state.dart';
 import 'theme.dart';
@@ -18,16 +17,16 @@ import 'screens/more_screen.dart';
 import 'screens/onboarding_screen.dart';
 
 void main() async {
+  // Flutter bindings initialize karna zaroori hai
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Data, Preferences and AppState
   final prefs = await SharedPreferences.getInstance();
   final appState = AppState();
   
-  // Running async tasks
+  // AppState load karna aur CSV se data fetch karna
   await Future.wait([
     appState.load(),
-    loadGitaData(), // Loading CSV data into kChapters
+    loadGitaData(), 
   ]);
 
   final bool onboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
