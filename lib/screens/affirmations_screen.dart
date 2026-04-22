@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// 1. Sirf ek hi theme file rakhein taaki 'Ambiguous' error na aaye
 import '../theme.dart'; 
 import '../data/gita_data.dart'; 
 
@@ -16,37 +15,51 @@ class AffirmationsScreen extends StatefulWidget {
 class _AffirmationsScreenState extends State<AffirmationsScreen> {
   int _index = 0;
 
+  // FIX: kAffirmations ko kChapters se replace kiya
   void _next() {
-    if (kAffirmations.isEmpty) return; // Safety check
+    if (kChapters.isEmpty) return; 
     setState(() {
-      _index = (_index + 1) % kAffirmations.length;
+      _index = (_index + 1) % kChapters.length;
     });
   }
 
   void _prev() {
-    if (kAffirmations.isEmpty) return; // Safety check
+    if (kChapters.isEmpty) return; 
     setState(() {
-      _index = (_index - 1 + kAffirmations.length) % kAffirmations.length;
+      _index = (_index - 1 + kChapters.length) % kChapters.length;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // 2. Agar list khali hai toh crash na ho, isliye safety check
-    if (kAffirmations.isEmpty) {
-      return const Scaffold(body: Center(child: Text("No affirmations available")));
+    // FIX: Empty list check for kChapters
+    if (kChapters.isEmpty) {
+      return const Scaffold(
+        backgroundColor: kBg,
+        body: Center(
+          child: Text(
+            "Wisdom is loading...", 
+            style: TextStyle(color: kGoldDim)
+          )
+        )
+      );
     }
 
-    final Map<String, String> currentAff = kAffirmations[_index];
-    final String text = currentAff['text'] ?? "No text found";
-    final String source = currentAff['source'] ?? "Unknown Source";
+    // FIX: Map<String, String> ki jagah Chapter object use kiya
+    final chapter = kChapters[_index];
+    final String text = chapter.summary; // Gita summary ko text banaya
+    final String source = chapter.nameSanskrit; // Sanskrit name ko source banaya
 
     return Scaffold(
       backgroundColor: kBg,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('Daily Affirmations'),
+        centerTitle: true,
+        title: Text(
+          'Gita Wisdom',
+          style: GoogleFonts.cinzel(color: kGold, fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
             tooltip: 'Copy to clipboard',
@@ -54,7 +67,7 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
             onPressed: () {
               Clipboard.setData(ClipboardData(text: '$text\n— $source'));
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Affirmation copied!')),
+                const SnackBar(content: Text('Wisdom copied!')),
               );
             },
           ),
@@ -67,7 +80,7 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
             _buildProgressDots(),
             const SizedBox(height: 8),
             Text(
-              '${_index + 1} of ${kAffirmations.length}',
+              'Chapter ${_index + 1} of ${kChapters.length}',
               style: const TextStyle(color: kTextDim, fontSize: 12),
             ),
             
@@ -75,12 +88,11 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
               child: AnimatedSwitcher(
                 duration: const Duration(milliseconds: 400),
                 transitionBuilder: (Widget child, Animation<double> animation) {
-                  // 3. Named argument 'position' ka sahi istemal
                   return FadeTransition(
                     opacity: animation,
                     child: SlideTransition(
                       position: Tween<Offset>(
-                        begin: const Offset(0.0, 0.1),
+                        begin: const Offset(0.0, 0.05),
                         end: Offset.zero,
                       ).animate(animation),
                       child: child,
@@ -104,7 +116,7 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(
-        kAffirmations.length,
+        kChapters.length,
         (i) => AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           margin: const EdgeInsets.symmetric(horizontal: 2),
@@ -133,19 +145,27 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
             ),
             borderRadius: BorderRadius.circular(28),
             border: Border.all(color: kGoldDim.withOpacity(0.3)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.3),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('✨', style: TextStyle(fontSize: 40)),
+              const Text('🔱', style: TextStyle(fontSize: 40)), // Icon change kiya context ke liye
               const SizedBox(height: 24),
               Text(
                 text,
                 textAlign: TextAlign.center,
                 style: GoogleFonts.crimsonText(
                   color: kGoldLight,
-                  fontSize: 22,
-                  height: 1.6,
+                  fontSize: 20,
+                  height: 1.5,
+                  fontStyle: FontStyle.italic,
                 ),
               ),
               const SizedBox(height: 24),
@@ -157,7 +177,11 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
                 ),
                 child: Text(
                   source,
-                  style: GoogleFonts.cinzel(color: kGoldDim, fontSize: 12),
+                  style: GoogleFonts.cinzel(
+                    color: kGoldDim, 
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold
+                  ),
                 ),
               ),
             ],
@@ -173,17 +197,23 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
       children: [
         OutlinedButton.icon(
           onPressed: _prev,
-          icon: const Icon(Icons.arrow_back),
-          label: const Text('Prev'),
-          style: OutlinedButton.styleFrom(foregroundColor: kGold),
+          icon: const Icon(Icons.arrow_back_ios_new, size: 16),
+          label: const Text('PREV'),
+          style: OutlinedButton.styleFrom(
+            foregroundColor: kGold,
+            side: const BorderSide(color: kGoldDim),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          ),
         ),
         ElevatedButton.icon(
           onPressed: _next,
-          icon: const Icon(Icons.arrow_forward),
-          label: const Text('Next'),
+          icon: const Icon(Icons.arrow_forward_ios, size: 16),
+          label: const Text('NEXT'),
           style: ElevatedButton.styleFrom(
             backgroundColor: kGold,
             foregroundColor: Colors.black,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            elevation: 5,
           ),
         ),
       ],
