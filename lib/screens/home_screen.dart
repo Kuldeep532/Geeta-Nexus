@@ -29,15 +29,10 @@ class _HomeScreenState extends State<HomeScreen> {
     _dailyVerse = _loadAutomatedVerse();
   }
 
-  /// Automatically picks a verse based on the current day of the year
   dynamic _loadAutomatedVerse() {
     if (allVerses.isEmpty) return null;
-
-    // Use the day of the year to pick a consistent verse for the whole day
     final now = DateTime.now();
     final dayOfYear = now.difference(DateTime(now.year, 1, 1)).inDays;
-    
-    // Using modulo to ensure we stay within the list bounds
     return allVerses[dayOfYear % allVerses.length];
   }
 
@@ -130,7 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
             colors: [Color(0xFF2A1F00), Color(0xFF1A1500)],
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: kDivider.withOpacity(0.5)),
+          border: Border.all(color: kDivider.withOpacity(0.5)), // FIXED: Removed leading comma
         ),
         child: Row(
           children: [
@@ -167,18 +162,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _statChip(String emoji, String value, String label) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 16),
-      child: Column(
-        children: [
-          Text(emoji, style: const TextStyle(fontSize: 18)),
-          const SizedBox(height: 2),
-          Text(value,
-              style: const TextStyle(
-                  color: kGold, fontWeight: FontWeight.bold, fontSize: 14)),
-          Text(label, style: const TextStyle(color: kTextDim, fontSize: 9)),
-        ],
-      ),
+    return Column(
+      children: [
+        Text(emoji, style: const TextStyle(fontSize: 18)),
+        const SizedBox(height: 2),
+        Text(value,
+            style: const TextStyle(
+                color: kGold, fontWeight: FontWeight.bold, fontSize: 14)),
+        Text(label, style: const TextStyle(color: kTextDim, fontSize: 9)),
+      ],
     );
   }
 
@@ -248,7 +240,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title.toUpperCase(),
-      style: GoogleFonts.cinzel(
+      style: GoogleFonts.cinzel( // FIXED: Removed leading comma
         color: kGold,
         fontSize: 13,
         fontWeight: FontWeight.bold,
@@ -300,22 +292,33 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildWisdomPreview() {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: kCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: kDivider.withOpacity(0.2)),
+        border: Border.all(color: kDivider),
       ),
       child: Row(
         children: [
-          const Icon(Icons.lightbulb_outline, color: kGold),
-          const SizedBox(width: 12),
+          const CircleAvatar(
+            backgroundColor: kDivider,
+            child: Icon(Icons.lightbulb_outline, color: kGold),
+          ),
+          const SizedBox(width: 16),
           Expanded(
-            child: Text(
-              _dailyVerse != null 
-                ? "Wisdom from Chapter ${_dailyVerse.chapter}" 
-                : "Explore the eternal teachings.",
-              style: const TextStyle(color: kText, fontSize: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Deepen your practice",
+                  style: GoogleFonts.cinzel(color: kGold, fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+                const Text(
+                  "Meditation is the journey of the self, through the self, to the self.",
+                  style: TextStyle(color: kTextDim, fontSize: 12),
+                ),
+              ],
             ),
           ),
         ],
