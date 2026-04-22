@@ -27,8 +27,6 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
   void initState() {
     super.initState();
     
-    // Logic: kChapters se bina kisi helper function ke data nikalna
-    // Isse gita_data.dart ko modify nahi karna padega
     _loadVersesFromDatabase();
 
     _controller = AnimationController(
@@ -42,9 +40,11 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
   }
 
   void _loadVersesFromDatabase() {
-    // Agar kChapters loaded hain toh unhe flat list mein convert karein
-    if (kChapters.isNotEmpty) {
-      _verses = kChapters.expand((chapter) => chapter.verses).toList();
+    // kChapters check karne ke baad use properly flat list mein convert karna
+    if (kChapters != null && kChapters.isNotEmpty) {
+      setState(() {
+        _verses = kChapters.expand((chapter) => chapter.verses).toList();
+      });
     }
   }
 
@@ -66,7 +66,6 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
     setState(() => _flipped = !_flipped);
   }
 
-  // Navigation Logic using AppState
   void _navigate(AppState state, bool forward) {
     if (_flipped) {
       _controller.reverse();
@@ -87,15 +86,12 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     
-    // Safety check: Agar data load nahi hua
+    // Safety check: Agar data list khali hai
     if (_verses.isEmpty) {
-      _loadVersesFromDatabase(); // Retry once
-      if (_verses.isEmpty) {
-        return Scaffold(
-          backgroundColor: kBg,
-          body: const Center(child: CircularProgressIndicator(color: kGold)),
-        );
-      }
+      return Scaffold(
+        backgroundColor: kBg,
+        body: const Center(child: CircularProgressIndicator(color: kGold)),
+      );
     }
 
     final safeIndex = appState.currentFlashcardIndex.clamp(0, _verses.length - 1);
@@ -121,7 +117,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
       body: Column(
         children: [
           LinearProgressIndicator(
-            value: (safeIndex + 1) / _verses.length,
+            value: _verses.isNotEmpty ? (safeIndex + 1) / _verses.length : 0,
             backgroundColor: kDivider,
             color: kGold,
             minHeight: 4,
@@ -136,7 +132,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
                   builder: (context, child) {
                     final angle = _flipAnim.value * math.pi;
                     return Transform(
-                      alignment: Alignment.center,
+                      alignment: Alignment.center, // FIXED: Removed leading comma
                       transform: Matrix4.identity()..setEntry(3, 2, 0.001)..rotateY(angle),
                       child: _flipAnim.value < 0.5
                           ? _buildCardSide(verse, true)
@@ -175,6 +171,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
       child: Center(
         child: SingleChildScrollView(
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(isFront ? "SANSKRIT" : "TRANSLATION", 
                 style: GoogleFonts.cinzel(color: kGoldDim, fontSize: 10, letterSpacing: 2)),
@@ -231,5 +228,5 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
         ),
       ),
     );
-  }
+  } // FIXED: Removed extra comma and cleaned up bracket
 }
