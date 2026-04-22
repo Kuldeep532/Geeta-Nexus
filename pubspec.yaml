@@ -25,7 +25,7 @@ dependencies:
   flex_color_scheme: ^7.3.1
   animations: ^2.0.1
   flutter_markdown: ^0.7.2+1
-  dynamic_color: ^1.7.0      # Dynamic color support (Material You)
+  dynamic_color: ^1.7.0
 
   # Data & Utilities
   intl: ^0.20.2
@@ -52,8 +52,8 @@ dependencies:
   share_plus: ^9.0.0
   device_info_plus: ^10.1.2
   image_picker: ^1.1.2
-  audioplayers: ^5.2.1      # Audio package ko rehne diya gaya hai
-  speech_to_text: ^6.6.0
+  audioplayers: ^5.2.1
+  speech_to_text: ^7.0.0      # Updated version to fix 'Registrar' and Android compatibility
   flutter_tts: ^4.0.2
   wakelock_plus: ^1.2.8
   vibration: ^2.0.1
@@ -65,6 +65,6 @@ dev_dependencies:
   build_runner: ^2.4.9
 
 flutter:
-  uses-material-design: true # Material UI support enabled
+  uses-material-design: true
   assets:
-    - assets/images/Bhagwad_Gita.csv 
+    - assets/images/Bhagwad_Gita.csv
