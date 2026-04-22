@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-// Imports (Inhe apni file structure ke hisaab se check kar lein)
 import '../theme.dart';
 import '../state/app_state.dart';
 import '../data/gita_data.dart';
 
-// Screens
 import 'search_screen.dart';
 import 'random_verse_screen.dart';
 import 'wisdom_cards_screen.dart';
@@ -28,8 +26,19 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Daily verse load ho raha hai
-    _dailyVerse = getDailyVerse();
+    _dailyVerse = _loadAutomatedVerse();
+  }
+
+  /// Automatically picks a verse based on the current day of the year
+  dynamic _loadAutomatedVerse() {
+    if (allVerses.isEmpty) return null;
+
+    // Use the day of the year to pick a consistent verse for the whole day
+    final now = DateTime.now();
+    final dayOfYear = now.difference(DateTime(now.year, 1, 1)).inDays;
+    
+    // Using modulo to ensure we stay within the list bounds
+    return allVerses[dayOfYear % allVerses.length];
   }
 
   @override
@@ -60,7 +69,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildSectionTitle("Today's Wisdom"),
                   const SizedBox(height: 12),
                   _buildWisdomPreview(),
-                  // Extra space bottom ke liye takki scrolling smooth rahe
                   const SizedBox(height: 100),
                 ],
               ),
@@ -298,14 +306,16 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: kDivider.withOpacity(0.2)),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.auto_awesome, color: kGoldDim, size: 24),
-          SizedBox(width: 12),
+          const Icon(Icons.lightbulb_outline, color: kGold),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
-              "Focus on your action, not on the fruits of it.",
-              style: TextStyle(color: kText, fontSize: 14),
+              _dailyVerse != null 
+                ? "Wisdom from Chapter ${_dailyVerse.chapter}" 
+                : "Explore the eternal teachings.",
+              style: const TextStyle(color: kText, fontSize: 14),
             ),
           ),
         ],
