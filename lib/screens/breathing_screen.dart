@@ -23,7 +23,17 @@ class BreathPattern {
 void main() {
   runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
-    theme: ThemeData.dark(),
+    // The colors will be inherited from here
+    theme: ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: const Color(0xFFFFD700), // Gold Seed
+        primary: const Color(0xFFFFD700),
+        surface: const Color(0xFF0D0A04),
+      ),
+      scaffoldBackgroundColor: const Color(0xFF0D0A04),
+    ),
     home: const BreathingScreen(),
   ));
 }
@@ -48,7 +58,7 @@ class _BreathingScreenState extends State<BreathingScreen>
 
   String _selectedKey = '4-4-4-4';
 
-  static const patterns = {
+  static const Map<String, BreathPattern> patterns = {
     '4-4-4-4': BreathPattern(
       name: 'Box Breathing',
       inhale: 4,
@@ -75,17 +85,16 @@ class _BreathingScreenState extends State<BreathingScreen>
     ),
   };
 
-  BreathPattern get current => patterns[_selectedKey]!;
+  // Safe getter to prevent null errors
+  BreathPattern get current => patterns[_selectedKey] ?? patterns['4-4-4-4']!;
 
   @override
   void initState() {
     super.initState();
-
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 1),
     );
-
     _anim = Tween<double>(begin: 0.6, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
@@ -99,24 +108,29 @@ class _BreathingScreenState extends State<BreathingScreen>
   }
 
   void start() {
-    _running = true;
-    _cycles = 0;
-    _phase = Phase.inhale;
+    if (!mounted) return;
+    setState(() {
+      _running = true;
+      _cycles = 0;
+      _phase = Phase.inhale;
+    });
     _runPhase();
   }
 
   void stop() {
-    _running = false;
+    if (!mounted) return;
     _timer?.cancel();
     _controller.stop();
-    setState(() => _secondsRemaining = 0);
+    setState(() {
+      _running = false;
+      _secondsRemaining = 0;
+    });
   }
 
   void _runPhase() {
     if (!_running || !mounted) return;
 
     final duration = _getDuration(_phase);
-
     if (duration == 0) {
       _nextPhase();
       return;
@@ -124,6 +138,7 @@ class _BreathingScreenState extends State<BreathingScreen>
 
     setState(() => _secondsRemaining = duration);
 
+    // Accessibility: Dynamic voice feedback
     SemanticsService.announce(
       "${_phase.name} for $duration seconds",
       TextDirection.ltr,
@@ -159,58 +174,48 @@ class _BreathingScreenState extends State<BreathingScreen>
 
   void _nextPhase() {
     if (!mounted || !_running) return;
-
     HapticFeedback.mediumImpact();
 
     setState(() {
       switch (_phase) {
-        case Phase.inhale:
-          _phase = Phase.hold;
-          break;
-        case Phase.hold:
-          _phase = Phase.exhale;
-          break;
-        case Phase.exhale:
-          _phase = Phase.rest;
-          break;
+        case Phase.inhale: _phase = Phase.hold; break;
+        case Phase.hold: _phase = Phase.exhale; break;
+        case Phase.exhale: _phase = Phase.rest; break;
         case Phase.rest:
           _phase = Phase.inhale;
           _cycles++;
           break;
       }
     });
-
     _runPhase();
   }
 
   int _getDuration(Phase p) {
     switch (p) {
-      case Phase.inhale:
-        return current.inhale;
-      case Phase.hold:
-        return current.hold;
-      case Phase.exhale:
-        return current.exhale;
-      case Phase.rest:
-        return current.rest;
+      case Phase.inhale: return current.inhale;
+      case Phase.hold: return current.hold;
+      case Phase.exhale: return current.exhale;
+      case Phase.rest: return current.rest;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     final total = _getDuration(_phase);
-    final progress =
-        total > 0 ? (_secondsRemaining / total).clamp(0.0, 1.0) : 0.0;
+    final progress = total > 0 ? (_secondsRemaining / total).clamp(0.0, 1.0) : 0.0;
 
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text(
           'DIVINE BREATH',
           style: GoogleFonts.cinzel(
-            color: kGold,
+            color: colorScheme.primary,
             letterSpacing: 2,
             fontWeight: FontWeight.bold,
           ),
@@ -220,25 +225,25 @@ class _BreathingScreenState extends State<BreathingScreen>
       body: Column(
         children: [
           const SizedBox(height: 20),
-          _patternSelector(),
+          _patternSelector(theme),
           const Spacer(),
-          _visual(progress),
+          _visual(progress, theme),
           const Spacer(),
-          _controls(),
+          _controls(theme),
           const SizedBox(height: 40),
         ],
       ),
     );
   }
 
-  Widget _visual(double progress) {
+  Widget _visual(double progress, ThemeData theme) {
+    final colorScheme = theme.colorScheme;
     return AnimatedBuilder(
       animation: _controller,
       builder: (_, __) {
         return Semantics(
           liveRegion: true,
-          label:
-              "Phase ${_phase.name}, $_secondsRemaining seconds remaining, $_cycles cycles completed",
+          label: "Phase ${_phase.name}, $_secondsRemaining seconds, $_cycles cycles",
           child: Column(
             children: [
               Stack(
@@ -250,7 +255,7 @@ class _BreathingScreenState extends State<BreathingScreen>
                     child: CircularProgressIndicator(
                       value: _running ? progress : 0,
                       strokeWidth: 3,
-                      color: kGold.withOpacity(0.5),
+                      color: colorScheme.primary.withOpacity(0.5),
                     ),
                   ),
                   Container(
@@ -258,14 +263,14 @@ class _BreathingScreenState extends State<BreathingScreen>
                     height: 240 * _anim.value,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: kGold, width: 4),
+                      border: Border.all(color: colorScheme.primary, width: 4),
                     ),
                     child: Center(
                       child: Text(
                         _running ? "$_secondsRemaining" : "Ready",
                         style: GoogleFonts.cinzel(
                           fontSize: 48,
-                          color: Colors.white,
+                          color: colorScheme.onSurface,
                         ),
                       ),
                     ),
@@ -277,7 +282,7 @@ class _BreathingScreenState extends State<BreathingScreen>
                 _phase.name.toUpperCase(),
                 style: GoogleFonts.cinzel(
                   fontSize: 26,
-                  color: kGold,
+                  color: colorScheme.primary,
                   letterSpacing: 4,
                 ),
               ),
@@ -288,7 +293,8 @@ class _BreathingScreenState extends State<BreathingScreen>
     );
   }
 
-  Widget _patternSelector() {
+  Widget _patternSelector(ThemeData theme) {
+    final colorScheme = theme.colorScheme;
     return SizedBox(
       height: 110,
       child: ListView(
@@ -296,43 +302,44 @@ class _BreathingScreenState extends State<BreathingScreen>
         padding: const EdgeInsets.symmetric(horizontal: 20),
         children: patterns.entries.map((e) {
           final selected = _selectedKey == e.key;
-
-          return IgnorePointer(
-            ignoring: _running,
-            child: GestureDetector(
-              onTap: () {
-                setState(() => _selectedKey = e.key);
-                HapticFeedback.selectionClick();
-              },
-              child: Container(
-                width: 160,
-                margin: const EdgeInsets.only(right: 15),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: selected ? kGold.withOpacity(0.1) : kCard,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: selected ? kGold : Colors.white10,
+          return GestureDetector(
+            onTap: _running ? null : () {
+              setState(() => _selectedKey = e.key);
+              HapticFeedback.selectionClick();
+            },
+            child: Container(
+              width: 160,
+              margin: const EdgeInsets.only(right: 15),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: selected 
+                    ? colorScheme.primary.withOpacity(0.1) 
+                    : colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: selected ? colorScheme.primary : colorScheme.outline.withOpacity(0.2),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    e.value.name,
+                    style: TextStyle(
+                      color: selected ? colorScheme.primary : colorScheme.onSurface,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      e.value.name,
-                      style: TextStyle(
-                        color: selected ? kGold : Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  const SizedBox(height: 5),
+                  Text(
+                    e.value.description,
+                    style: TextStyle(
+                      fontSize: 11, 
+                      color: colorScheme.onSurfaceVariant
                     ),
-                    const SizedBox(height: 5),
-                    Text(
-                      e.value.description,
-                      style: const TextStyle(fontSize: 11, color: kTextDim),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           );
@@ -341,20 +348,17 @@ class _BreathingScreenState extends State<BreathingScreen>
     );
   }
 
-  Widget _controls() {
+  Widget _controls(ThemeData theme) {
+    final colorScheme = theme.colorScheme;
     return ElevatedButton(
       onPressed: () {
         _running ? stop() : start();
       },
       style: ElevatedButton.styleFrom(
-        backgroundColor:
-            _running ? Colors.redAccent.withOpacity(0.1) : kGold,
-        foregroundColor: _running ? Colors.redAccent : Colors.black,
-        padding:
-            const EdgeInsets.symmetric(horizontal: 60, vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
-        ),
+        backgroundColor: _running ? colorScheme.errorContainer : colorScheme.primary,
+        foregroundColor: _running ? colorScheme.onErrorContainer : colorScheme.onPrimary,
+        padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       ),
       child: Text(_running ? "STOP" : "START"),
     );
