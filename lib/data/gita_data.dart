@@ -1,9 +1,15 @@
+import 'package:flutter/foundation.dart'; // FIX: Isse debugPrint ka error solve hoga
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:csv/csv.dart';
 import '../models/models.dart';
 
 List<Chapter> kChapters = [];
 List<Verse> allVerses = []; 
+
+// FIX: Is helper function ko add karne se RandomVerseScreen ka error chala jayega
+List<Verse> getAllVerses() {
+  return allVerses;
+}
 
 Future<void> loadGitaData() async {
   try {
@@ -51,8 +57,10 @@ Future<void> loadGitaData() async {
 
     kChapters.sort((a, b) => a.number.compareTo(b.number));
     
+    debugPrint("Gita data loaded: ${allVerses.length} verses"); // Ab error nahi aayega
+
   } catch (e) {
-    debugPrint("Error loading Gita data: $e");
+    debugPrint("Error loading Gita data: $e"); // FIX: foundation.dart ki wajah se ab ye chalega
   }
 }
 
