@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import '../theme.dart'; 
 import '../data/gita_data.dart'; 
 
@@ -15,12 +14,12 @@ class AffirmationsScreen extends StatefulWidget {
 class _AffirmationsScreenState extends State<AffirmationsScreen> {
   int _index = 0;
 
-  // FIX: kAffirmations ko kChapters se replace kiya
   void _next() {
     if (kChapters.isEmpty) return; 
     setState(() {
       _index = (_index + 1) % kChapters.length;
     });
+    HapticFeedback.lightImpact();
   }
 
   void _prev() {
@@ -28,11 +27,11 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
     setState(() {
       _index = (_index - 1 + kChapters.length) % kChapters.length;
     });
+    HapticFeedback.lightImpact();
   }
 
   @override
   Widget build(BuildContext context) {
-    // FIX: Empty list check for kChapters
     if (kChapters.isEmpty) {
       return const Scaffold(
         backgroundColor: kBg,
@@ -45,10 +44,9 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
       );
     }
 
-    // FIX: Map<String, String> ki jagah Chapter object use kiya
     final chapter = kChapters[_index];
-    final String text = chapter.summary; // Gita summary ko text banaya
-    final String source = chapter.nameSanskrit; // Sanskrit name ko source banaya
+    final String text = chapter.summary; 
+    final String source = chapter.nameSanskrit; 
 
     return Scaffold(
       backgroundColor: kBg,
@@ -132,59 +130,62 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
   }
 
   Widget _buildAffirmationCard(String text, String source) {
-    return KeyedSubtree(
-      key: ValueKey<int>(_index), 
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF2A1F00), Color(0xFF1A1500)],
+    return Semantics(
+      label: "Chapter ${_index + 1}. $text. From $source",
+      child: KeyedSubtree(
+        key: ValueKey<int>(_index), 
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF2A1F00), Color(0xFF1A1500)],
+              ),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: kGoldDim.withOpacity(0.3)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: kGoldDim.withOpacity(0.3)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('🔱', style: TextStyle(fontSize: 40)), // Icon change kiya context ke liye
-              const SizedBox(height: 24),
-              Text(
-                text,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.crimsonText(
-                  color: kGoldLight,
-                  fontSize: 20,
-                  height: 1.5,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(
-                  color: kDivider,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  source,
-                  style: GoogleFonts.cinzel(
-                    color: kGoldDim, 
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('🔱', style: TextStyle(fontSize: 40)), 
+                const SizedBox(height: 24),
+                Text(
+                  text,
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.crimsonText(
+                    color: kGoldLight, // Fixed: Colors synced with theme.dart
+                    fontSize: 20,
+                    height: 1.5,
+                    fontStyle: FontStyle.italic,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: kDivider,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    source,
+                    style: GoogleFonts.cinzel(
+                      color: kGoldDim, 
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
