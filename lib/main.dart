@@ -4,6 +4,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+// Imports for data loading
+// Note: Ensure the path points to the file where loadGitaData is defined
+import 'data/constants.dart'; 
+
 import 'state/app_state.dart';
 import 'theme.dart';
 import 'screens/home_screen.dart';
@@ -14,13 +18,17 @@ import 'screens/more_screen.dart';
 import 'screens/onboarding_screen.dart';
 
 void main() async {
-  // Ensure Flutter bindings are initialized before async calls
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize SharedPreferences and AppState concurrently for better performance
+  // Initialize Data, Preferences and AppState
   final prefs = await SharedPreferences.getInstance();
   final appState = AppState();
-  await appState.load(); 
+  
+  // Running async tasks
+  await Future.wait([
+    appState.load(),
+    loadGitaData(), // Loading CSV data into kChapters
+  ]);
 
   final bool onboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
 
@@ -38,11 +46,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Set UI overlay style globally
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark, // Changed to dark for light backgrounds
+        statusBarIconBrightness: Brightness.dark,
         systemNavigationBarColor: Colors.white,
         systemNavigationBarIconBrightness: Brightness.dark,
       ),
@@ -51,7 +58,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Bhagavad Gita AI',
-      theme: buildTheme(), // Ensure buildTheme() handles font embedding
+      theme: buildTheme(), 
       home: showOnboarding ? const OnboardingScreen() : const MainShell(),
     );
   }
@@ -67,7 +74,6 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
 
-  // Use a getter or a final list for screens
   final List<Widget> _screens = const [
     HomeScreen(),
     ChaptersScreen(),
@@ -89,15 +95,12 @@ class _MainShellState extends State<MainShell> {
     final theme = Theme.of(context);
 
     return PopScope(
-      // Allow pop only if we are on the first tab (index 0)
       canPop: _currentIndex == 0,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        // If not on Home, back button takes user to Home tab
         setState(() => _currentIndex = 0);
       },
       child: Scaffold(
-        // IndexedStack maintains the scroll position of each tab
         body: IndexedStack(
           index: _currentIndex,
           children: _screens,
@@ -115,7 +118,7 @@ class _MainShellState extends State<MainShell> {
             currentIndex: _currentIndex,
             onTap: _onTabTapped,
             backgroundColor: theme.scaffoldBackgroundColor,
-            selectedItemColor: const Color(0xFFFFD700), // Saffron/Gold
+            selectedItemColor: const Color(0xFFFFD700),
             unselectedItemColor: theme.hintColor,
             type: BottomNavigationBarType.fixed,
             elevation: 0,
