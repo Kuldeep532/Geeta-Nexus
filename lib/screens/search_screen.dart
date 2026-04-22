@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
@@ -105,7 +106,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 onPressed: () {
                   _controller.text = t;
                   _search(t);
-                  FocusScope.of(context).unfocus(); // Close keyboard on selection
+                  FocusScope.of(context).unfocus();
                 },
               );
             }).toList(),
