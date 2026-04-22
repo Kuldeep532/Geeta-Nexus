@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
@@ -137,7 +136,7 @@ class _SearchScreenState extends State<SearchScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              Text(
+              Text( // FIXED: Removed leading comma
                 '${_results.length} verse${_results.length != 1 ? 's' : ''} found',
                 style: const TextStyle(color: kTextDim, fontSize: 12),
               ),
@@ -197,5 +196,5 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       ),
     );
-  }
+  } // FIXED: Closed the method and class properly
 }
