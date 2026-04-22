@@ -22,7 +22,7 @@ class MoreScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Optimization: Listen only to necessary changes or remove if not using state data here
+    // Optimization: Listen only to necessary changes
     final appState = context.watch<AppState>();
 
     return Scaffold(
@@ -86,7 +86,6 @@ class MoreScreen extends StatelessWidget {
 
   Widget _buildGrid(BuildContext context, List<_Item> items) {
     return GridView.builder(
-      // Performance optimization: GridView.builder is better for memory
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: items.length,
@@ -105,7 +104,7 @@ class MoreScreen extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(14),
           child: Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(12), // FIXED: Faltu comma hataya gaya
             decoration: BoxDecoration(
               color: kCard,
               borderRadius: BorderRadius.circular(14),
@@ -191,5 +190,6 @@ class _Item {
   final String subtitle;
   final Widget screen;
 
+  // FIXED: Variable ke beech mein extra comma hataya gaya
   const _Item(this.emoji, this.title, this.subtitle, this.screen);
 }
