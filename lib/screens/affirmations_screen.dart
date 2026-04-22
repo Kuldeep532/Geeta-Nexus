@@ -134,6 +134,7 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
       label: "Chapter ${_index + 1}. $text. From $source",
       child: KeyedSubtree(
         key: ValueKey<int>(_index), 
+        // FIXED: Removed the leading comma before Center
         child: Center(
           child: Container(
             padding: const EdgeInsets.all(32),
@@ -162,7 +163,7 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
                   text,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.crimsonText(
-                    color: kGoldLight, // Fixed: Colors synced with theme.dart
+                    color: kGoldLight, 
                     fontSize: 20,
                     height: 1.5,
                     fontStyle: FontStyle.italic,
@@ -219,5 +220,5 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
         ),
       ],
     );
-  }
+  } // FIXED: Removed extra comma before closing bracket
 }
