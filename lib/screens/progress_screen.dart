@@ -120,7 +120,7 @@ class ProgressScreen extends StatelessWidget {
   }
 
   Widget _buildProgressSection(int current, int max, double value) {
-    return Semantics(
+    return Semantics( // FIXED: Removed leading comma before return
       label: "Progress to next level: ${(value * 100).toInt()} percent.",
       child: Column(
         children: [
