@@ -52,14 +52,18 @@ class _AiScreenState extends State<AiScreen> {
   }
 
   void _addGreeting() {
-    _messages.add(_Message(text: _greetings[_persona]!, isUser: false));
+    setState(() {
+      _messages.add(_Message(text: _greetings[_persona]!, isUser: false));
+    });
   }
 
   String _getLocalResponse(String query) {
     final q = query.toLowerCase();
+    // Safely expanding verses
     final verses = kChapters.expand((c) => c.verses).toList();
 
-    // Logic for responses
+    if (verses.isEmpty) return "Keep seeking truth. (Gita 9.27)";
+
     if (q.contains('karma') || q.contains('action') || q.contains('duty')) {
       final verse = verses.firstWhere((v) => v.id == '2.47', orElse: () => verses.first);
       return _buildResponse("The essence of karma yoga is acting without attachment.", verse.id);
@@ -80,27 +84,36 @@ class _AiScreenState extends State<AiScreen> {
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
+    
     _controller.clear();
     setState(() {
       _messages.add(_Message(text: text, isUser: true));
       _thinking = true;
     });
+    
     _scrollToBottom();
     context.read<AppState>().addXp(2);
+    
     await Future.delayed(const Duration(milliseconds: 800));
     final response = _getLocalResponse(text);
-    setState(() {
-      _messages.add(_Message(text: response, isUser: false));
-      _thinking = false;
-    });
-    _scrollToBottom();
+    
+    if (mounted) {
+      setState(() {
+        _messages.add(_Message(text: response, isUser: false));
+        _thinking = false;
+      });
+      _scrollToBottom();
+    }
   }
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
-        _scrollController.animateTo(_scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300), 
+          curve: Curves.easeOut
+        );
       }
     });
   }
@@ -123,7 +136,7 @@ class _AiScreenState extends State<AiScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // Standard background
+      backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text(_personaNames[_persona]!, style: GoogleFonts.cinzel()),
       ),
@@ -135,7 +148,9 @@ class _AiScreenState extends State<AiScreen> {
               controller: _scrollController,
               itemCount: _messages.length + (_thinking ? 1 : 0),
               itemBuilder: (context, index) {
-                if (_thinking && index == _messages.length) return _buildThinkingBubble();
+                if (_thinking && index == _messages.length) {
+                  return _buildThinkingBubble();
+                }
                 return _buildMessageBubble(_messages[index]);
               },
             ),
@@ -157,14 +172,15 @@ class _AiScreenState extends State<AiScreen> {
   }
 
   Widget _buildMessageBubble(_Message msg) {
-    return ListTile(
-      title: Align(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Align(
         alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
         child: Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: msg.isUser ? Colors.orange : Colors.blueGrey,
-            borderRadius: BorderRadius.circular(10),
+            color: msg.isUser ? Colors.orange.shade800 : Colors.blueGrey.shade900,
+            borderRadius: BorderRadius.circular(15),
           ),
           child: Text(msg.text, style: const TextStyle(color: Colors.white)),
         ),
@@ -172,15 +188,27 @@ class _AiScreenState extends State<AiScreen> {
     );
   }
 
-  Widget _buildThinkingBubble() => const Text("Thinking...", style: TextStyle(color: Colors.grey));
+  Widget _buildThinkingBubble() => const Padding(
+    padding: EdgeInsets.all(8.0),
+    child: Text("Thinking...", style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
+  );
 
   Widget _buildInputBar() {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Row(
         children: [
-          Expanded(child: TextField(controller: _controller, decoration: const InputDecoration(hintText: "Ask..."))),
-          IconButton(icon: const Icon(Icons.send), onPressed: _sendMessage),
+          Expanded(
+            child: TextField(
+              controller: _controller, 
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                hintText: "Ask...",
+                hintStyle: TextStyle(color: Colors.white54),
+              )
+            )
+          ),
+          IconButton(icon: const Icon(Icons.send, color: Colors.orange), onPressed: _sendMessage),
         ],
       ),
     );
