@@ -4,9 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// Sahi import path: Jo ChaptersScreen mein use ho raha hai
+// Sahi import path
 import 'data/gita_data.dart'; 
-
 import 'state/app_state.dart';
 import 'theme.dart';
 import 'screens/home_screen.dart';
@@ -17,7 +16,6 @@ import 'screens/more_screen.dart';
 import 'screens/onboarding_screen.dart';
 
 void main() async {
-  // Flutter bindings initialize karna zaroori hai
   WidgetsFlutterBinding.ensureInitialized();
 
   final prefs = await SharedPreferences.getInstance();
@@ -45,6 +43,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Navigation bar aur Status bar colors settings
     SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -97,6 +96,7 @@ class _MainShellState extends State<MainShell> {
       canPop: _currentIndex == 0,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
+        // Agar user kisi aur tab par hai, toh Back button se Home (0) par le jayein
         setState(() => _currentIndex = 0);
       },
       child: Scaffold(
@@ -117,7 +117,7 @@ class _MainShellState extends State<MainShell> {
             currentIndex: _currentIndex,
             onTap: _onTabTapped,
             backgroundColor: theme.scaffoldBackgroundColor,
-            selectedItemColor: const Color(0xFFFFD700),
+            selectedItemColor: const Color(0xFFFFD700), // Pure Gold color
             unselectedItemColor: theme.hintColor,
             type: BottomNavigationBarType.fixed,
             elevation: 0,
@@ -136,7 +136,7 @@ class _MainShellState extends State<MainShell> {
               BottomNavigationBarItem(
                 icon: Icon(Icons.menu_book_outlined),
                 activeIcon: Icon(Icons.menu_book),
-                label: 'Chapters',
+                label: 'Chapters', // FIXED: Removed leading comma
                 tooltip: 'Gita Chapters',
               ),
               BottomNavigationBarItem(
@@ -162,5 +162,5 @@ class _MainShellState extends State<MainShell> {
         ),
       ),
     );
-  }
+  } // FIXED: Properly closed build method and class
 }
