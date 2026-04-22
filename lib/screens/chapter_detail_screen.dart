@@ -12,7 +12,6 @@ class ChapterDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Fixed: Handling empty state properly
     if (chapter.name.isEmpty) {
       return const _ErrorStateWidget(message: "Chapter data not found");
     }
@@ -142,7 +141,6 @@ class _VerseList extends StatelessWidget {
       );
     }
 
-    // 2. Fixed: shrinkWrap combined with NeverScrollableScrollPhysics for Slivers
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -168,7 +166,6 @@ class _VerseRowItem extends StatelessWidget {
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        // 3. Fixed: Field names to match typical Gita API models (verse vs number)
         leading: CircleAvatar(
           backgroundColor: kBg,
           child: Text(
@@ -177,7 +174,7 @@ class _VerseRowItem extends StatelessWidget {
           ),
         ),
         title: Text(
-          verse.translation.split('\n').first, // Clean preview
+          verse.translation.split('\n').first,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: GoogleFonts.crimsonText(color: kText, fontSize: 16),
@@ -202,7 +199,6 @@ class _CompletionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 4. Fixed: Removed syntax error (trailing comma and bracket issue)
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
@@ -227,7 +223,6 @@ class _CompletionButton extends StatelessWidget {
   }
 }
 
-// 5. Fixed: Added missing Stats and Summary Widget Logic
 class _ChapterStats extends StatelessWidget {
   final Chapter chapter;
   const _ChapterStats({required this.chapter});
@@ -252,6 +247,7 @@ class _ChapterStats extends StatelessWidget {
         border: Border.all(color: kGoldDim.withOpacity(0.3)),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: kGold, size: 14),
           const SizedBox(width: 8),
