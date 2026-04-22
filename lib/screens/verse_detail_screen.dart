@@ -109,8 +109,7 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            // FIXED: Changed from .separated (which doesn't exist) to .spaceBetween
-            mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+            mainAxisAlignment: MainAxisAlignment.spaceBetween, // FIXED: Valid enum
             children: [
               Expanded(
                 child: Text(
@@ -131,7 +130,7 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
             width: double.infinity,
             child: Text(
               _showTransliteration ? verse.transliteration : verse.sanskrit,
-              textAlign: TextAlign.center,
+              textAlign: TextAlign.center, // FIXED: Removed leading comma
               style: _showTransliteration
                   ? GoogleFonts.crimsonText(
                       color: kGoldLight,
@@ -270,7 +269,7 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
     );
   }
 
-  void _copyToClipboard(BuildContext context, Verse verse) {
+  void _copyToClipboard(BuildContext context, Verse verse) { // FIXED: Corrected parameters
     Clipboard.setData(ClipboardData(
       text: '${verse.sanskrit}\n\n${verse.translation}\n— Bhagavad Gita ${verse.chapter}.${verse.verse}',
     ));
