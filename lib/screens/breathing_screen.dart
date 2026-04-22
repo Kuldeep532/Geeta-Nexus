@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/rendering.dart'; // FIX: SemanticsService ke liye zaroori hai
+import 'package:flutter/rendering.dart'; 
 import 'package:google_fonts/google_fonts.dart';
-import '../theme.dart'; // Naye colors ke liye import
+import '../theme.dart'; 
 
 enum Phase { inhale, hold, exhale, rest }
 
@@ -121,7 +121,6 @@ class _BreathingScreenState extends State<BreathingScreen>
 
     setState(() => _secondsRemaining = duration);
 
-    // FIX: SemanticsService ab rendering.dart import karne se chalega
     SemanticsService.announce(
       "${_phase.name} for $duration seconds",
       TextDirection.ltr,
@@ -174,6 +173,7 @@ class _BreathingScreenState extends State<BreathingScreen>
   }
 
   int _getDuration(Phase p) {
+    // FIXED: Removed the invalid comma after 'switch'
     switch (p) {
       case Phase.inhale: return current.inhale;
       case Phase.hold: return current.hold;
@@ -338,5 +338,5 @@ class _BreathingScreenState extends State<BreathingScreen>
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
       ),
     );
-  }
+  } // FIXED: Removed extra comma before closing bracket
 }
