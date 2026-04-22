@@ -22,43 +22,55 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Agar kWisdomCards khali hai toh error se bachne ke liye check
+    final int itemCount = kWisdomCards.isNotEmpty ? kWisdomCards.length : 0;
+
     return Scaffold(
       backgroundColor: kBg,
       appBar: AppBar(
         title: const Text('Wisdom Cards'),
         leading: const BackButton(),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
       body: Column(
         children: [
           const SizedBox(height: 12),
-          Text(
+          const Text(
             'Swipe to explore divine teachings',
-            style: const TextStyle(color: kTextDim, fontSize: 13),
+            style: TextStyle(color: kTextDim, fontSize: 13),
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: PageView.builder(
-              controller: _pageController,
-              itemCount: kWisdomCards.length,
-              onPageChanged: (i) => setState(() => _currentPage = i),
-              itemBuilder: (ctx, i) {
-                final card = kWisdomCards[i];
-                final colors = _cardColors[i % _cardColors.length];
-                return AnimatedScale(
-                  scale: _currentPage == i ? 1.0 : 0.93,
-                  duration: const Duration(milliseconds: 300),
-                  child: _buildCard(card, colors),
-                );
-              },
-            ),
+            child: itemCount > 0 
+              ? PageView.builder(
+                  controller: _pageController,
+                  itemCount: itemCount,
+                  onPageChanged: (i) => setState(() => _currentPage = i),
+                  itemBuilder: (ctx, i) {
+                    final card = kWisdomCards[i];
+                    final colors = _cardColors[i % _cardColors.length];
+                    
+                    // Accessibility: Card number batane ke liye
+                    return Semantics(
+                      label: "Card ${i + 1} of $itemCount",
+                      child: AnimatedScale(
+                        scale: _currentPage == i ? 1.0 : 0.93,
+                        duration: const Duration(milliseconds: 300),
+                        child: _buildCard(card, colors),
+                      ),
+                    );
+                  },
+                )
+              : const Center(child: CircularProgressIndicator(color: kGold)),
           ),
           const SizedBox(height: 20),
-          // Semantic label for accessibility
+          // Page Indicator Section
           Semantics(
-            label: "Page indicator",
+            label: "Page indicator. Current page is ${_currentPage + 1}",
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(kWisdomCards.length, (i) {
+              children: List.generate(itemCount, (i) {
                 return AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   margin: const EdgeInsets.symmetric(horizontal: 3),
@@ -99,7 +111,6 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: kGoldDim.withOpacity(0.4), width: 1.5),
       ),
-      // Use SingleChildScrollView to prevent overflow on smaller screens
       child: SingleChildScrollView(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -112,30 +123,36 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
                 border: Border.all(color: kGoldDim),
               ),
               child: Text(
-                'Gita ${card["verse"]!}',
+                'Gita ${card["verse"] ?? ""}',
                 style: GoogleFonts.cinzel(
-                    color: kGold, fontSize: 12, letterSpacing: 0.5),
+                   color: kGold, 
+                   fontSize: 12, 
+                   letterSpacing: 0.5,
+                ),
               ),
             ),
             const SizedBox(height: 24),
             Text(
-              card['title']!,
+              card['title'] ?? "",
               style: GoogleFonts.cinzel(
                 color: kGold,
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1,
               ),
-              textAlign: TextAlign.center, // Fixed misplaced comma
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
-            Text(
-              '❝',
-              style: TextStyle(color: kGoldDim.withOpacity(0.5), fontSize: 40),
+            // Accessibility: Is symbol ko hide kiya gaya hai
+            const ExcludeSemantics(
+              child: Text(
+                '❝',
+                style: TextStyle(color: kGoldDim, fontSize: 40),
+              ),
             ),
             const SizedBox(height: 8),
             Text(
-              card['wisdom']!,
+              card['wisdom'] ?? "",
               style: GoogleFonts.crimsonText(
                 color: kText,
                 fontSize: 17,
@@ -145,12 +162,14 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            const Divider(color: kDivider),
+            const ExcludeSemantics(child: Divider(color: kDivider)),
             const SizedBox(height: 12),
-            const Icon(Icons.auto_awesome, color: kGoldDim, size: 20),
+            const ExcludeSemantics(
+              child: Icon(Icons.auto_awesome, color: kGoldDim, size: 20),
+            ),
           ],
         ),
       ),
     );
-  } // Fixed syntax error (removed leading comma)
+  }
 }
