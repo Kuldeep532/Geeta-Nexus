@@ -3,6 +3,7 @@ import 'package:csv/csv.dart';
 import '../models/models.dart';
 
 List<Chapter> kChapters = [];
+List<Verse> allVerses = []; 
 
 Future<void> loadGitaData() async {
   try {
@@ -14,13 +15,14 @@ Future<void> loadGitaData() async {
     }
 
     Map<int, List<Verse>> chapterVersesMap = {};
+    allVerses.clear(); 
 
     for (var row in listData) {
       if (row.length < 8) continue;
 
-      int chapterNum = int.parse(row[1].toString());
+      final int chapterNum = int.parse(row[1].toString());
       
-      Verse verse = Verse(
+      final verse = Verse(
         id: row[0].toString(),
         chapter: chapterNum,
         verse: int.parse(row[2].toString()),
@@ -32,6 +34,7 @@ Future<void> loadGitaData() async {
       );
 
       chapterVersesMap.putIfAbsent(chapterNum, () => []).add(verse);
+      allVerses.add(verse); 
     }
 
     kChapters = chapterVersesMap.entries.map((entry) {
@@ -49,8 +52,19 @@ Future<void> loadGitaData() async {
     kChapters.sort((a, b) => a.number.compareTo(b.number));
     
   } catch (e) {
-    print("Error: $e");
+    debugPrint("Error loading Gita data: $e");
   }
+}
+
+List<Verse> searchVerses(String query) {
+  if (query.isEmpty) return [];
+  final lowercaseQuery = query.toLowerCase();
+  
+  return allVerses.where((v) {
+    return v.translation.toLowerCase().contains(lowercaseQuery) || 
+           v.meaning.toLowerCase().contains(lowercaseQuery) || 
+           v.verse.toString() == query;
+  }).toList();
 }
 
 String _getChapterName(int num) {
