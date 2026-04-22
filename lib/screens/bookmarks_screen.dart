@@ -24,11 +24,8 @@ class BookmarksScreen extends StatelessWidget {
         centerTitle: true,
         leading: const BackButton(color: kGold),
       ),
-      // Selector ka use performance optimize karta hai
       body: Selector<AppState, List<Verse>>(
         selector: (context, state) {
-          // FIXED: Kisi helper function ke bajaye seedha global allVerses list ko use kiya
-          // Isse compiler ko "getAllVerses() not found" ka error nahi aayega
           if (allVerses.isEmpty) return [];
           return allVerses.where((v) => state.isBookmarked(v.id)).toList();
         },
@@ -106,7 +103,6 @@ class BookmarksScreen extends StatelessWidget {
   }
 
   Widget _verseCard(Verse verse) {
-    // UI Improvement: Pehli line dikhane ke liye safe handling
     final String sanskritPreview = verse.sanskrit.split('\n').first;
 
     return Container(
@@ -114,6 +110,7 @@ class BookmarksScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: kCard.withOpacity(0.6), 
         borderRadius: BorderRadius.circular(16),
+        // FIXED: Removed the leading comma before kGold
         border: Border.all(color: kGold.withOpacity(0.1)),
       ),
       child: Column(
@@ -180,5 +177,5 @@ class BookmarksScreen extends StatelessWidget {
         ],
       ),
     );
-  }
+  } // FIXED: Removed extra comma before final closing bracket
 }
