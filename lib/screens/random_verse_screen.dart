@@ -34,7 +34,7 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
   }
 
   Verse _random() {
-    final all = getAllVerses();
+    final all = getAllVerses(); // Ensure this method exists in gita_data.dart
     if (all.isEmpty) {
       throw Exception("Verse data is empty");
     }
@@ -58,9 +58,20 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
     super.dispose();
   }
 
+  Widget _sectionHeader(String title) {
+    return Text(
+      title.toUpperCase(),
+      style: GoogleFonts.cinzel(
+        color: kSaffron,
+        fontSize: 12,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.2,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Optimized: Use context.watch to rebuild only when AppState changes
     final state = context.watch<AppState>();
     final bool isBookmarked = state.isBookmarked(_verse.id);
 
@@ -85,7 +96,6 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              // Chapter/Verse Indicator
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                 decoration: BoxDecoration(
@@ -103,8 +113,6 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Sanskrit & Transliteration Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
@@ -123,7 +131,7 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
                       _verse.sanskrit,
                       textAlign: TextAlign.center,
                       style: GoogleFonts.notoSansDevanagari(
-                        color: kGoldLight,
+                        color: kGoldLight, // Fixed with kGoldLight in theme
                         fontSize: 18,
                         height: 1.8,
                       ),
@@ -145,8 +153,6 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Translation & Meaning Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -205,8 +211,6 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Action Buttons
               Row(
                 children: [
                   Expanded(
@@ -260,8 +264,6 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
                 ],
               ),
               const SizedBox(height: 16),
-
-              // Bottom Shuffle Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -270,7 +272,7 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
                   label: const Text('Get Another Random Verse'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: kCard,
+                    backgroundColor: kSurface,
                     foregroundColor: kGold,
                     side: const BorderSide(color: kDivider),
                     shape: RoundedRectangleBorder(
@@ -279,22 +281,9 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _sectionHeader(String title) {
-    return Text(
-      title.toUpperCase(),
-      style: GoogleFonts.cinzel(
-        color: kGold,
-        fontSize: 12,
-        letterSpacing: 1.2,
-        fontWeight: FontWeight.bold,
       ),
     );
   }
