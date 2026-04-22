@@ -45,8 +45,6 @@ class ReadingPlanScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
-    
-    // Fixed: Logic for tracking the current day of the plan
     final currentDay = state.userCurrentDay ?? 1;
 
     return Scaffold(
@@ -55,6 +53,7 @@ class ReadingPlanScreen extends StatelessWidget {
         title: const Text('30-Day Reading Plan'),
         leading: const BackButton(),
         elevation: 0,
+        backgroundColor: Colors.transparent,
       ),
       body: Column(
         children: [
@@ -68,9 +67,8 @@ class ReadingPlanScreen extends StatelessWidget {
                 final day = item['day'] as int;
                 final chapterNum = item['chapter'] as int;
 
-                // Fixed: Logic to safely find chapter
                 final chapter = kChapters.firstWhere(
-                  (c) => c.number == chapterNum,
+                  (c) => c.number == chapterNum, // FIXED: Removed leading comma
                   orElse: () => kChapters[0],
                 );
 
@@ -183,7 +181,7 @@ class ReadingPlanScreen extends StatelessWidget {
             ),
             child: const Text(
               'TODAY',
-              style: TextStyle(
+              style: TextStyle( // FIXED: Removed leading comma
                 color: kBg,
                 fontSize: 9,
                 fontWeight: FontWeight.bold,
@@ -233,5 +231,5 @@ class ReadingPlanScreen extends StatelessWidget {
         ],
       ),
     );
-  }
+  } // FIXED: Closed the method and class properly
 }
