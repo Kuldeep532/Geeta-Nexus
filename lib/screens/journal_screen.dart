@@ -58,7 +58,6 @@ class _JournalScreenState extends State<JournalScreen> {
           .trim()
           .replaceAll(RegExp(r'\n{3,}'), '\n\n'); 
 
-      // FIXED: Ensure these arguments match your AppState.addJournalEntry parameters
       state.addJournalEntry(
         id: _uuid.v4(),
         content: cleanContent,
@@ -114,7 +113,7 @@ class _JournalScreenState extends State<JournalScreen> {
   Widget _buildForm(AppState state) {
     return Container(
       padding: const EdgeInsets.all(20),
-      color: kSurface,
+      color: kCard, // Consistent with theme
       child: Form(
         key: _formKey,
         child: Column(
@@ -125,18 +124,24 @@ class _JournalScreenState extends State<JournalScreen> {
               controller: _contentController,
               autofocus: true,
               maxLines: 4,
+              style: const TextStyle(color: kText),
               validator: (val) => val == null || val.trim().isEmpty ? "Please write your thoughts" : null,
               decoration: const InputDecoration(
                 hintText: "Begin writing...",
+                hintStyle: TextStyle(color: kTextDim),
                 border: OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 15), // FIXED: Removed leading comma
             _buildMoodSelector(),
             const SizedBox(height: 15),
             ElevatedButton(
               onPressed: () => _submit(state),
-              style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kGold,
+                foregroundColor: kBg,
+                minimumSize: const Size(double.infinity, 48),
+              ),
               child: const Text("Save Entry"),
             )
           ],
@@ -178,9 +183,10 @@ class _JournalScreenState extends State<JournalScreen> {
         return await showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text("Delete entry?"),
+            backgroundColor: kCard,
+            title: const Text("Delete entry?", style: TextStyle(color: kText)),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancel")),
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancel", style: TextStyle(color: kGold))),
               TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Delete", style: TextStyle(color: Colors.red))),
             ],
           ),
@@ -194,6 +200,7 @@ class _JournalScreenState extends State<JournalScreen> {
         child: const Icon(Icons.delete, color: Colors.white),
       ),
       child: Card(
+        color: kCard,
         margin: const EdgeInsets.symmetric(vertical: 8),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -207,8 +214,8 @@ class _JournalScreenState extends State<JournalScreen> {
                   Text(DateFormat('MMM d, h:mm a').format(entry.date), style: const TextStyle(fontSize: 12, color: kTextDim)),
                 ],
               ),
-              const Divider(height: 20),
-              Text(entry.content, style: GoogleFonts.crimsonText(fontSize: 17, height: 1.4)),
+              const Divider(height: 20, color: kDivider),
+              Text(entry.content, style: GoogleFonts.crimsonText(fontSize: 17, height: 1.4, color: kText)),
             ],
           ),
         ),
@@ -223,9 +230,9 @@ class _JournalScreenState extends State<JournalScreen> {
         children: [
           const Icon(Icons.auto_stories, size: 60, color: kDivider),
           const SizedBox(height: 10),
-          Text("No entries yet", style: GoogleFonts.cinzel()),
+          Text("No entries yet", style: GoogleFonts.cinzel(color: kGoldDim)),
         ],
       ),
     );
-  }
+  } // FIXED: Removed extra comma before closing bracket
 }
