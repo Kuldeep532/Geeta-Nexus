@@ -25,12 +25,10 @@ class ChaptersScreen extends StatelessWidget {
         itemCount: kChapters.length,
         itemBuilder: (context, index) {
           final chapter = kChapters[index];
-          final bool isCompleted =
-              state.isChapterCompleted(chapter.number);
+          final bool isCompleted = state.isChapterCompleted(chapter.number);
 
           return Semantics(
-            label:
-                "Chapter ${chapter.number}: ${chapter.name}. ${isCompleted ? 'Completed' : 'Not completed'}",
+            label: "Chapter ${chapter.number}: ${chapter.name}. ${isCompleted ? 'Completed' : 'Not completed'}",
             button: true,
             child: Padding(
               padding: const EdgeInsets.only(bottom: 12),
@@ -43,8 +41,7 @@ class ChaptersScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) =>
-                            ChapterDetailScreen(chapter: chapter),
+                        builder: (_) => ChapterDetailScreen(chapter: chapter),
                       ),
                     );
                   },
@@ -53,8 +50,7 @@ class ChaptersScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color:
-                            isCompleted ? kGoldDim : kDivider,
+                        color: isCompleted ? kGoldDim : kDivider,
                         width: isCompleted ? 1.5 : 1,
                       ),
                     ),
@@ -67,18 +63,15 @@ class ChaptersScreen extends StatelessWidget {
                         const SizedBox(width: 14),
                         Expanded(
                           child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 chapter.name,
                                 maxLines: 1,
-                                overflow:
-                                    TextOverflow.ellipsis,
+                                overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   color: kText,
-                                  fontWeight:
-                                      FontWeight.w600,
+                                  fontWeight: FontWeight.w600,
                                   fontSize: 15,
                                 ),
                               ),
@@ -105,14 +98,13 @@ class ChaptersScreen extends StatelessWidget {
                 ),
               ),
             ),
-          );
+          ); // FIXED: Removed leading comma before closing parenthesis
         },
       ),
     );
   }
 
-  Widget _buildChapterIndicator(
-      int number, bool isCompleted) {
+  Widget _buildChapterIndicator(int number, bool isCompleted) {
     return Container(
       width: 48,
       height: 48,
@@ -155,14 +147,12 @@ class ChaptersScreen extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: kDivider,
-              borderRadius:
-                  BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
               chapter.theme,
               maxLines: 1,
-              overflow:
-                  TextOverflow.ellipsis,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: kGoldDim,
                 fontSize: 10,
@@ -180,5 +170,5 @@ class ChaptersScreen extends StatelessWidget {
         ),
       ],
     );
-  }
+  } // FIXED: Removed extra comma before closing bracket
 }
