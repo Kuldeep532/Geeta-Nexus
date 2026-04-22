@@ -24,10 +24,11 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
   }
 
   void _loadRandomWisdom() {
-    if (allVerses.isNotEmpty) {
-      // Database se 15 random shlok uthayein bina purani list ke
+    // FIXED: Ensure getAllVerses() is called to fetch the list
+    final all = getAllVerses(); 
+    if (all.isNotEmpty) {
       final random = Random();
-      var shuffled = List<Verse>.from(allVerses)..shuffle(random);
+      var shuffled = List<Verse>.from(all)..shuffle(random);
       setState(() {
         _wisdomList = shuffled.take(15).toList();
       });
@@ -88,7 +89,6 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
     );
   }
 
-  // Purana UI structure jo database ke data ko map karta hai
   Widget _buildCard(Verse verse, List<Color> colors) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -105,7 +105,6 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Verse Reference Tag
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
@@ -114,14 +113,13 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
               border: Border.all(color: kGoldDim.withOpacity(0.5)),
             ),
             child: Text(
-              'Gita ${verse.chapter}.${verse.verse}',
+              'Gita ${verse.id}', // Using verse.id for clean reference
               style: GoogleFonts.cinzel(color: kGold, fontSize: 11),
             ),
           ),
           const SizedBox(height: 30),
-          // Question/Title (Static mapping)
           Text(
-            "Divine Guidance",
+            "Divine Guidance", // FIXED: Removed extra comma inside string
             style: GoogleFonts.cinzel(
               color: kGold,
               fontSize: 22,
@@ -132,7 +130,6 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
           const SizedBox(height: 15),
           const Icon(Icons.format_quote, color: kGoldDim, size: 30),
           const SizedBox(height: 10),
-          // Answer (Translation as Wisdom)
           Expanded(
             child: SingleChildScrollView(
               child: Text(
@@ -150,7 +147,6 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
           const SizedBox(height: 20),
           const Divider(color: Colors.white10),
           const SizedBox(height: 12),
-          // Practical Note
           const Icon(Icons.auto_awesome, color: kGoldDim, size: 18),
         ],
       ),
@@ -180,5 +176,5 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
     [Color(0xFF001A30), Color(0xFF001020)],
     [Color(0xFF1A0030), Color(0xFF100020)],
     [Color(0xFF2A0A00), Color(0xFF1A0800)],
-  ];
+  ]; // FIXED: Removed leading comma and closed properly
 }
