@@ -11,6 +11,8 @@ class Verse {
   // UI Compatibility Getters
   int get number => verse; 
   String get text => translation;
+  // Added to fix potential reference errors in UI screens
+  int get verseNumber => verse; 
 
   const Verse({
     required this.id,
@@ -23,7 +25,6 @@ class Verse {
     required this.keywords,
   });
 
-  // Convert to Map for Database/JSON
   Map<String, dynamic> toMap() => {
         'id': id,
         'chapter': chapter,
@@ -35,7 +36,6 @@ class Verse {
         'keywords': keywords,
       };
 
-  // Create from Map
   factory Verse.fromMap(Map<String, dynamic> m) => Verse(
         id: m['id'] ?? '',
         chapter: m['chapter'] ?? 0,
@@ -44,7 +44,7 @@ class Verse {
         transliteration: m['transliteration'] ?? '',
         translation: m['translation'] ?? '',
         meaning: m['meaning'] ?? '',
-        keywords: List<String>.from(m['keywords'] ?? []),
+        keywords: m['keywords'] != null ? List<String>.from(m['keywords']) : [],
       );
 }
 
@@ -110,12 +110,16 @@ class JournalEntry {
         'date': date.toIso8601String(),
       };
 
-  factory JournalEntry.fromMap(Map<String, dynamic> m) => JournalEntry(
-        id: m['id'] ?? '',
-        content: m['content'] ?? '',
-        mood: m['mood'] ?? '',
-        date: m['date'] != null ? DateTime.parse(m['date']) : DateTime.now(),
-      );
+  factory JournalEntry.fromMap(Map<String, dynamic> m) {
+    return JournalEntry(
+      id: m['id'] ?? '',
+      content: m['content'] ?? '',
+      mood: m['mood'] ?? '',
+      date: m['date'] != null 
+          ? DateTime.tryParse(m['date'].toString()) ?? DateTime.now() 
+          : DateTime.now(),
+    );
+  }
 }
 
 class QuizQuestion {
@@ -140,7 +144,7 @@ class QuizQuestion {
 
   factory QuizQuestion.fromMap(Map<String, dynamic> m) => QuizQuestion(
         question: m['question'] ?? '',
-        options: List<String>.from(m['options'] ?? []),
+        options: m['options'] != null ? List<String>.from(m['options']) : [],
         correctIndex: m['correctIndex'] ?? 0,
         explanation: m['explanation'] ?? '',
       );
