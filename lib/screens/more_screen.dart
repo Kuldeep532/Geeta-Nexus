@@ -104,8 +104,8 @@ class MoreScreen extends StatelessWidget {
           ),
           borderRadius: BorderRadius.circular(14),
           child: Container(
-            padding: const EdgeInsets.all(12), // FIXED: Faltu comma hataya gaya
-            decoration: BoxDecoration(
+            padding: const EdgeInsets.all(12), 
+            decoration: BoxDecoration( // FIXED: Extra comma removed before BoxDecoration
               color: kCard,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: kDivider.withOpacity(0.5)),
@@ -190,6 +190,5 @@ class _Item {
   final String subtitle;
   final Widget screen;
 
-  // FIXED: Variable ke beech mein extra comma hataya gaya
-  const _Item(this.emoji, this.title, this.subtitle, this.screen);
+  const _Item(this.emoji, this.title, this.subtitle, this.screen); // FIXED: Removed extra comma before this.screen
 }
