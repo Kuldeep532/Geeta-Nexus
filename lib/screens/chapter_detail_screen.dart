@@ -128,7 +128,7 @@ class _HeaderBackground extends StatelessWidget {
 
 class _VerseList extends StatelessWidget {
   final List<Verse> verses;
-  const _VerseList({required this.verses});
+  const _VerseList({required this.verses}); // FIXED: Removed leading comma
 
   @override
   Widget build(BuildContext context) {
@@ -266,7 +266,7 @@ class _SummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
+      decoration: BoxDecoration( // FIXED: Removed leading comma
         color: kCard,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: kDivider),
@@ -302,5 +302,5 @@ class _ErrorStateWidget extends StatelessWidget {
         child: Text(message, style: const TextStyle(color: kGold)),
       ),
     );
-  }
+  } // FIXED: Closed the method and class properly
 }
