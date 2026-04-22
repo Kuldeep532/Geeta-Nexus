@@ -3,11 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-const kGold = Color(0xFFD4AF37);
-const kBg = Color(0xFF121212);
-const kCard = Color(0xFF1E1E1E);
-const kTextDim = Colors.white54;
-
 enum Phase { inhale, hold, exhale, rest }
 
 class BreathPattern {
@@ -103,8 +98,6 @@ class _BreathingScreenState extends State<BreathingScreen>
     super.dispose();
   }
 
-  // ---------------- CORE LOGIC ----------------
-
   void start() {
     _running = true;
     _cycles = 0;
@@ -131,13 +124,11 @@ class _BreathingScreenState extends State<BreathingScreen>
 
     setState(() => _secondsRemaining = duration);
 
-    // 🔊 Screen reader announcement
     SemanticsService.announce(
       "${_phase.name} for $duration seconds",
       TextDirection.ltr,
     );
 
-    // 🎯 Animation sync
     _controller.duration = Duration(seconds: duration);
 
     if (_phase == Phase.inhale) {
@@ -148,7 +139,6 @@ class _BreathingScreenState extends State<BreathingScreen>
       _controller.stop();
     }
 
-    // 🔁 Timer + haptics sync
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (!mounted || !_running) {
@@ -156,7 +146,7 @@ class _BreathingScreenState extends State<BreathingScreen>
         return;
       }
 
-      HapticFeedback.selectionClick(); // every second
+      HapticFeedback.selectionClick();
 
       if (_secondsRemaining > 1) {
         setState(() => _secondsRemaining--);
@@ -170,7 +160,7 @@ class _BreathingScreenState extends State<BreathingScreen>
   void _nextPhase() {
     if (!mounted || !_running) return;
 
-    HapticFeedback.mediumImpact(); // phase change
+    HapticFeedback.mediumImpact();
 
     setState(() {
       switch (_phase) {
@@ -205,8 +195,6 @@ class _BreathingScreenState extends State<BreathingScreen>
         return current.rest;
     }
   }
-
-  // ---------------- UI ----------------
 
   @override
   Widget build(BuildContext context) {
@@ -310,7 +298,7 @@ class _BreathingScreenState extends State<BreathingScreen>
           final selected = _selectedKey == e.key;
 
           return IgnorePointer(
-            ignoring: _running, // 🔒 disable during session
+            ignoring: _running,
             child: GestureDetector(
               onTap: () {
                 setState(() => _selectedKey = e.key);
