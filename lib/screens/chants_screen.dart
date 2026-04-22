@@ -1,8 +1,14 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart'; // FIX 1: Required for SemanticsService
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../theme.dart';
+import 'package:http/http.dart' as http;
+
+// FIX 2: Ensure these files only export what is needed. 
+// If kGold/kBg are defined in theme.dart, do not import other screens here.
+import '../theme.dart'; 
 import '../state/app_state.dart';
 
 const int kMalaBeads = 108;
@@ -16,271 +22,198 @@ class ChantsScreen extends StatefulWidget {
 
 class _ChantsScreenState extends State<ChantsScreen> {
   int _selectedMantraIndex = 0;
+  late Future<List<Map<String, String>>> _mantraFuture;
 
-  final List<Map<String, String>> _mantras = const [
+  final List<Map<String, String>> _localMantras = const [
     {
-      'name': 'Hare Krishna Mahamantra',
-      'mantra':
-          'Hare Krishna Hare Krishna\nKrishna Krishna Hare Hare\nHare Rama Hare Rama\nRama Rama Hare Hare',
-      'meaning':
-          'A call to the divine energies of Vishnu. Purifies the mind and awakens devotion.',
-    },
-    {
-      'name': 'Om Namah Shivaya',
-      'mantra': 'Om Namah Shivaya',
-      'meaning':
-          'I bow to the inner self. Invokes universal consciousness.',
-    },
-    {
-      'name': 'Gayatri Mantra',
-      'mantra':
-          'Om Bhur Bhuvah Svah\nTat Savitur Varenyam\nBhargo Devasya Dhimahi\nDhiyo Yo Nah Prachodayat',
-      'meaning':
-          'Meditating on the divine light to illuminate our intellect.',
-    },
-    {
-      'name': 'So Ham',
-      'mantra': 'So Ham',
-      'meaning':
-          '"I am That" — identifying the individual breath with the cosmic soul.',
+      'name': 'Mahamantra',
+      'mantra': 'Hare Krishna Hare Krishna Krishna Krishna Hare Hare, Hare Rama Hare Rama Rama Rama Hare Hare',
+      'meaning': 'A prayer to the Divine Energy for universal peace and consciousness.'
     },
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _mantraFuture = _fetchOnlineMantras();
+  }
+
+  Future<List<Map<String, String>>> _fetchOnlineMantras() async {
+    final url = Uri.parse('https://havyaka-rest-api-gaonkarbhai.vercel.app/api/v1/mantras?limit=100');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final List<dynamic> list = data['mantras'];
+        return list.map((m) => {
+          'name': m['name']?.toString() ?? 'Unknown',
+          'mantra': m['shloka']?.toString() ?? '',
+          'meaning': (m['purpose'] ?? m['benefits'] ?? 'Sacred Chant').toString(),
+        }).toList();
+      }
+    } catch (e) {
+      debugPrint("API Error: $e");
+    }
+    return _localMantras;
+  }
+
+  void _incrementChant(AppState state) {
+    HapticFeedback.mediumImpact();
+    state.incrementJapa();
+  }
+
+  void _resetChant(AppState state) {
+    HapticFeedback.heavyImpact();
+    state.resetJapa();
+    // This now works because of the rendering.dart import
+    SemanticsService.announce("Counter reset to zero", Directionality.of(context));
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final japa = context.select<AppState, int>((s) => s.japaCount);
+    final appState = context.watch<AppState>();
+    final japa = appState.japaCount;
     final rounds = japa ~/ kMalaBeads;
     final inRound = japa % kMalaBeads;
-    final mantra = _mantras[_selectedMantraIndex];
 
     return Scaffold(
       backgroundColor: kBg,
       appBar: AppBar(
         title: const Text('Japa & Chants'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: "Reset Japa",
+            onPressed: () => _resetChant(appState),
+          ),
+        ],
       ),
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: constraints.maxHeight,
-                ),
-                child: IntrinsicHeight( // ✅ FIXED: layout ambiguity
+      body: FutureBuilder<List<Map<String, String>>>(
+        future: _mantraFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(color: kGold));
+          }
+
+          final mantras = snapshot.data ?? _localMantras;
+          if (_selectedMantraIndex >= mantras.length) _selectedMantraIndex = 0;
+          final mantra = mantras[_selectedMantraIndex];
+
+          return SafeArea(
+            child: LayoutBuilder(builder: (context, constraints) {
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: ConstrainedBox(
+                  // Ensure the screen is scrollable but handles space well
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight - 32),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween, // Distribute space
                     children: [
-                      _buildSelector(),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _buildSelector(mantras),
+                          const SizedBox(height: 20),
+                          _buildMantraCard(mantra),
+                        ],
+                      ),
                       const SizedBox(height: 20),
-                      _buildMantraCard(mantra),
-                      const SizedBox(height: 24),
-                      _buildCounter(japa, rounds),
-                      const SizedBox(height: 24),
-                      _buildProgress(inRound),
+                      Column(
+                        children: [
+                          _buildCounterDisplay(japa, rounds),
+                          const SizedBox(height: 24),
+                          _buildProgress(inRound),
+                          const SizedBox(height: 32),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () => _incrementChant(appState),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: kGold,
+                                foregroundColor: Colors.black,
+                                padding: const EdgeInsets.symmetric(vertical: 20),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: const Text('ADD CHANT', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
-              ),
-            );
-          },
-        ),
+              );
+            }),
+          );
+        },
       ),
     );
   }
 
-  // ---------------- SELECTOR ----------------
-
-  Widget _buildSelector() {
+  Widget _buildSelector(List<Map<String, String>> mantras) {
     return Wrap(
       spacing: 8,
-      runSpacing: 8,
-      children: List.generate(_mantras.length, (i) {
-        final selected = i == _selectedMantraIndex;
-
+      children: List.generate(mantras.length, (i) {
         return ChoiceChip(
-          label: Text(
-            _mantras[i]['name']!,
-            overflow: TextOverflow.ellipsis,
-          ),
-          selected: selected,
-          onSelected: (_) {
-            setState(() => _selectedMantraIndex = i);
-
-            SemanticsService.announce(
-              '${_mantras[i]['name']} selected',
-              Directionality.of(context),
-            );
+          label: Text(mantras[i]['name']!),
+          selected: _selectedMantraIndex == i,
+          onSelected: (selected) {
+            if (selected) {
+              setState(() => _selectedMantraIndex = i);
+              SemanticsService.announce("Selected ${mantras[i]['name']}", Directionality.of(context));
+            }
           },
         );
       }),
     );
   }
 
-  // ---------------- MANTRA CARD ----------------
-
   Widget _buildMantraCard(Map<String, String> m) {
     return Semantics(
       container: true,
-      label: '${m['name']}. ${m['meaning']}',
+      label: "Current Mantra: ${m['name']}",
       child: Container(
         padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: kCard,
-          borderRadius: BorderRadius.circular(16),
-        ),
+        decoration: BoxDecoration(color: kCard, borderRadius: BorderRadius.circular(16)),
         child: Column(
           children: [
-            Text(
-              m['name']!,
-              style: GoogleFonts.cinzel(
-                color: kGold,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              m['mantra']!,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.notoSans(
-                fontSize: 18,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              m['meaning']!,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.crimsonText(
-                fontSize: 14,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
+            Text(m['name']!, style: GoogleFonts.cinzel(color: kGold, fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 15),
+            Text(m['mantra']!, textAlign: TextAlign.center, style: GoogleFonts.notoSans(fontSize: 20)),
+            const SizedBox(height: 15),
+            Text(m['meaning']!, textAlign: TextAlign.center, style: GoogleFonts.crimsonText(fontSize: 16, fontStyle: FontStyle.italic)),
           ],
         ),
       ),
     );
   }
 
-  // ---------------- COUNTER ----------------
+  Widget _buildCounterDisplay(int total, int rounds) {
+    return Semantics(
+      label: "Total count $total, Rounds finished $rounds",
+      child: Column(
+        children: [
+          Text('$total', style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: kGold)),
+          Text('Total Chants', style: TextStyle(color: kGold.withOpacity(0.7))),
+          const SizedBox(height: 8),
+          Text('Rounds: $rounds', style: const TextStyle(fontSize: 18, color: Colors.white70)),
+        ],
+      ),
+    );
+  }
 
-  Widget _buildCounter(int japa, int rounds) {
+  Widget _buildProgress(int count) {
     return Column(
       children: [
-        Semantics(
-          liveRegion: true,
-          label: 'Total chants $japa',
-          child: Text(
-            '$japa',
-            style: GoogleFonts.cinzel(
-              fontSize: 48,
-              fontWeight: FontWeight.bold,
-              color: kGold,
-            ),
-          ),
+        LinearProgressIndicator(
+          value: count / kMalaBeads,
+          backgroundColor: kCard,
+          color: kGold,
+          minHeight: 12,
         ),
         const SizedBox(height: 8),
-        Text('$rounds malas completed'),
-        const SizedBox(height: 20),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 16,
-          runSpacing: 12,
-          children: [
-            _button(
-              icon: Icons.add,
-              label: 'Add chant',
-              onTap: () {
-                final state = context.read<AppState>(); // ✅ moved here
-                HapticFeedback.mediumImpact();
-
-                state.incrementJapa();
-
-                final updated = state.japaCount; // ✅ FIXED state lag
-
-                SemanticsService.announce(
-                  'Chant added. Total $updated',
-                  Directionality.of(context),
-                );
-              },
-            ),
-            _button(
-              icon: Icons.refresh,
-              label: 'Reset counter',
-              onTap: () {
-                final state = context.read<AppState>(); // ✅ moved here
-                _resetDialog(state);
-              },
-            ),
-          ],
-        ),
+        Text('$count / $kMalaBeads Beads', style: const TextStyle(fontWeight: FontWeight.bold, color: kGold)),
       ],
-    );
-  }
-
-  // ---------------- BUTTON ----------------
-
-  Widget _button({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return SizedBox(
-      width: 72,
-      height: 72,
-      child: ElevatedButton(
-        onPressed: onTap,
-        child: Icon(icon, semanticLabel: label),
-      ),
-    );
-  }
-
-  // ---------------- RESET ----------------
-
-  void _resetDialog(AppState state) {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Reset Counter?'),
-        content: const Text('This will clear your count.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              state.resetJapa();
-              Navigator.pop(context);
-
-              SemanticsService.announce(
-                'Counter reset to zero',
-                Directionality.of(context),
-              );
-            },
-            child: const Text('Reset'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ---------------- PROGRESS ----------------
-
-  Widget _buildProgress(int inRound) {
-    return Semantics(
-      label: 'Progress $inRound of $kMalaBeads',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Progress: $inRound / $kMalaBeads'),
-          const SizedBox(height: 8),
-          LinearProgressIndicator(
-            value: inRound / kMalaBeads,
-          ),
-        ],
-      ),
     );
   }
 }
