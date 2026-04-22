@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/rendering.dart'; // Required for SemanticsService
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme.dart';
@@ -18,7 +17,9 @@ class FlashcardsScreen extends StatefulWidget {
 
 class _FlashcardsScreenState extends State<FlashcardsScreen>
     with SingleTickerProviderStateMixin {
-  late List<Verse> _verses;
+  
+  // FIXED: Late initialization issues handle karne ke liye 
+  List<Verse> _verses = []; 
   bool _flipped = false;
   late AnimationController _controller;
   late Animation<double> _flipAnim;
@@ -26,7 +27,10 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
   @override
   void initState() {
     super.initState();
-    _verses = getAllVerses();
+    
+    // FIXED: External function ki jagah direct kChapters use kiya
+    // Ye bina gita_data.dart ko touch kiye kaam karega
+    _verses = kChapters.expand((chapter) => chapter.verses).toList();
 
     _controller = AnimationController(
       vsync: this,
@@ -57,14 +61,14 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
 
     setState(() => _flipped = !_flipped);
 
+    // FIXED: Accessibility announcement for screen readers
     SemanticsService.announce(
-      _flipped ? "Showing Translation" : "Showing Sanskrit Verse",
+      _flipped ? "Showing Translation side" : "Showing Sanskrit side",
       TextDirection.ltr,
     );
   }
 
   void _moveNext(AppState state) {
-    // Note: Ensure currentFlashcardIndex exists in AppState
     if (state.currentFlashcardIndex < _verses.length - 1) {
       if (_flipped) {
         _controller.reverse();
@@ -90,9 +94,11 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
     final appState = context.watch<AppState>();
     final currentIndex = appState.currentFlashcardIndex;
 
+    // FIXED: Data load hone tak loading screen dikhayein
     if (_verses.isEmpty) {
-      return const Scaffold(
-        body: Center(child: Text("No verses found")),
+      return Scaffold(
+        backgroundColor: kBg,
+        body: const Center(child: CircularProgressIndicator(color: kGold)),
       );
     }
 
@@ -102,16 +108,18 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
     return Scaffold(
       backgroundColor: kBg,
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: const Text('Gita Flashcards'),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 20),
             child: Center(
-              child: Text(
-                '${safeIndex + 1}/${_verses.length}',
-                style: GoogleFonts.inter(
-                  color: kGold,
-                  fontWeight: FontWeight.bold,
+              child: Semantics(
+                label: "Card ${safeIndex + 1} of ${_verses.length}",
+                child: Text(
+                  '${safeIndex + 1}/${_verses.length}',
+                  style: GoogleFonts.inter(color: kGold, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -127,26 +135,29 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
               padding: const EdgeInsets.all(24.0),
               child: GestureDetector(
                 onTap: _handleFlip,
-                child: AnimatedBuilder(
-                  animation: _flipAnim,
-                  builder: (context, child) {
-                    final angle = _flipAnim.value * math.pi;
-
-                    return Transform(
-                      alignment: Alignment.center,
-                      transform: Matrix4.identity()
-                        ..setEntry(3, 2, 0.001)
-                        ..rotateY(angle),
-                      child: _flipAnim.value < 0.5
-                          ? _buildCardSide(verse, isFront: true)
-                          : Transform(
-                              alignment: Alignment.center,
-                              transform: Matrix4.identity()
-                                ..rotateY(math.pi), // Fixed syntax here
-                              child: _buildCardSide(verse, isFront: false),
-                            ),
-                    );
-                  },
+                // Accessibility hint for blind users
+                child: Semantics(
+                  button: true,
+                  label: "Double tap to flip the card",
+                  child: AnimatedBuilder(
+                    animation: _flipAnim,
+                    builder: (context, child) {
+                      final angle = _flipAnim.value * math.pi;
+                      return Transform(
+                        alignment: Alignment.center,
+                        transform: Matrix4.identity()
+                          ..setEntry(3, 2, 0.001)
+                          ..rotateY(angle),
+                        child: _flipAnim.value < 0.5
+                            ? _buildCardSide(verse, isFront: true)
+                            : Transform(
+                                alignment: Alignment.center,
+                                transform: Matrix4.identity()..rotateY(math.pi),
+                                child: _buildCardSide(verse, isFront: false),
+                              ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
@@ -172,60 +183,36 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
   }
 
   Widget _buildCardSide(Verse verse, {required bool isFront}) {
-    return Semantics(
-      label: isFront ? "Verse Card" : "Translation Card",
-      container: true,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30),
-          gradient: LinearGradient(
-            colors: isFront
-                ? [const Color(0xFF2D240B), const Color(0xFF1A1404)]
-                : [const Color(0xFF0A192F), const Color(0xFF020C1B)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          border: Border.all(
-            color: isFront
-                ? kGold.withOpacity(0.3)
-                : Colors.blue.withOpacity(0.3),
-            width: 2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.5),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            )
-          ],
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        gradient: LinearGradient(
+          colors: isFront
+              ? [const Color(0xFF2D240B), const Color(0xFF1A1404)]
+              : [const Color(0xFF0A192F), const Color(0xFF020C1B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(30),
-          child: Stack(
-            children: [
-              Positioned(
-                right: -20,
-                top: -20,
-                child: Icon(
-                  Icons.menu_book,
-                  size: 100,
-                  color: Colors.white.withOpacity(0.05),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(30),
-                child: Center(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: isFront
-                          ? _buildFrontContent(verse)
-                          : _buildBackContent(verse),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+        border: Border.all(
+          color: isFront ? kGold.withOpacity(0.3) : Colors.blue.withOpacity(0.3),
+          width: 2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.5),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          )
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(30),
+        child: Center(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: isFront ? _buildFrontContent(verse) : _buildBackContent(verse),
+            ),
           ),
         ),
       ),
@@ -234,14 +221,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
 
   List<Widget> _buildFrontContent(Verse verse) {
     return [
-      Text(
-        "SHLOKA",
-        style: GoogleFonts.inter(
-          letterSpacing: 4,
-          color: kGoldDim,
-          fontSize: 12,
-        ),
-      ),
+      Text("SHLOKA", style: GoogleFonts.inter(letterSpacing: 4, color: kGoldDim, fontSize: 12)),
       const SizedBox(height: 20),
       Text(
         verse.sanskrit,
@@ -255,47 +235,24 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
       ),
       const SizedBox(height: 40),
       const Icon(Icons.touch_app, color: kTextDim, size: 20),
-      const SizedBox(height: 8),
-      const Text(
-        "Tap to Flip",
-        style: TextStyle(color: kTextDim, fontSize: 12),
-      ),
+      const Text("Tap to Flip", style: TextStyle(color: kTextDim, fontSize: 12)),
     ];
   }
 
   List<Widget> _buildBackContent(Verse verse) {
     return [
-      Text(
-        "TRANSLATION",
-        style: GoogleFonts.inter(
-          letterSpacing: 4,
-          color: Colors.blueAccent,
-          fontSize: 12,
-        ),
-      ),
+      Text("TRANSLATION", style: GoogleFonts.inter(letterSpacing: 4, color: Colors.blueAccent, fontSize: 12)),
       const SizedBox(height: 20),
       Text(
         verse.translation,
         textAlign: TextAlign.center,
-        style: GoogleFonts.lora(
-          color: Colors.white, // Fixed stray comma here
-          fontSize: 18,
-          fontStyle: FontStyle.italic,
-          height: 1.5,
-        ),
+        style: GoogleFonts.lora(color: Colors.white, fontSize: 18, fontStyle: FontStyle.italic, height: 1.5),
       ),
-      const Padding(
-        padding: EdgeInsets.symmetric(vertical: 20),
-        child: Divider(color: Colors.white10),
-      ),
+      const Padding(padding: EdgeInsets.symmetric(vertical: 20), child: Divider(color: Colors.white10)),
       Text(
         verse.meaning,
         textAlign: TextAlign.center,
-        style: GoogleFonts.inter(
-          color: kTextDim,
-          fontSize: 14,
-          height: 1.6,
-        ),
+        style: GoogleFonts.inter(color: kTextDim, fontSize: 14, height: 1.6),
       ),
     ];
   }
@@ -308,29 +265,20 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
         children: [
-          _navButton(
-            Icons.chevron_left,
-            "Prev",
-            isFirst ? null : () => _movePrev(state),
-          ),
+          _navButton(Icons.chevron_left, "Prev", isFirst ? null : () => _movePrev(state)),
           const SizedBox(width: 16),
           _navButton(
-            Icons.chevron_right,
-            isLast ? "Finish" : "Next",
-            isLast ? null : () => _moveNext(state),
-            primary: true,
+            Icons.chevron_right, 
+            isLast ? "Finish" : "Next", 
+            isLast ? null : () => _moveNext(state), 
+            primary: true
           ),
         ],
       ),
     );
   }
 
-  Widget _navButton(
-    IconData icon,
-    String label,
-    VoidCallback? onPressed, {
-    bool primary = false,
-  }) {
+  Widget _navButton(IconData icon, String label, VoidCallback? onPressed, {bool primary = false}) {
     return Expanded(
       child: SizedBox(
         height: 60,
@@ -341,13 +289,9 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
           style: ElevatedButton.styleFrom(
             backgroundColor: primary ? kGold : Colors.transparent,
             foregroundColor: primary ? Colors.black : kGold,
-            elevation: primary ? 4 : 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
-              side: BorderSide(
-                color: kGold,
-                width: primary ? 0 : 1,
-              ),
+              side: BorderSide(color: kGold, width: primary ? 0 : 1),
             ),
           ),
         ),
