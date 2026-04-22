@@ -28,7 +28,7 @@ dependencies:
   dynamic_color: ^1.7.0
 
   # Data & Utilities
-  intl: ^0.20.2
+  intl: ^0.19.0
   uuid: ^4.4.0
   collection: ^1.18.0
   dartz: ^0.10.1
@@ -49,11 +49,11 @@ dependencies:
   # Hardware & Media
   permission_handler: ^11.3.1
   url_launcher: ^6.3.0
-  share_plus: ^9.0.0
+  share_plus: ^10.0.0         # Updated to resolve 'web' package conflict
   device_info_plus: ^10.1.2
   image_picker: ^1.1.2
   audioplayers: ^5.2.1
-  speech_to_text: ^7.0.0      # Updated version to fix 'Registrar' and Android compatibility
+  speech_to_text: ^7.0.0      
   flutter_tts: ^4.0.2
   wakelock_plus: ^1.2.8
   vibration: ^2.0.1
