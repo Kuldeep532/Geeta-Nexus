@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart'; // FIX: Isse debugPrint ka error solve hoga
+import 'package:flutter/foundation.dart'; 
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:csv/csv.dart';
 import '../models/models.dart';
@@ -6,119 +6,143 @@ import '../models/models.dart';
 List<Chapter> kChapters = [];
 List<Verse> allVerses = []; 
 
-// FIX: Is helper function ko add karne se RandomVerseScreen ka error chala jayega
+/// Sare verses ko fetch karne ka helper function
 List<Verse> getAllVerses() {
   return allVerses;
 }
 
 Future<void> loadGitaData() async {
   try {
+    // Assets se CSV load karna
     final String rawData = await rootBundle.loadString("assets/images/Bhagwad_Gita.csv");
+    
+    // CSV to List conversion
     List<List<dynamic>> listData = const CsvToListConverter().convert(rawData);
 
-    if (listData.isNotEmpty) {
-      listData.removeAt(0);
+    if (listData.isEmpty) {
+      debugPrint("CSV File is empty!");
+      return;
     }
+
+    // Header row ko hatana
+    listData.removeAt(0);
 
     Map<int, List<Verse>> chapterVersesMap = {};
     allVerses.clear(); 
 
     for (var row in listData) {
-      if (row.length < 8) continue;
+      // Row length check taaki range error na aaye
+      if (row.length < 7) continue;
 
-      final int chapterNum = int.parse(row[1].toString());
+      // Safe integer parsing
+      final int chapterNum = int.tryParse(row[1].toString()) ?? 0;
+      final int verseNum = int.tryParse(row[2].toString()) ?? 0;
       
+      if (chapterNum == 0) continue; // Invalid data skip karein
+
       final verse = Verse(
         id: row[0].toString(),
         chapter: chapterNum,
-        verse: int.parse(row[2].toString()),
-        sanskrit: row[3].toString(),
-        transliteration: row[4].toString(),
-        translation: row[6].toString(), 
-        meaning: row[5].toString(),     
-        keywords: [], 
+        verse: verseNum,
+        sanskrit: row[3]?.toString() ?? "",
+        transliteration: row[4]?.toString() ?? "",
+        translation: row[6]?.toString() ?? "", 
+        meaning: row[5]?.toString() ?? "",     
+        keywords: _generateKeywords(row[6].toString()), // Dynamic keywords
       );
 
       chapterVersesMap.putIfAbsent(chapterNum, () => []).add(verse);
       allVerses.add(verse); 
     }
 
+    // Chapters list create karna aur map karna
     kChapters = chapterVersesMap.entries.map((entry) {
+      final int chNum = entry.key;
       return Chapter(
-        number: entry.key,
-        name: _getChapterName(entry.key),
-        nameSanskrit: _getSanskritName(entry.key),
-        summary: "Chapter ${entry.key}",
+        number: chNum,
+        name: _getChapterName(chNum),
+        nameSanskrit: _getSanskritName(chNum),
+        summary: _getChapterSummary(chNum), // Added meaningful summaries
         verseCount: entry.value.length,
-        theme: "Spiritual Wisdom",
+        theme: _getChapterTheme(chNum), // Added themes
         verses: entry.value,
       );
     }).toList();
 
+    // Chapters ko sequence mein lagana
     kChapters.sort((a, b) => a.number.compareTo(b.number));
     
-    debugPrint("Gita data loaded: ${allVerses.length} verses"); // Ab error nahi aayega
+    debugPrint("✅ Gita Data Loaded: ${allVerses.length} verses in ${kChapters.length} chapters.");
 
-  } catch (e) {
-    debugPrint("Error loading Gita data: $e"); // FIX: foundation.dart ki wajah se ab ye chalega
+  } catch (e, stacktrace) {
+    debugPrint("❌ Fatal Error loading Gita data: $e");
+    debugPrint(stacktrace.toString());
   }
 }
 
+/// Simple keyword generator for better search
+List<String> _generateKeywords(String text) {
+  if (text.isEmpty) return [];
+  final commonWords = {'the', 'and', 'is', 'of', 'in', 'it', 'you', 'that'};
+  return text.toLowerCase()
+      .replaceAll(RegExp(r'[^\w\s]'), '')
+      .split(' ')
+      .where((w) => w.length > 3 && !commonWords.contains(w))
+      .take(5)
+      .toList();
+}
+
+/// Search logic updated to search in Sanskrit too
 List<Verse> searchVerses(String query) {
   if (query.isEmpty) return [];
-  final lowercaseQuery = query.toLowerCase();
+  final q = query.toLowerCase();
   
   return allVerses.where((v) {
-    return v.translation.toLowerCase().contains(lowercaseQuery) || 
-           v.meaning.toLowerCase().contains(lowercaseQuery) || 
-           v.verse.toString() == query;
+    return v.translation.toLowerCase().contains(q) || 
+           v.meaning.toLowerCase().contains(q) || 
+           v.transliteration.toLowerCase().contains(q) ||
+           v.id == query;
   }).toList();
+}
+
+// --- Metadata Helpers ---
+
+String _getChapterTheme(int num) {
+  if (num <= 6) return "Karma & Selfless Action";
+  if (num <= 12) return "Bhakti & Devotion";
+  return "Jnana & Liberation";
+}
+
+String _getChapterSummary(int num) {
+  const summaries = {
+    1: "Arjuna faces a moral crisis on the battlefield of Kurukshetra.",
+    2: "Krishna teaches the immortality of the soul and the duty of a warrior.",
+    3: "The path of selfless action without attachment to results.",
+    // Baaki summaries yahan add kar sakte hain...
+  };
+  return summaries[num] ?? "Deep spiritual insights from Chapter $num.";
 }
 
 String _getChapterName(int num) {
   const names = {
-    1: "Arjuna's Dilemma",
-    2: "The Path of Knowledge",
-    3: "Karma Yoga",
-    4: "Wisdom of Action",
-    5: "Renunciation",
-    6: "Meditation",
-    7: "Knowledge & Realization",
-    8: "The Eternal",
-    9: "Royal Secret",
-    10: "Divine Splendor",
-    11: "Cosmic Form",
-    12: "Devotion",
-    13: "Field & Knower",
-    14: "Three Gunas",
-    15: "Ultimate Person",
-    16: "Divine & Demonic",
-    17: "Three Folds of Faith",
-    18: "Liberation"
+    1: "Arjuna's Dilemma", 2: "Path of Knowledge", 3: "Karma Yoga",
+    4: "Wisdom of Action", 5: "Renunciation", 6: "Meditation",
+    7: "Realization", 8: "The Eternal", 9: "Royal Secret",
+    10: "Divine Splendor", 11: "Cosmic Form", 12: "Devotion",
+    13: "Field & Knower", 14: "Three Gunas", 15: "Ultimate Person",
+    16: "Divine & Demonic", 17: "Faith", 18: "Liberation"
   };
   return names[num] ?? "Chapter $num";
 }
 
 String _getSanskritName(int num) {
   const namesSanskrit = {
-    1: "Arjuna Vishada Yoga",
-    2: "Sankhya Yoga",
-    3: "Karma Yoga",
-    4: "Jnana Karma Sanyasa Yoga",
-    5: "Karma Sanyasa Yoga",
-    6: "Dhyana Yoga",
-    7: "Jnana Vijnana Yoga",
-    8: "Akshara Brahma Yoga",
-    9: "Raja Vidya Raja Guhya Yoga",
-    10: "Vibhuti Vistara Yoga",
-    11: "Vishwarupa Darshana Yoga",
-    12: "Bhakti Yoga",
-    13: "Kshetra Kshetrajna Vibhaga Yoga",
-    14: "Gunatraya Vibhaga Yoga",
-    15: "Purushottama Yoga",
-    16: "Daivasura Sampad Vibhaga Yoga",
-    17: "Shraddhatraya Vibhaga Yoga",
-    18: "Moksha Sanyasa Yoga",
+    1: "Arjuna Vishada Yoga", 2: "Sankhya Yoga", 3: "Karma Yoga",
+    4: "Jnana Karma Sanyasa Yoga", 5: "Karma Sanyasa Yoga", 6: "Dhyana Yoga",
+    7: "Jnana Vijnana Yoga", 8: "Akshara Brahma Yoga", 9: "Raja Vidya Yoga",
+    10: "Vibhuti Yoga", 11: "Vishwarupa Darshana Yoga", 12: "Bhakti Yoga",
+    13: "Kshetra Kshetrajna Yoga", 14: "Gunatraya Vibhaga Yoga", 15: "Purushottama Yoga",
+    16: "Daivasura Sampad Yoga", 17: "Shraddhatraya Vibhaga Yoga", 18: "Moksha Sanyasa Yoga",
   };
   return namesSanskrit[num] ?? "";
 }
