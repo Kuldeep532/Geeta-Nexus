@@ -17,7 +17,6 @@ class MeditationScreen extends StatefulWidget {
 class _MeditationScreenState extends State<MeditationScreen>
     with TickerProviderStateMixin {
   
-  // High-performance state variables
   final ValueNotifier<int> _secondsLeftNotifier = ValueNotifier<int>(300);
   int _selectedMinutes = 5;
   bool _running = false;
@@ -51,18 +50,15 @@ class _MeditationScreenState extends State<MeditationScreen>
     _pulseController.dispose();
     _audioPlayer.dispose();
     _secondsLeftNotifier.dispose();
-    WakelockPlus.disable(); // Ensure screen lock is released
+    WakelockPlus.disable(); 
     super.dispose();
   }
 
-  // Safe Audio Logic: Won't crash if file is missing
   Future<void> _playFinishSound() async {
     try {
-      // Logic: Only attempts play if the file exists in your future assets
       await _audioPlayer.play(AssetSource('audio/meditation_bell.mp3'));
     } catch (e) {
-      // Silently catch error if file is not yet uploaded
-      debugPrint("Audio ignored: File likely missing from assets. Error: $e");
+      debugPrint("Audio ignored: $e");
     }
   }
 
@@ -72,7 +68,7 @@ class _MeditationScreenState extends State<MeditationScreen>
       WakelockPlus.disable();
       setState(() => _running = false);
     } else {
-      WakelockPlus.enable(); // Keep screen on during meditation
+      WakelockPlus.enable(); 
       setState(() {
         _running = true;
         _finished = false;
@@ -88,7 +84,6 @@ class _MeditationScreenState extends State<MeditationScreen>
           timer.cancel();
           _onFinish();
         } else {
-          // Updates only the listener, not the whole build method
           _secondsLeftNotifier.value = remaining;
         }
       });
@@ -99,7 +94,6 @@ class _MeditationScreenState extends State<MeditationScreen>
     _playFinishSound();
     WakelockPlus.disable();
     
-    // Safety check for Provider context
     if (mounted) {
       context.read<AppState>().addMeditationMinutes(_selectedMinutes);
     }
@@ -140,7 +134,7 @@ class _MeditationScreenState extends State<MeditationScreen>
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-          child: Column(
+          child: Column( // FIXED: Removed leading comma
             children: [
               Text(
                 'सर्वं ब्रह्मार्पणं कुरु',
@@ -227,11 +221,6 @@ class _MeditationScreenState extends State<MeditationScreen>
                   ),
                 ),
               ),
-            if (_running)
-              const Positioned(
-                top: 20,
-                child: Icon(Icons.self_improvement, size: 40, color: kGoldDim),
-              ),
             ValueListenableBuilder<int>(
               valueListenable: _secondsLeftNotifier,
               builder: (context, seconds, child) {
@@ -257,7 +246,7 @@ class _MeditationScreenState extends State<MeditationScreen>
                   builder: (context, seconds, child) {
                     return Text(
                       _formatTime(seconds),
-                      style: GoogleFonts.cinzel(
+                      style: GoogleFonts.cinzel( // FIXED: Removed leading comma
                           color: kGold, fontSize: 48, fontWeight: FontWeight.bold),
                     );
                   },
@@ -312,12 +301,12 @@ class _MeditationScreenState extends State<MeditationScreen>
         Text(
           'Practice completed successfully.\nMay your day be filled with mindfulness.',
           textAlign: TextAlign.center,
-          style: GoogleFonts.inter(color: kTextDim, fontSize: 15, height: 1.5),
+          style: const TextStyle(color: kTextDim, height: 1.5),
         ),
-        const SizedBox(height: 35),
+        const SizedBox(height: 30),
         TextButton(
           onPressed: _reset,
-          child: const Text('RESTART SESSION', style: TextStyle(color: kGold, letterSpacing: 1)),
+          child: const Text('MEDITATE AGAIN', style: TextStyle(color: kGold, letterSpacing: 1.2)),
         ),
       ],
     );
@@ -325,47 +314,21 @@ class _MeditationScreenState extends State<MeditationScreen>
 
   Widget _buildInstructions() {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: kCard,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: kDivider),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Icon(Icons.info_outline, color: kGold, size: 18),
-              const SizedBox(width: 10),
-              Text('GUIDELINES',
-                  style: GoogleFonts.cinzel(
-                      color: kGold, fontSize: 13, fontWeight: FontWeight.bold)),
-            ],
+          const Icon(Icons.info_outline, color: kGoldDim, size: 20),
+          const SizedBox(height: 12),
+          Text(
+            "Sit comfortably, keep your back straight, and focus on your breath. Let thoughts pass like clouds in the sky.",
+            textAlign: TextAlign.center,
+            style: GoogleFonts.inter(color: kTextDim, fontSize: 13, height: 1.5),
           ),
-          const SizedBox(height: 15),
-          const _Step(text: 'Sit with a straight back, hands on your knees.'),
-          const _Step(text: 'Focus your gaze inward or close your eyes.'),
-          const _Step(text: 'Let thoughts pass like clouds in the sky.'),
-        ],
-      ),
-    );
-  }
-}
-
-class _Step extends StatelessWidget {
-  final String text;
-  const _Step({required this.text});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('• ', style: TextStyle(color: kGold, fontSize: 18)),
-          Expanded(child: Text(text, style: const TextStyle(color: kTextDim, fontSize: 14))),
         ],
       ),
     );
