@@ -20,7 +20,6 @@ class _QuizScreenState extends State<QuizScreen> {
   int _score = 0;
   bool _finished = false;
 
-  // The local data source - Update your questions here
   final List<QuizQuestion> _questions = [
     const QuizQuestion(
       question: "What does 'karmaṇy evādhikāras te' mean?",
@@ -33,7 +32,6 @@ class _QuizScreenState extends State<QuizScreen> {
       correctIndex: 1,
       explanation: "Gita 2.47 teaches that we have the right to act, but not to the fruits. This is the essence of karma yoga.",
     ),
-    // Add more questions following this structure
   ];
 
   QuizQuestion get current => _questions[_currentIndex];
@@ -49,14 +47,12 @@ class _QuizScreenState extends State<QuizScreen> {
       if (isCorrect) _score++;
     });
 
-    // Tactile feedback for accessibility
     if (isCorrect) {
       HapticFeedback.lightImpact();
     } else {
       HapticFeedback.vibrate();
     }
 
-    // Sync with Global State
     Provider.of<AppState>(context, listen: false).recordQuizAnswer(isCorrect);
   }
 
@@ -89,6 +85,7 @@ class _QuizScreenState extends State<QuizScreen> {
       appBar: AppBar(
         title: Text('Gita Wisdom Quiz', style: GoogleFonts.cinzel()),
         elevation: 0,
+        backgroundColor: Colors.transparent,
       ),
       body: _finished ? _buildResults() : _buildQuestion(),
     );
@@ -139,7 +136,7 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  Widget _buildQuestionCard() {
+  Widget _buildQuestionCard() { // FIXED: Removed leading comma
     return Semantics(
       header: true,
       child: Container(
@@ -249,11 +246,16 @@ class _QuizScreenState extends State<QuizScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          const Text('🕉️', style: TextStyle(fontSize: 60)),
+          const SizedBox(height: 20),
           Text('Quiz Complete', style: GoogleFonts.cinzel(fontSize: 28, color: kGold)),
           const SizedBox(height: 8),
           Text('Score: $_score / ${_questions.length}', style: const TextStyle(color: kText, fontSize: 18)),
           const SizedBox(height: 40),
-          TextButton(onPressed: _restart, child: const Text('RESTART QUIZ', style: TextStyle(color: kGold))),
+          TextButton(
+            onPressed: _restart, 
+            child: const Text('RESTART QUIZ', style: TextStyle(color: kGold, letterSpacing: 1.2))
+          ),
         ],
       ),
     );
