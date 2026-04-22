@@ -1,7 +1,9 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import '../data/gita_data.dart';
+import '../models/models.dart';
 
 class WisdomCardsScreen extends StatefulWidget {
   const WisdomCardsScreen({super.key});
@@ -13,6 +15,24 @@ class WisdomCardsScreen extends StatefulWidget {
 class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
   final PageController _pageController = PageController(viewportFraction: 0.88);
   int _currentPage = 0;
+  List<Verse> _wisdomList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRandomWisdom();
+  }
+
+  void _loadRandomWisdom() {
+    if (allVerses.isNotEmpty) {
+      // Database se 15 random shlok uthayein bina purani list ke
+      final random = Random();
+      var shuffled = List<Verse>.from(allVerses)..shuffle(random);
+      setState(() {
+        _wisdomList = shuffled.take(15).toList();
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -22,23 +42,23 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Agar kWisdomCards khali hai toh error se bachne ke liye check
-    final int itemCount = kWisdomCards.isNotEmpty ? kWisdomCards.length : 0;
+    final int itemCount = _wisdomList.length;
 
     return Scaffold(
       backgroundColor: kBg,
       appBar: AppBar(
-        title: const Text('Wisdom Cards'),
-        leading: const BackButton(),
+        title: Text('WISDOM CARDS', style: GoogleFonts.cinzel(color: kGold, fontSize: 16)),
+        centerTitle: true,
+        leading: const BackButton(color: kGold),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: Column(
         children: [
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           const Text(
             'Swipe to explore divine teachings',
-            style: TextStyle(color: kTextDim, fontSize: 13),
+            style: TextStyle(color: kTextDim, fontSize: 12),
           ),
           const SizedBox(height: 16),
           Expanded(
@@ -48,57 +68,28 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
                   itemCount: itemCount,
                   onPageChanged: (i) => setState(() => _currentPage = i),
                   itemBuilder: (ctx, i) {
-                    final card = kWisdomCards[i];
+                    final verse = _wisdomList[i];
                     final colors = _cardColors[i % _cardColors.length];
                     
-                    // Accessibility: Card number batane ke liye
-                    return Semantics(
-                      label: "Card ${i + 1} of $itemCount",
-                      child: AnimatedScale(
-                        scale: _currentPage == i ? 1.0 : 0.93,
-                        duration: const Duration(milliseconds: 300),
-                        child: _buildCard(card, colors),
-                      ),
+                    return AnimatedScale(
+                      scale: _currentPage == i ? 1.0 : 0.93,
+                      duration: const Duration(milliseconds: 300),
+                      child: _buildCard(verse, colors),
                     );
                   },
                 )
               : const Center(child: CircularProgressIndicator(color: kGold)),
           ),
           const SizedBox(height: 20),
-          // Page Indicator Section
-          Semantics(
-            label: "Page indicator. Current page is ${_currentPage + 1}",
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(itemCount, (i) {
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: _currentPage == i ? 16 : 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: _currentPage == i ? kGold : kDivider,
-                    borderRadius: BorderRadius.circular(3),
-                  ),
-                );
-              }),
-            ),
-          ),
+          _buildIndicator(itemCount),
           const SizedBox(height: 24),
         ],
       ),
     );
   }
 
-  static const _cardColors = [
-    [Color(0xFF2A1F00), Color(0xFF1A1500)],
-    [Color(0xFF001A30), Color(0xFF001020)],
-    [Color(0xFF1A0030), Color(0xFF100020)],
-    [Color(0xFF001A10), Color(0xFF001008)],
-    [Color(0xFF2A0A00), Color(0xFF1A0800)],
-  ];
-
-  Widget _buildCard(Map<String, String> card, List<Color> colors) {
+  // Purana UI structure jo database ke data ko map karta hai
+  Widget _buildCard(Verse verse, List<Color> colors) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       padding: const EdgeInsets.all(28),
@@ -109,67 +100,85 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
           colors: colors,
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: kGoldDim.withOpacity(0.4), width: 1.5),
+        border: Border.all(color: kGoldDim.withOpacity(0.3)),
       ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: kGold.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: kGoldDim),
-              ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Verse Reference Tag
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: kGold.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: kGoldDim.withOpacity(0.5)),
+            ),
+            child: Text(
+              'Gita ${verse.chapter}.${verse.verse}',
+              style: GoogleFonts.cinzel(color: kGold, fontSize: 11),
+            ),
+          ),
+          const SizedBox(height: 30),
+          // Question/Title (Static mapping)
+          Text(
+            "Divine Guidance",
+            style: GoogleFonts.cinzel(
+              color: kGold,
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 15),
+          const Icon(Icons.format_quote, color: kGoldDim, size: 30),
+          const SizedBox(height: 10),
+          // Answer (Translation as Wisdom)
+          Expanded(
+            child: SingleChildScrollView(
               child: Text(
-                'Gita ${card["verse"] ?? ""}',
-                style: GoogleFonts.cinzel(
-                   color: kGold, 
-                   fontSize: 12, 
-                   letterSpacing: 0.5,
+                verse.translation,
+                style: GoogleFonts.crimsonText(
+                  color: kText,
+                  fontSize: 18,
+                  height: 1.5,
+                  fontStyle: FontStyle.italic,
                 ),
+                textAlign: TextAlign.center,
               ),
             ),
-            const SizedBox(height: 24),
-            Text(
-              card['title'] ?? "",
-              style: GoogleFonts.cinzel(
-                color: kGold,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            // Accessibility: Is symbol ko hide kiya gaya hai
-            const ExcludeSemantics(
-              child: Text(
-                '❝',
-                style: TextStyle(color: kGoldDim, fontSize: 40),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              card['wisdom'] ?? "",
-              style: GoogleFonts.crimsonText(
-                color: kText,
-                fontSize: 17,
-                height: 1.8,
-                fontStyle: FontStyle.italic,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            const ExcludeSemantics(child: Divider(color: kDivider)),
-            const SizedBox(height: 12),
-            const ExcludeSemantics(
-              child: Icon(Icons.auto_awesome, color: kGoldDim, size: 20),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 20),
+          const Divider(color: Colors.white10),
+          const SizedBox(height: 12),
+          // Practical Note
+          const Icon(Icons.auto_awesome, color: kGoldDim, size: 18),
+        ],
       ),
     );
   }
+
+  Widget _buildIndicator(int count) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(count, (i) {
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          margin: const EdgeInsets.symmetric(horizontal: 3),
+          width: _currentPage == i ? 16 : 6,
+          height: 6,
+          decoration: BoxDecoration(
+            color: _currentPage == i ? kGold : kDivider,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        );
+      }),
+    );
+  }
+
+  static const _cardColors = [
+    [Color(0xFF2A1F00), Color(0xFF1A1500)],
+    [Color(0xFF001A30), Color(0xFF001020)],
+    [Color(0xFF1A0030), Color(0xFF100020)],
+    [Color(0xFF2A0A00), Color(0xFF1A0800)],
+  ];
 }
