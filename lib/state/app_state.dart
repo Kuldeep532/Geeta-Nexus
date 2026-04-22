@@ -18,9 +18,10 @@ class AppState extends ChangeNotifier {
   int _currentReadingChapter = 1;
   List<String> _completedChapters = [];
   
-  // NEW: Missing state for Flashcards
+  // Flashcards state
   int _currentFlashcardIndex = 0;
 
+  // Getters
   int get xp => _xp;
   int get streak => _streak;
   DateTime? get lastVisit => _lastVisit;
@@ -34,16 +35,16 @@ class AppState extends ChangeNotifier {
   bool get onboardingComplete => _onboardingComplete;
   int get currentReadingChapter => _currentReadingChapter;
   List<String> get completedChapters => List.unmodifiable(_completedChapters);
-  
-  // NEW: Getter for Flashcard Index
   int get currentFlashcardIndex => _currentFlashcardIndex;
+
+  // FIXED: Added missing getter for reading_plan_screen.dart
+  int? get userCurrentDay => _currentReadingChapter; 
 
   int get level => (_xp / 100).floor() + 1;
   int get xpInLevel => _xp % 100;
   double get quizAccuracy =>
       _totalQuizAnswered == 0 ? 0 : _quizScore / _totalQuizAnswered;
 
-  // NEW: Method to update Flashcard Index
   void updateFlashcardIndex(int index) {
     _currentFlashcardIndex = index;
     notifyListeners();
@@ -110,18 +111,30 @@ class AppState extends ChangeNotifier {
     await prefs.setInt('quizScore', _quizScore);
     await prefs.setInt('totalQuizAnswered', _totalQuizAnswered);
     await prefs.setInt('japaCount', _japaCount);
-    await prefs.setInt('totalMeditationMinutes', _totalMeditationMinutes);
+    
+    // FIXED: Removed the extra comma after await
+    await prefs.setInt('totalMeditationMinutes', _totalMeditationMinutes); 
+    
     await prefs.setBool('onboardingComplete', _onboardingComplete);
     await prefs.setInt('currentReadingChapter', _currentReadingChapter);
     await prefs.setStringList('completedChapters', _completedChapters);
     
-    // Fixed: Removed leading comma
     final journalJson = _journalEntries.map((e) => jsonEncode(e.toMap())).toList();
     await prefs.setStringList('journalEntries', journalJson);
   }
 
-  // ... [keep your existing methods like addXp, toggleBookmark, etc.]
+  // FIXED: Renamed or added alias to match screen call
+  void markChapterComplete(int chapterNumber) {
+    final key = 'chapter_$chapterNumber';
+    if (!_completedChapters.contains(key)) {
+      _completedChapters.add(key);
+      addXp(100);
+      notifyListeners();
+      _save();
+    }
+  }
 
+  // Rest of the existing methods...
   void addXp(int amount) {
     _xp += amount;
     notifyListeners();
@@ -214,16 +227,6 @@ class AppState extends ChangeNotifier {
     _save();
   }
 
-  void completeChapter(int chapterNumber) {
-    final key = 'chapter_$chapterNumber';
-    if (!_completedChapters.contains(key)) {
-      _completedChapters.add(key);
-      addXp(100);
-      notifyListeners();
-      _save();
-    }
-  }
-
   bool isChapterCompleted(int chapterNumber) =>
       _completedChapters.contains('chapter_$chapterNumber');
 
@@ -240,5 +243,5 @@ class AppState extends ChangeNotifier {
     if (_journalEntries.isNotEmpty) result.add({'icon': '✍️', 'name': 'Reflector', 'desc': 'First journal entry'});
     if (_bookmarks.length >= 5) result.add({'icon': '🔖', 'name': 'Collector', 'desc': '5 bookmarks'});
     return result;
-  } // Fixed: Removed leading comma
+  }
 }
