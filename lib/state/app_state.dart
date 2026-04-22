@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
 
 class AppState extends ChangeNotifier {
+  // --- Private State ---
   int _xp = 0;
   int _streak = 0;
   DateTime? _lastVisit;
@@ -17,11 +18,9 @@ class AppState extends ChangeNotifier {
   bool _onboardingComplete = false;
   int _currentReadingChapter = 1;
   List<String> _completedChapters = [];
-  
-  // Flashcards state
   int _currentFlashcardIndex = 0;
 
-  // Getters
+  // --- Getters ---
   int get xp => _xp;
   int get streak => _streak;
   DateTime? get lastVisit => _lastVisit;
@@ -37,13 +36,15 @@ class AppState extends ChangeNotifier {
   List<String> get completedChapters => List.unmodifiable(_completedChapters);
   int get currentFlashcardIndex => _currentFlashcardIndex;
 
-  // FIXED: Added missing getter for reading_plan_screen.dart
+  // Compatibility getter for reading plan screens
   int? get userCurrentDay => _currentReadingChapter; 
 
   int get level => (_xp / 100).floor() + 1;
   int get xpInLevel => _xp % 100;
   double get quizAccuracy =>
       _totalQuizAnswered == 0 ? 0 : _quizScore / _totalQuizAnswered;
+
+  // --- Methods ---
 
   void updateFlashcardIndex(int index) {
     _currentFlashcardIndex = index;
@@ -54,10 +55,12 @@ class AppState extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     _xp = prefs.getInt('xp') ?? 0;
     _streak = prefs.getInt('streak') ?? 0;
+    
     final lastVisitStr = prefs.getString('lastVisit');
     if (lastVisitStr != null) {
       _lastVisit = DateTime.tryParse(lastVisitStr);
     }
+    
     _bookmarks = Set<String>.from(prefs.getStringList('bookmarks') ?? []);
     _readVerses = Set<String>.from(prefs.getStringList('readVerses') ?? []);
     _quizScore = prefs.getInt('quizScore') ?? 0;
@@ -81,14 +84,17 @@ class AppState extends ChangeNotifier {
   void _updateStreak() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
+    
     if (_lastVisit == null) {
       _streak = 1;
       _lastVisit = today;
       _save();
       return;
     }
+    
     final lastDay = DateTime(_lastVisit!.year, _lastVisit!.month, _lastVisit!.day);
     final diff = today.difference(lastDay).inDays;
+    
     if (diff == 0) return;
     if (diff == 1) {
       _streak++;
@@ -103,18 +109,17 @@ class AppState extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('xp', _xp);
     await prefs.setInt('streak', _streak);
+    
     if (_lastVisit != null) {
       await prefs.setString('lastVisit', _lastVisit!.toIso8601String());
     }
+    
     await prefs.setStringList('bookmarks', _bookmarks.toList());
     await prefs.setStringList('readVerses', _readVerses.toList());
     await prefs.setInt('quizScore', _quizScore);
     await prefs.setInt('totalQuizAnswered', _totalQuizAnswered);
     await prefs.setInt('japaCount', _japaCount);
-    
-    // FIXED: Removed the extra comma after await
     await prefs.setInt('totalMeditationMinutes', _totalMeditationMinutes); 
-    
     await prefs.setBool('onboardingComplete', _onboardingComplete);
     await prefs.setInt('currentReadingChapter', _currentReadingChapter);
     await prefs.setStringList('completedChapters', _completedChapters);
@@ -123,7 +128,14 @@ class AppState extends ChangeNotifier {
     await prefs.setStringList('journalEntries', journalJson);
   }
 
-  // FIXED: Renamed or added alias to match screen call
+  // --- Feature Logic ---
+
+  void addXp(int amount) {
+    _xp += amount;
+    notifyListeners();
+    _save();
+  }
+
   void markChapterComplete(int chapterNumber) {
     final key = 'chapter_$chapterNumber';
     if (!_completedChapters.contains(key)) {
@@ -132,13 +144,6 @@ class AppState extends ChangeNotifier {
       notifyListeners();
       _save();
     }
-  }
-
-  // Rest of the existing methods...
-  void addXp(int amount) {
-    _xp += amount;
-    notifyListeners();
-    _save();
   }
 
   void toggleBookmark(String verseId) {
@@ -175,9 +180,10 @@ class AppState extends ChangeNotifier {
     _save();
   }
 
-  void addJournalEntry(String content, String mood) {
+  // MATCH FIX: Changed to named parameters to match UI calls
+  void addJournalEntry({required String content, required String mood, String? id}) {
     final entry = JournalEntry(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: id ?? DateTime.now().millisecondsSinceEpoch.toString(),
       content: content,
       mood: mood,
       date: DateTime.now(),
@@ -230,6 +236,7 @@ class AppState extends ChangeNotifier {
   bool isChapterCompleted(int chapterNumber) =>
       _completedChapters.contains('chapter_$chapterNumber');
 
+  // --- Badges Logic ---
   List<Map<String, dynamic>> get badges {
     final result = <Map<String, dynamic>>[];
     if (_xp >= 50) result.add({'icon': '🌱', 'name': 'Seeker', 'desc': 'Started the journey'});
