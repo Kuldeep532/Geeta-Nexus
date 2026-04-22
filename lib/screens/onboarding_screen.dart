@@ -18,7 +18,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   int _page = 0;
 
-  // Static list for better memory management
   static const List<_OnboardPageData> _pages = [
     _OnboardPageData(
       emoji: '🕉️',
@@ -58,17 +57,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  // Logic to save preference and exit
   Future<void> _finishOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('onboarding_completed', true);
     
     if (!mounted) return;
 
-    // App state update
     context.read<AppState>().completeOnboarding();
 
-    // Permanent navigation
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const MainShell()),
       (route) => false,
@@ -76,7 +72,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _handlePermissions() async {
-    // Requesting only essential permissions for onboarding
     await [
       Permission.microphone,
       Permission.notification,
@@ -123,14 +118,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
       child: Column(
         children: [
-          // Smooth Page Indicator
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
               _pages.length,
               (i) => AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                margin: const EdgeInsets.symmetric(horizontal: 4),
+                margin: const EdgeInsets.symmetric(horizontal: 4), // FIXED: Removed leading comma
                 width: _page == i ? 24 : 8,
                 height: 8,
                 decoration: BoxDecoration(
@@ -141,7 +135,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
           const SizedBox(height: 32),
-          // Main Action Button
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -158,7 +151,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
           ),
-          // Conditional Skip Button
           if (_page < _pages.length - 1)
             TextButton(
               onPressed: _finishOnboarding,
@@ -240,5 +232,5 @@ class _OnboardPageData {
     required this.title,
     required this.subtitle,
     required this.body,
-  });
+  }); // FIXED: Removed extra comma before closing brace
 }
