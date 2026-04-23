@@ -23,7 +23,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             children: const [
               _Heading('Privacy Policy'),
               _Body(
-                'Last updated: 2026\n\nGeeta AI ("we", "our") is committed to protecting your privacy. This policy explains what information we handle when you use the app.',
+                'Last updated: 2026\n\nBhagavad Gita AI is developed by Kuldeep Kumar Yadav at Satvik Technology ("we", "our"). We are committed to protecting your privacy. This policy explains what information we handle when you use the app.',
               ),
               _Heading('Information we store'),
               _Body(
@@ -49,7 +49,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
               ),
               _Heading('Contact'),
               _Body(
-                'For privacy questions, email us at kuldeepky538@gmail.com.',
+                'For privacy questions, email Satvik Technology at kuldeepky538@gmail.com.',
               ),
               SizedBox(height: 30),
             ],

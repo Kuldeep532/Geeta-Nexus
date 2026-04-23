@@ -14,6 +14,7 @@ import 'screens/ai_screen.dart';
 import 'screens/progress_screen.dart';
 import 'screens/more_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/update_checker.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,11 +54,15 @@ class MyApp extends StatelessWidget {
       ),
     );
 
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Bhagavad Gita AI',
-      theme: buildTheme(), 
-      home: showOnboarding ? const OnboardingScreen() : const MainShell(),
+    return Consumer<AppState>(
+      builder: (context, state, _) => MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Bhagavad Gita AI',
+        theme: buildLightTheme(),
+        darkTheme: buildTheme(),
+        themeMode: state.themeMode,
+        home: showOnboarding ? const OnboardingScreen() : const MainShell(),
+      ),
     );
   }
 }
@@ -71,6 +76,14 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      autoCheckForUpdates(context);
+    });
+  }
 
   final List<Widget> _screens = const [
     HomeScreen(),

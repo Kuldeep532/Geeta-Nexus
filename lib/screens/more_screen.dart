@@ -26,6 +26,38 @@ import 'social_links.dart';
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
 
+  Future<void> _pickTheme(BuildContext context, AppState state) async {
+    final picked = await showDialog<ThemeMode>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Choose Theme'),
+        children: [
+          _themeOption(ctx, 'Automatic (system)', '🌓', ThemeMode.system,
+              state.themeMode),
+          _themeOption(ctx, 'Light', '☀️', ThemeMode.light, state.themeMode),
+          _themeOption(ctx, 'Dark', '🌙', ThemeMode.dark, state.themeMode),
+        ],
+      ),
+    );
+    if (picked != null) state.setThemeMode(picked);
+  }
+
+  Widget _themeOption(BuildContext context, String label, String emoji,
+      ThemeMode mode, ThemeMode current) {
+    return SimpleDialogOption(
+      onPressed: () => Navigator.pop(context, mode),
+      child: Row(
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 20)),
+          const SizedBox(width: 12),
+          Expanded(child: Text(label)),
+          if (current == mode)
+            const Icon(Icons.check, color: kGold, size: 20),
+        ],
+      ),
+    );
+  }
+
   Future<void> _editName(BuildContext context, AppState state) async {
     final controller = TextEditingController(text: state.userName);
     final result = await showDialog<String>(
@@ -112,9 +144,23 @@ class MoreScreen extends StatelessWidget {
                 onTap: () => _editName(context, appState),
               ),
               _buildInfoTile(
+                emoji: appState.themeMode == ThemeMode.dark
+                    ? '🌙'
+                    : appState.themeMode == ThemeMode.light
+                        ? '☀️'
+                        : '🌓',
+                title: 'Theme',
+                subtitle: appState.themeMode == ThemeMode.dark
+                    ? 'Dark'
+                    : appState.themeMode == ThemeMode.light
+                        ? 'Light'
+                        : 'Automatic (system)',
+                onTap: () => _pickTheme(context, appState),
+              ),
+              _buildInfoTile(
                 emoji: '⬆️',
                 title: 'Check for Updates',
-                subtitle: 'Latest news & version',
+                subtitle: 'Auto-checks on app open',
                 onTap: () => Navigator.push(context,
                     MaterialPageRoute(builder: (_) => const UpdatesScreen())),
               ),

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
 
@@ -20,9 +21,11 @@ class AppState extends ChangeNotifier {
   List<String> _completedChapters = [];
   int _currentFlashcardIndex = 0;
   String _userName = '';
+  ThemeMode _themeMode = ThemeMode.system;
 
   // --- Getters ---
   String get userName => _userName;
+  ThemeMode get themeMode => _themeMode;
   int get xp => _xp;
   int get streak => _streak;
   DateTime? get lastVisit => _lastVisit;
@@ -73,6 +76,12 @@ class AppState extends ChangeNotifier {
     _currentReadingChapter = prefs.getInt('currentReadingChapter') ?? 1;
     _completedChapters = prefs.getStringList('completedChapters') ?? [];
     _userName = prefs.getString('userName') ?? '';
+    final tm = prefs.getString('themeMode') ?? 'system';
+    _themeMode = tm == 'light'
+        ? ThemeMode.light
+        : tm == 'dark'
+            ? ThemeMode.dark
+            : ThemeMode.system;
 
     final journalJson = prefs.getStringList('journalEntries') ?? [];
     _journalEntries = journalJson
@@ -127,6 +136,13 @@ class AppState extends ChangeNotifier {
     await prefs.setInt('currentReadingChapter', _currentReadingChapter);
     await prefs.setStringList('completedChapters', _completedChapters);
     await prefs.setString('userName', _userName);
+    await prefs.setString(
+        'themeMode',
+        _themeMode == ThemeMode.light
+            ? 'light'
+            : _themeMode == ThemeMode.dark
+                ? 'dark'
+                : 'system');
     
     final journalJson = _journalEntries.map((e) => jsonEncode(e.toMap())).toList();
     await prefs.setStringList('journalEntries', journalJson);
@@ -220,6 +236,12 @@ class AppState extends ChangeNotifier {
   void addMeditationMinutes(int minutes) {
     _totalMeditationMinutes += minutes;
     addXp(minutes * 5);
+    notifyListeners();
+    _save();
+  }
+
+  void setThemeMode(ThemeMode mode) {
+    _themeMode = mode;
     notifyListeners();
     _save();
   }

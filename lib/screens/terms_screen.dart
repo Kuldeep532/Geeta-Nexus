@@ -23,11 +23,11 @@ class TermsScreen extends StatelessWidget {
             children: const [
               _Heading('Terms & Conditions'),
               _Body(
-                'By installing and using Geeta AI, you agree to the following terms.',
+                'Bhagavad Gita AI is owned and operated by Satvik Technology and developed by Kuldeep Kumar Yadav. By installing and using the app, you agree to the following terms.',
               ),
               _Heading('1. Use of the app'),
               _Body(
-                'Geeta AI is provided for personal, non-commercial spiritual and educational use. You agree to use the app respectfully and lawfully.',
+                'Bhagavad Gita AI is provided for personal, non-commercial spiritual and educational use. You agree to use the app respectfully and lawfully.',
               ),
               _Heading('2. Spiritual content'),
               _Body(
@@ -39,11 +39,11 @@ class TermsScreen extends StatelessWidget {
               ),
               _Heading('4. Intellectual property'),
               _Body(
-                'The Bhagavad Gita is in the public domain. App design, code, UI, and original content are the property of the developer.',
+                'The Bhagavad Gita is in the public domain. App design, code, UI, and original content are the property of Satvik Technology.',
               ),
               _Heading('5. Limitation of liability'),
               _Body(
-                'The app is provided "as is" without warranties of any kind. The developer is not liable for any decisions made based on the content of the app.',
+                'The app is provided "as is" without warranties of any kind. Satvik Technology and the developer are not liable for any decisions made based on the content of the app.',
               ),
               _Heading('6. Changes to terms'),
               _Body(

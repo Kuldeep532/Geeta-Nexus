@@ -25,6 +25,67 @@ class AppColors {
   static Color autoDefine(Color? input, {Color fallback = kGold}) => input ?? fallback;
 }
 
+ThemeData buildLightTheme() {
+  const Color lBg = Color(0xFFFFF8E7);
+  const Color lSurface = Color(0xFFFFF1CE);
+  const Color lCard = Color(0xFFFFFAEA);
+  const Color lText = Color(0xFF2A1F00);
+  const Color lTextDim = Color(0xFF7A6A3A);
+  const Color lDivider = Color(0xFFE5D499);
+  return ThemeData(
+    useMaterial3: true,
+    brightness: Brightness.light,
+    scaffoldBackgroundColor: lBg,
+    primaryColor: kGoldDim,
+    colorScheme: const ColorScheme.light(
+      primary: kGoldDim,
+      secondary: kSaffron,
+      surface: lSurface,
+      error: kError,
+      onPrimary: Colors.white,
+      onSurface: lText,
+      outline: lDivider,
+    ),
+    textTheme: GoogleFonts.crimsonTextTextTheme(
+      const TextTheme(
+        displayLarge: TextStyle(color: kGoldDim, fontWeight: FontWeight.bold),
+        bodyLarge: TextStyle(color: lText),
+        bodySmall: TextStyle(color: lTextDim),
+      ),
+    ),
+    appBarTheme: AppBarTheme(
+      backgroundColor: lBg,
+      centerTitle: true,
+      titleTextStyle: GoogleFonts.cinzel(
+        color: kGoldDim,
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
+      ),
+      iconTheme: const IconThemeData(color: kGoldDim),
+    ),
+    cardTheme: CardThemeData(
+      color: lCard,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: const BorderSide(color: lDivider),
+      ),
+    ),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: lSurface,
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: const BorderSide(color: kGoldDim, width: 1.5),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(15),
+        borderSide: const BorderSide(color: lDivider),
+      ),
+    ),
+  );
+}
+
 ThemeData buildTheme() {
   return ThemeData(
     useMaterial3: true,
