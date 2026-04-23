@@ -5,11 +5,12 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("dev.flutter.flutter-gradle-plugin")
+    // Google Services plugin applied here
+    id("com.google.gms.google-services")
 }
 
 val keystorePropertiesFile = rootProject.file("key.properties")
 val keystoreProperties = Properties()
-
 if (keystorePropertiesFile.exists()) {
     FileInputStream(keystorePropertiesFile).use {
         keystoreProperties.load(it)
@@ -18,8 +19,6 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.kuldeep.gitaai"
-
-    // Recommended to explicitly define (Flutter still overrides internally if needed)
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -58,8 +57,8 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
-
-            // Recommended optimizations
+            
+            // Optimizations from your screen
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -72,4 +71,11 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Latest Google & Firebase Services (April 2026 update)
+    implementation(platform("com.google.firebase:firebase-bom:34.12.0"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.android.gms:play-services-auth:21.5.0")
 }
