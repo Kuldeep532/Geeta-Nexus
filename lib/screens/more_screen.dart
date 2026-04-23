@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
-// Removed: import '../constants.dart'; 
-
 import '../state/app_state.dart';
 import 'about_screen.dart';
 import 'affirmations_screen.dart';
@@ -95,9 +93,9 @@ class _MoreScreenState extends State<MoreScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: theme.cardTheme.color ?? theme.colorScheme.surfaceVariant.withOpacity(0.3),
+        color: theme.cardTheme.color, // Uses kCard from theme.dart
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: cs.outlineVariant.withOpacity(0.5)),
+        border: Border.all(color: cs.outline.withOpacity(0.5)),
       ),
       child: Row(
         children: [
@@ -122,7 +120,7 @@ class _MoreScreenState extends State<MoreScreen> {
                 const SizedBox(height: 2),
                 Text(
                   accountEmail,
-                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
+                  style: TextStyle(color: cs.onSurface.withOpacity(0.7), fontSize: 12),
                 ),
               ],
             ),
@@ -132,13 +130,13 @@ class _MoreScreenState extends State<MoreScreen> {
             decoration: BoxDecoration(
               color: appState.isGoogleAccountLinked
                   ? Colors.green.withOpacity(0.18)
-                  : cs.outlineVariant.withOpacity(0.2),
+                  : cs.outline.withOpacity(0.2),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
               appState.isGoogleAccountLinked ? 'Google Linked' : 'Local Profile',
               style: TextStyle(
-                color: appState.isGoogleAccountLinked ? Colors.greenAccent : cs.onSurfaceVariant,
+                color: appState.isGoogleAccountLinked ? cs.secondary : cs.onSurface.withOpacity(0.6),
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
               ),
@@ -157,6 +155,13 @@ class _MoreScreenState extends State<MoreScreen> {
       appBar: AppBar(
         title: const Text('Explore'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.palette_outlined),
+            onPressed: () => _pickTheme(context, appState),
+            tooltip: 'Change Theme',
+          )
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -164,7 +169,7 @@ class _MoreScreenState extends State<MoreScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _sectionTitle('Study & Learn'),
+              _sectionTitle('Study & Learn', context),
               const SizedBox(height: 12),
               _buildGrid(context, [
                 _Item('📚', 'Flashcards', 'Master key verses', const FlashcardsScreen()),
@@ -174,7 +179,7 @@ class _MoreScreenState extends State<MoreScreen> {
                 _Item('🔭', 'Astrology', 'Kundli & horoscope', const AstrologyScreen()),
               ]),
               const SizedBox(height: 24),
-              _sectionTitle('Practice'),
+              _sectionTitle('Practice', context),
               const SizedBox(height: 12),
               _buildGrid(context, [
                 _Item('🧘', 'Meditation', 'Sit in stillness', const MeditationScreen()),
@@ -184,14 +189,19 @@ class _MoreScreenState extends State<MoreScreen> {
                 _Item('🎙️', 'Voice Practice', 'Recite with feedback', const GeetaVoicePracticeScreen()),
               ]),
               const SizedBox(height: 24),
-              _sectionTitle('Profile Account'),
+              _sectionTitle('Profile Account', context),
               const SizedBox(height: 12),
               Semantics(
                 label: 'Profile account details',
                 child: _buildAccountCard(context, appState),
               ),
               const SizedBox(height: 40),
-              Center(child: Text(_appVersionLabel, style: TextStyle(color: Theme.of(context).disabledColor, fontSize: 12))),
+              Center(
+                child: Text(
+                  _appVersionLabel, 
+                  style: TextStyle(color: Theme.of(context).disabledColor, fontSize: 12)
+                ),
+              ),
             ],
           ),
         ),
@@ -199,32 +209,53 @@ class _MoreScreenState extends State<MoreScreen> {
     );
   }
 
-  Widget _sectionTitle(String title) => Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold));
+  Widget _sectionTitle(String title, BuildContext context) => Text(
+    title, 
+    style: TextStyle(
+      fontSize: 18, 
+      fontWeight: FontWeight.bold,
+      color: Theme.of(context).colorScheme.primary, // Dynamically uses kGold
+    ),
+  );
 
   Widget _buildGrid(BuildContext context, List<_Item> items) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 1.5),
+          crossAxisCount: 2, 
+          crossAxisSpacing: 10, 
+          mainAxisSpacing: 10, 
+          childAspectRatio: 1.4,
+      ),
       itemCount: items.length,
       itemBuilder: (context, index) => _buildCard(context, items[index]),
     );
   }
 
   Widget _buildCard(BuildContext context, _Item item) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(12),
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => item.screen)),
-      child: Card(
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(item.emoji, style: const TextStyle(fontSize: 24)),
-              const SizedBox(height: 4),
-              Text(item.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-            ],
+    final theme = Theme.of(context);
+    return Semantics(
+      button: true,
+      label: '${item.title}: ${item.subtitle}',
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => item.screen)),
+        child: Card(
+          // Card color and shape are already defined in your buildTheme()
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(item.emoji, style: const TextStyle(fontSize: 28)),
+                const SizedBox(height: 6),
+                Text(
+                  item.title, 
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                ),
+              ],
+            ),
           ),
         ),
       ),
