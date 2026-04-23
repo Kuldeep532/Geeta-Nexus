@@ -1,0 +1,11 @@
+{
+  "version": "3.5.0",
+  "notes": "Refresh home features, version handling, and profile accessibility updates (commit 0eb1984)",
+  "generatedAt": "2026-04-23T18:58:44.672916+00:00",
+  "url": "https://example.com/latest.apk",
+  "newFeatures": [
+    "Notification stream available in More section",
+    "Admin-only sender mode auto-enabled for kuldeepky538@gmail.com",
+    "Live app version detection"
+  ]
+}

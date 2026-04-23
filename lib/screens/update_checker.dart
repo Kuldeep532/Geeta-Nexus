@@ -2,15 +2,18 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme.dart';
-import 'updates_screen.dart' show kCurrentAppVersion, kDefaultUpdateFeedUrl;
+import 'updates_screen.dart' show kDefaultUpdateFeedUrl;
 
 /// Silently checks the remote update feed and shows a dialog if a newer
 /// version is available. Designed to be called on app start.
 Future<void> autoCheckForUpdates(BuildContext context) async {
   try {
+    final packageInfo = await PackageInfo.fromPlatform();
+    final currentVersion = packageInfo.version;
     final prefs = await SharedPreferences.getInstance();
     final feedUrl = prefs.getString('update_feed_url') ?? kDefaultUpdateFeedUrl;
     final lastSkipped = prefs.getString('update_skipped_version') ?? '';
@@ -26,7 +29,7 @@ Future<void> autoCheckForUpdates(BuildContext context) async {
     final url = (data['url'] ?? data['downloadUrl'] ?? '').toString();
     if (latest.isEmpty) return;
     if (latest == lastSkipped) return;
-    if (!_isNewer(latest, kCurrentAppVersion)) return;
+    if (!_isNewer(latest, currentVersion)) return;
 
     if (!context.mounted) return;
     await showDialog(

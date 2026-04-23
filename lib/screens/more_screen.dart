@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import '../theme.dart';
 import '../state/app_state.dart';
@@ -13,6 +14,7 @@ import 'journal_screen.dart';
 import 'glossary_screen.dart';
 import 'bookmarks_screen.dart';
 import 'flashcards_screen.dart';
+import 'astrology_screen.dart';
 import 'reading_plan_screen.dart';
 import 'wisdom_cards_screen.dart';
 import 'affirmations_screen.dart';
@@ -21,10 +23,32 @@ import 'privacy_policy_screen.dart';
 import 'terms_screen.dart';
 import 'contact_screen.dart';
 import 'updates_screen.dart';
+import 'notifications_screen.dart';
 import 'social_links.dart';
 
-class MoreScreen extends StatelessWidget {
+class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
+
+  @override
+  State<MoreScreen> createState() => _MoreScreenState();
+}
+
+class _MoreScreenState extends State<MoreScreen> {
+  String _appVersionLabel = 'Loading version...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    if (!mounted) return;
+    setState(() {
+      _appVersionLabel = 'v${info.version}+${info.buildNumber}';
+    });
+  }
 
   Future<void> _pickTheme(BuildContext context, AppState state) async {
     final picked = await showDialog<ThemeMode>(
@@ -89,6 +113,72 @@ class MoreScreen extends StatelessWidget {
     }
   }
 
+
+
+  Widget _buildAccountCard(AppState appState) {
+    final accountName = appState.userName.isNotEmpty ? appState.userName : 'Not connected';
+    final accountEmail = appState.userEmail.isNotEmpty
+        ? appState.userEmail
+        : 'Connect Google sign-in from onboarding';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: kCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: kDivider.withOpacity(0.5)),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: kGold.withOpacity(0.14),
+            child: const Icon(Icons.account_circle, color: kGold, size: 28),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  accountName,
+                  style: const TextStyle(
+                    color: kText,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  accountEmail,
+                  style: const TextStyle(color: kTextDim, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: appState.isGoogleAccountLinked
+                  ? Colors.green.withOpacity(0.18)
+                  : kDivider.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              appState.isGoogleAccountLinked ? 'Google Linked' : 'Local Profile',
+              style: TextStyle(
+                color: appState.isGoogleAccountLinked ? Colors.greenAccent : kTextDim,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
@@ -114,6 +204,7 @@ class MoreScreen extends StatelessWidget {
                 _Item('🎯', 'Quiz', 'Test your knowledge', const QuizScreen()),
                 _Item('📖', 'Glossary', 'Sanskrit terms', const GlossaryScreen()),
                 _Item('🗺️', 'Reading Plan', '30-day journey', const ReadingPlanScreen()),
+                _Item('🔭', 'Astrology', 'Kundli & horoscope', const AstrologyScreen()),
               ]),
               const SizedBox(height: 24),
               _sectionTitle('Practice'),
@@ -133,8 +224,21 @@ class MoreScreen extends StatelessWidget {
                 _Item('🔖', 'Bookmarks', 'Saved verses', const BookmarksScreen()),
               ]),
               const SizedBox(height: 24),
+              _sectionTitle('Profile Account'),
+              const SizedBox(height: 12),
+              Semantics(
+                label: 'Profile account details',
+                child: _buildAccountCard(appState),
+              ),
+              const SizedBox(height: 24),
               _sectionTitle('Settings & Info'),
               const SizedBox(height: 12),
+              _buildInfoTile(
+                emoji: 'A',
+                title: 'App Version',
+                subtitle: _appVersionLabel,
+                onTap: () {},
+              ),
               _buildInfoTile(
                 emoji: '👤',
                 title: appState.userName.isEmpty
@@ -163,6 +267,17 @@ class MoreScreen extends StatelessWidget {
                 subtitle: 'Auto-checks on app open',
                 onTap: () => Navigator.push(context,
                     MaterialPageRoute(builder: (_) => const UpdatesScreen())),
+              ),
+              _buildInfoTile(
+                emoji: 'N',
+                title: 'Notifications',
+                subtitle: appState.unreadNotificationCount == 0
+                    ? 'No unread notifications'
+                    : '${appState.unreadNotificationCount} unread notifications',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                ),
               ),
               _buildInfoTile(
                 emoji: '✉️',
