@@ -53,6 +53,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 12),
+                  if (state.userName.isNotEmpty) ...[
+                    Text(
+                      'Namaste, ${state.userName} 🙏',
+                      style: GoogleFonts.cinzel(
+                        color: kGold,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   _buildStreakBar(state),
                   const SizedBox(height: 24),
                   _buildDailyVerse(context, _dailyVerse),

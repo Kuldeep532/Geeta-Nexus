@@ -16,13 +16,49 @@ import 'flashcards_screen.dart';
 import 'reading_plan_screen.dart';
 import 'wisdom_cards_screen.dart';
 import 'affirmations_screen.dart';
+import 'about_screen.dart';
+import 'privacy_policy_screen.dart';
+import 'terms_screen.dart';
+import 'contact_screen.dart';
+import 'updates_screen.dart';
+import 'social_links.dart';
 
 class MoreScreen extends StatelessWidget {
   const MoreScreen({super.key});
 
+  Future<void> _editName(BuildContext context, AppState state) async {
+    final controller = TextEditingController(text: state.userName);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: kCard,
+        title: const Text('Your Name', style: TextStyle(color: kGold)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: const TextStyle(color: kText),
+          decoration: const InputDecoration(
+            hintText: 'Enter your name',
+            hintStyle: TextStyle(color: kTextDim),
+          ),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+              child: const Text('Save')),
+        ],
+      ),
+    );
+    if (result != null) {
+      state.setUserName(result);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Optimization: Listen only to necessary changes
     final appState = context.watch<AppState>();
 
     return Scaffold(
@@ -64,9 +100,61 @@ class MoreScreen extends StatelessWidget {
                 _Item('✨', 'Affirmations', 'Daily affirmations', const AffirmationsScreen()),
                 _Item('🔖', 'Bookmarks', 'Saved verses', const BookmarksScreen()),
               ]),
+              const SizedBox(height: 24),
+              _sectionTitle('Settings & Info'),
+              const SizedBox(height: 12),
+              _buildInfoTile(
+                emoji: '👤',
+                title: appState.userName.isEmpty
+                    ? 'Set your name'
+                    : appState.userName,
+                subtitle: 'Tap to edit',
+                onTap: () => _editName(context, appState),
+              ),
+              _buildInfoTile(
+                emoji: '⬆️',
+                title: 'Check for Updates',
+                subtitle: 'Latest news & version',
+                onTap: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const UpdatesScreen())),
+              ),
+              _buildInfoTile(
+                emoji: '✉️',
+                title: 'Contact Us',
+                subtitle: 'Send a message',
+                onTap: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const ContactScreen())),
+              ),
+              _buildInfoTile(
+                emoji: '🛡️',
+                title: 'Privacy Policy',
+                subtitle: 'How we handle your data',
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const PrivacyPolicyScreen())),
+              ),
+              _buildInfoTile(
+                emoji: '📜',
+                title: 'Terms & Conditions',
+                subtitle: 'Rules of use',
+                onTap: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const TermsScreen())),
+              ),
+              _buildInfoTile(
+                emoji: 'ℹ️',
+                title: 'About',
+                subtitle: 'About this app',
+                onTap: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const AboutScreen())),
+              ),
+              const SizedBox(height: 20),
+              _sectionTitle('Follow Us'),
+              const SizedBox(height: 12),
+              const SocialLinksRow(),
               const SizedBox(height: 30),
               _buildQuoteCard(),
-              const SizedBox(height: 40), 
+              const SizedBox(height: 40),
             ],
           ),
         ),
@@ -143,6 +231,51 @@ class MoreScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildInfoTile({
+    required String emoji,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: kCard,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: kDivider.withOpacity(0.5)),
+          ),
+          child: Row(
+            children: [
+              Text(emoji, style: const TextStyle(fontSize: 22)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: const TextStyle(
+                            color: kText,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600)),
+                    Text(subtitle,
+                        style:
+                            const TextStyle(color: kTextDim, fontSize: 11)),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: kTextDim),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

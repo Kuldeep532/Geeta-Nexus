@@ -17,53 +17,77 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   int _page = 0;
+  final TextEditingController _nameController = TextEditingController();
+  final FocusNode _nameFocus = FocusNode();
+  String? _nameError;
 
   static const List<_OnboardPageData> _pages = [
     _OnboardPageData(
       emoji: '🕉️',
       title: 'Bhagavad Gita AI',
       subtitle: 'The Song of God',
-      body: 'Discover the timeless wisdom of the Bhagavad Gita — 700 verses of divine knowledge that have guided seekers.',
+      body:
+          'Discover the timeless wisdom of the Bhagavad Gita — 700 verses of divine knowledge that have guided seekers.',
     ),
     _OnboardPageData(
       emoji: '📖',
       title: 'Read & Reflect',
       subtitle: '18 Chapters of Wisdom',
-      body: 'Explore all 18 chapters with Sanskrit verses, transliterations, and deep meanings as you journey through the teachings.',
+      body:
+          'Explore all 18 chapters with Sanskrit verses, transliterations, and deep meanings as you journey through the teachings.',
     ),
     _OnboardPageData(
       emoji: '🤖',
       title: 'Ask Krishna',
       subtitle: 'Your Divine Guide',
-      body: 'Have conversations with Lord Krishna or your Gita Guide. Ask any question about dharma, karma, or devotion.',
+      body:
+          'Have conversations with Lord Krishna or your Gita Guide. Ask any question about dharma, karma, or devotion.',
     ),
     _OnboardPageData(
       emoji: '🧘',
       title: 'Practice Daily',
       subtitle: 'Meditation • Breathing • Japa',
-      body: 'Build a daily spiritual practice with meditation timers, pranayama exercises, and a japa mala counter.',
+      body:
+          'Build a daily spiritual practice with meditation timers, pranayama exercises, and a japa mala counter.',
     ),
     _OnboardPageData(
       emoji: '🌟',
       title: 'Grow Spiritually',
       subtitle: 'Track Your Journey',
-      body: 'Earn XP, level up, unlock badges, and build your streak. Track your progress through all 18 chapters.',
+      body:
+          'Earn XP, level up, unlock badges, and build your streak. Track your progress through all 18 chapters.',
+    ),
+    // Last page = name entry, handled separately by _buildNamePage
+    _OnboardPageData(
+      emoji: '🙏',
+      title: 'What should we call you?',
+      subtitle: 'Personalize your journey',
+      body: 'Enter your name so we can greet you each day.',
     ),
   ];
+
+  bool get _isNamePage => _page == _pages.length - 1;
 
   @override
   void dispose() {
     _controller.dispose();
+    _nameController.dispose();
+    _nameFocus.dispose();
     super.dispose();
   }
 
   Future<void> _finishOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('onboarding_completed', true);
-    
+
     if (!mounted) return;
 
-    context.read<AppState>().completeOnboarding();
+    final name = _nameController.text.trim();
+    final state = context.read<AppState>();
+    if (name.isNotEmpty) {
+      state.setUserName(name);
+    }
+    state.completeOnboarding();
 
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const MainShell()),
@@ -76,18 +100,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       Permission.microphone,
       Permission.notification,
     ].request();
-    
-    _finishOnboarding();
+
+    await _finishOnboarding();
   }
 
-  void _nextPage() {
+  void _next() {
+    if (_isNamePage) {
+      final name = _nameController.text.trim();
+      if (name.isEmpty) {
+        setState(() => _nameError = 'Please enter your name to continue');
+        _nameFocus.requestFocus();
+        return;
+      }
+      setState(() => _nameError = null);
+      _handlePermissions();
+      return;
+    }
+
     if (_page < _pages.length - 1) {
       _controller.nextPage(
-        duration: const Duration(milliseconds: 400), 
+        duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
       );
-    } else {
-      _handlePermissions();
     }
   }
 
@@ -95,6 +129,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBg,
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: Column(
           children: [
@@ -102,8 +137,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: PageView.builder(
                 controller: _controller,
                 itemCount: _pages.length,
-                onPageChanged: (i) => setState(() => _page = i),
-                itemBuilder: (ctx, i) => _buildPageLayout(_pages[i]),
+                onPageChanged: (i) {
+                  setState(() => _page = i);
+                  if (i == _pages.length - 1) {
+                    Future.delayed(const Duration(milliseconds: 250),
+                        () => _nameFocus.requestFocus());
+                  }
+                },
+                itemBuilder: (ctx, i) => i == _pages.length - 1
+                    ? _buildNamePage(_pages[i])
+                    : _buildPageLayout(_pages[i]),
               ),
             ),
             _buildBottomControls(),
@@ -124,7 +167,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               _pages.length,
               (i) => AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                margin: const EdgeInsets.symmetric(horizontal: 4), // FIXED: Removed leading comma
+                margin: const EdgeInsets.symmetric(horizontal: 4),
                 width: _page == i ? 24 : 8,
                 height: 8,
                 decoration: BoxDecoration(
@@ -134,33 +177,35 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _nextPage,
+              onPressed: _next,
               style: ElevatedButton.styleFrom(
                 backgroundColor: kGold,
                 foregroundColor: kBg,
                 padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
               child: Text(
-                _page == _pages.length - 1 ? 'Begin Your Journey 🕉️' : 'Next',
-                style: GoogleFonts.cinzel(fontSize: 16, fontWeight: FontWeight.bold),
+                _isNamePage ? 'Begin Your Journey 🕉️' : 'Next',
+                style: GoogleFonts.cinzel(
+                    fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
           ),
-          if (_page < _pages.length - 1)
+          if (!_isNamePage)
             TextButton(
-              onPressed: _finishOnboarding,
+              onPressed: _handlePermissions,
               child: const Text(
                 'Skip Tour',
                 style: TextStyle(color: kTextDim, fontSize: 14),
               ),
             )
           else
-            const SizedBox(height: 48), 
+            const SizedBox(height: 48),
         ],
       ),
     );
@@ -182,10 +227,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 border: Border.all(color: kGoldDim, width: 2),
               ),
               child: Center(
-                child: Text(
-                  page.emoji, 
-                  style: const TextStyle(fontSize: 54),
-                ),
+                child:
+                    Text(page.emoji, style: const TextStyle(fontSize: 54)),
               ),
             ),
             const SizedBox(height: 40),
@@ -202,7 +245,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Text(
               page.subtitle,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: kGoldDim, fontSize: 16, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                  color: kGoldDim,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 24),
             Text(
@@ -213,6 +259,87 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 fontSize: 18,
                 height: 1.6,
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNamePage(_OnboardPageData page) {
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+        child: Column(
+          children: [
+            const SizedBox(height: 24),
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: kGold.withOpacity(0.1),
+                border: Border.all(color: kGoldDim, width: 2),
+              ),
+              child: Center(
+                child:
+                    Text(page.emoji, style: const TextStyle(fontSize: 44)),
+              ),
+            ),
+            const SizedBox(height: 28),
+            Text(
+              page.title,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.cinzel(
+                color: kGold,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              page.body,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.crimsonText(
+                color: kText,
+                fontSize: 16,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 28),
+            TextField(
+              controller: _nameController,
+              focusNode: _nameFocus,
+              textAlign: TextAlign.center,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _next(),
+              style: GoogleFonts.cinzel(
+                color: kText,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Your name',
+                hintStyle: const TextStyle(color: kTextDim),
+                filled: true,
+                fillColor: kCard,
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 18, vertical: 18),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(color: kDivider.withOpacity(0.6)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: kGold, width: 1.6),
+                ),
+                errorText: _nameError,
+              ),
+            ),
+            const SizedBox(height: 14),
+            const Text(
+              'You can change this anytime in Settings.',
+              style: TextStyle(color: kTextDim, fontSize: 12),
             ),
           ],
         ),
@@ -232,5 +359,5 @@ class _OnboardPageData {
     required this.title,
     required this.subtitle,
     required this.body,
-  }); // FIXED: Removed extra comma before closing brace
+  });
 }

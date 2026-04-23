@@ -19,8 +19,10 @@ class AppState extends ChangeNotifier {
   int _currentReadingChapter = 1;
   List<String> _completedChapters = [];
   int _currentFlashcardIndex = 0;
+  String _userName = '';
 
   // --- Getters ---
+  String get userName => _userName;
   int get xp => _xp;
   int get streak => _streak;
   DateTime? get lastVisit => _lastVisit;
@@ -70,6 +72,7 @@ class AppState extends ChangeNotifier {
     _onboardingComplete = prefs.getBool('onboardingComplete') ?? false;
     _currentReadingChapter = prefs.getInt('currentReadingChapter') ?? 1;
     _completedChapters = prefs.getStringList('completedChapters') ?? [];
+    _userName = prefs.getString('userName') ?? '';
 
     final journalJson = prefs.getStringList('journalEntries') ?? [];
     _journalEntries = journalJson
@@ -123,6 +126,7 @@ class AppState extends ChangeNotifier {
     await prefs.setBool('onboardingComplete', _onboardingComplete);
     await prefs.setInt('currentReadingChapter', _currentReadingChapter);
     await prefs.setStringList('completedChapters', _completedChapters);
+    await prefs.setString('userName', _userName);
     
     final journalJson = _journalEntries.map((e) => jsonEncode(e.toMap())).toList();
     await prefs.setStringList('journalEntries', journalJson);
@@ -216,6 +220,12 @@ class AppState extends ChangeNotifier {
   void addMeditationMinutes(int minutes) {
     _totalMeditationMinutes += minutes;
     addXp(minutes * 5);
+    notifyListeners();
+    _save();
+  }
+
+  void setUserName(String name) {
+    _userName = name.trim();
     notifyListeners();
     _save();
   }
