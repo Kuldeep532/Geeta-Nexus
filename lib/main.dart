@@ -44,25 +44,67 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Navigation bar aur Status bar colors settings
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        systemNavigationBarColor: Colors.white,
-        systemNavigationBarIconBrightness: Brightness.dark,
-      ),
-    );
-
     return Consumer<AppState>(
-      builder: (context, state, _) => MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'Bhagavad Gita AI',
-        theme: buildLightTheme(),
-        darkTheme: buildTheme(),
-        themeMode: state.themeMode,
-        home: showOnboarding ? const OnboardingScreen() : const MainShell(),
-      ),
+      builder: (context, state, _) {
+        final baseLight = buildLightTheme();
+        final baseDark = buildTheme();
+        final lightTheme = state.highContrast
+            ? baseLight.copyWith(
+                colorScheme: baseLight.colorScheme.copyWith(
+                  primary: Colors.black,
+                  onPrimary: Colors.white,
+                  surface: Colors.white,
+                  onSurface: Colors.black,
+                ),
+              )
+            : baseLight;
+        final darkTheme = state.highContrast
+            ? baseDark.copyWith(
+                colorScheme: baseDark.colorScheme.copyWith(
+                  primary: Colors.yellowAccent,
+                  onPrimary: Colors.black,
+                  surface: Colors.black,
+                  onSurface: Colors.white,
+                ),
+              )
+            : baseDark;
+
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Bhagavad Gita AI',
+          theme: lightTheme,
+          darkTheme: darkTheme,
+          themeMode: state.themeMode,
+          themeAnimationDuration: state.reduceMotion
+              ? Duration.zero
+              : const Duration(milliseconds: 250),
+          builder: (context, child) {
+            final media = MediaQuery.of(context);
+            final brightness = Theme.of(context).brightness;
+            final isDark = brightness == Brightness.dark;
+            SystemChrome.setSystemUIOverlayStyle(
+              SystemUiOverlayStyle(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness:
+                    isDark ? Brightness.light : Brightness.dark,
+                statusBarBrightness:
+                    isDark ? Brightness.dark : Brightness.light,
+                systemNavigationBarColor: Theme.of(context).scaffoldBackgroundColor,
+                systemNavigationBarIconBrightness:
+                    isDark ? Brightness.light : Brightness.dark,
+              ),
+            );
+            return MediaQuery(
+              data: media.copyWith(
+                textScaler: TextScaler.linear(state.largeText ? 1.12 : 1.0),
+                highContrast: state.highContrast,
+              ),
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
+          home: showOnboarding ? const OnboardingScreen() : const MainShell(),
+        );
+      },
     );
   }
 }
