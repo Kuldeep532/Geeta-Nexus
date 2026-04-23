@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
-// IMPORTANT: Replace this with the actual path to your color constants
-// if they are defined in a file like 'lib/constants/colors.dart'
-import '../constants.dart'; 
+// Removed: import '../constants.dart'; 
 
 import '../state/app_state.dart';
 import 'about_screen.dart';
@@ -52,6 +50,7 @@ class _MoreScreenState extends State<MoreScreen> {
     });
   }
 
+  // --- Theme Selection ---
   Future<void> _pickTheme(BuildContext context, AppState state) async {
     final picked = await showDialog<ThemeMode>(
       context: context,
@@ -82,47 +81,30 @@ class _MoreScreenState extends State<MoreScreen> {
     );
   }
 
-  Future<void> _editName(BuildContext context, AppState state) async {
-    final controller = TextEditingController(text: state.userName);
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Your Name'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: const InputDecoration(hintText: 'Enter your name'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: const Text('Save')),
-        ],
-      ),
-    );
-    if (result != null) state.setUserName(result);
-  }
-
-  Widget _buildAccountCard(AppState appState) {
+  // --- Account Card ---
+  Widget _buildAccountCard(BuildContext context, AppState appState) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    
     final accountName = appState.userName.isNotEmpty ? appState.userName : 'Not connected';
     final accountEmail = appState.userEmail.isNotEmpty
         ? appState.userEmail
-        : 'Connect Google sign-in from onboarding';
+        : 'Connect Google sign-in';
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: kCard,
+        color: theme.cardTheme.color ?? theme.colorScheme.surfaceVariant.withOpacity(0.3),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: kDivider.withOpacity(0.5)),
+        border: Border.all(color: cs.outlineVariant.withOpacity(0.5)),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 22,
-            backgroundColor: kGold.withOpacity(0.14),
-            // REMOVED 'const' because kGold is dynamic
-            child: Icon(Icons.account_circle, color: kGold, size: 28),
+            backgroundColor: cs.primary.withOpacity(0.14),
+            child: Icon(Icons.account_circle, color: cs.primary, size: 28),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -132,7 +114,7 @@ class _MoreScreenState extends State<MoreScreen> {
                 Text(
                   accountName,
                   style: TextStyle(
-                    color: kText, // REMOVED 'const' from parent TextStyle
+                    color: cs.onSurface,
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
@@ -140,7 +122,7 @@ class _MoreScreenState extends State<MoreScreen> {
                 const SizedBox(height: 2),
                 Text(
                   accountEmail,
-                  style: TextStyle(color: kTextDim, fontSize: 12),
+                  style: TextStyle(color: cs.onSurfaceVariant, fontSize: 12),
                 ),
               ],
             ),
@@ -150,13 +132,13 @@ class _MoreScreenState extends State<MoreScreen> {
             decoration: BoxDecoration(
               color: appState.isGoogleAccountLinked
                   ? Colors.green.withOpacity(0.18)
-                  : kDivider.withOpacity(0.2),
+                  : cs.outlineVariant.withOpacity(0.2),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
               appState.isGoogleAccountLinked ? 'Google Linked' : 'Local Profile',
               style: TextStyle(
-                color: appState.isGoogleAccountLinked ? Colors.greenAccent : kTextDim,
+                color: appState.isGoogleAccountLinked ? Colors.greenAccent : cs.onSurfaceVariant,
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
               ),
@@ -167,9 +149,6 @@ class _MoreScreenState extends State<MoreScreen> {
     );
   }
 
-  // Rest of the UI building methods (_sectionTitle, _buildGrid, _buildInfoTile, etc.)
-  // should follow similar logic ensuring 'const' is not used with custom color variables.
-  
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
@@ -178,8 +157,6 @@ class _MoreScreenState extends State<MoreScreen> {
       appBar: AppBar(
         title: const Text('Explore'),
         centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -207,38 +184,29 @@ class _MoreScreenState extends State<MoreScreen> {
                 _Item('🎙️', 'Voice Practice', 'Recite with feedback', const GeetaVoicePracticeScreen()),
               ]),
               const SizedBox(height: 24),
-              _sectionTitle('Inspiration'),
-              const SizedBox(height: 12),
-              _buildGrid(context, [
-                _Item('🃏', 'Wisdom Cards', 'Divine teachings', const WisdomCardsScreen()),
-                _Item('✨', 'Affirmations', 'Daily affirmations', const AffirmationsScreen()),
-                _Item('🔖', 'Bookmarks', 'Saved verses', const BookmarksScreen()),
-              ]),
-              const SizedBox(height: 24),
               _sectionTitle('Profile Account'),
               const SizedBox(height: 12),
               Semantics(
                 label: 'Profile account details',
-                child: _buildAccountCard(appState),
+                child: _buildAccountCard(context, appState),
               ),
-              const SizedBox(height: 24),
-              // ... Add remaining settings tiles here
+              const SizedBox(height: 40),
+              Center(child: Text(_appVersionLabel, style: TextStyle(color: Theme.of(context).disabledColor, fontSize: 12))),
             ],
           ),
         ),
       ),
     );
   }
-  
-  // Helper methods for Titles and Grid would be defined below...
+
   Widget _sectionTitle(String title) => Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold));
-  
+
   Widget _buildGrid(BuildContext context, List<_Item> items) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 1.5),
+          crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10, childAspectRatio: 1.5),
       itemCount: items.length,
       itemBuilder: (context, index) => _buildCard(context, items[index]),
     );
@@ -246,8 +214,20 @@ class _MoreScreenState extends State<MoreScreen> {
 
   Widget _buildCard(BuildContext context, _Item item) {
     return InkWell(
+      borderRadius: BorderRadius.circular(12),
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => item.screen)),
-      child: Card(child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [Text(item.emoji), Text(item.title)]))),
+      child: Card(
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(item.emoji, style: const TextStyle(fontSize: 24)),
+              const SizedBox(height: 4),
+              Text(item.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
