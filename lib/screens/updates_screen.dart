@@ -12,6 +12,11 @@ const String kCurrentAppVersion = '1.0.0';
 const String kDefaultUpdateFeedUrl =
     'https://raw.githubusercontent.com/kuldeepkumar-yadav/geeta-ai-updates/main/updates.json';
 
+const List<String> kNewFeatures = [
+  'Continue with Google sign-in option during onboarding',
+  'Live update feed for instant release notes',
+];
+
 class UpdatesScreen extends StatefulWidget {
   const UpdatesScreen({super.key});
 
@@ -153,6 +158,8 @@ class _UpdatesScreenState extends State<UpdatesScreen> {
               else
                 const SizedBox.shrink(),
               const SizedBox(height: 20),
+              _newFeaturesCard(),
+              const SizedBox(height: 12),
               _howItWorksCard(),
             ],
           ),
@@ -286,6 +293,52 @@ class _UpdatesScreenState extends State<UpdatesScreen> {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+
+  Widget _newFeaturesCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: kCard.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: kDivider.withOpacity(0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('NEW FEATURES',
+              style: GoogleFonts.cinzel(
+                  color: kGold,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.1)),
+          const SizedBox(height: 10),
+          ...kNewFeatures.map(
+            (feature) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(top: 2),
+                    child: Icon(Icons.check_circle, color: kGoldDim, size: 14),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      feature,
+                      style: const TextStyle(color: kText, fontSize: 13, height: 1.35),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );

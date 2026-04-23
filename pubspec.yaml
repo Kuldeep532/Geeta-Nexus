@@ -46,6 +46,7 @@ dependencies:
   dio: ^5.5.0+1
   connectivity_plus: ^6.0.3
   google_generative_ai: ^0.4.0
+  google_sign_in: ^6.3.0
 
   # Hardware & Media
   permission_handler: ^11.3.1
