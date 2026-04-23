@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import '../theme.dart';
 import '../state/app_state.dart';
@@ -23,8 +24,29 @@ import 'contact_screen.dart';
 import 'updates_screen.dart';
 import 'social_links.dart';
 
-class MoreScreen extends StatelessWidget {
+class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
+
+  @override
+  State<MoreScreen> createState() => _MoreScreenState();
+}
+
+class _MoreScreenState extends State<MoreScreen> {
+  String _appVersionLabel = 'Loading version...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    if (!mounted) return;
+    setState(() {
+      _appVersionLabel = 'v${info.version}+${info.buildNumber}';
+    });
+  }
 
   Future<void> _pickTheme(BuildContext context, AppState state) async {
     final picked = await showDialog<ThemeMode>(
@@ -201,10 +223,19 @@ class MoreScreen extends StatelessWidget {
               const SizedBox(height: 24),
               _sectionTitle('Profile Account'),
               const SizedBox(height: 12),
-              _buildAccountCard(appState),
+              Semantics(
+                label: 'Profile account details',
+                child: _buildAccountCard(appState),
+              ),
               const SizedBox(height: 24),
               _sectionTitle('Settings & Info'),
               const SizedBox(height: 12),
+              _buildInfoTile(
+                emoji: 'A',
+                title: 'App Version',
+                subtitle: _appVersionLabel,
+                onTap: () {},
+              ),
               _buildInfoTile(
                 emoji: '👤',
                 title: appState.userName.isEmpty

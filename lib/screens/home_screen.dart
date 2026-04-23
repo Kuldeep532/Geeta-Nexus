@@ -34,24 +34,24 @@ class _HomeScreenState extends State<HomeScreen> {
   String _timeBasedGreeting() {
     final hour = DateTime.now().hour;
     if (hour >= 5 && hour < 12) {
-      return 'Good Morning · Jai Shri Krishna 🙏';
+      return 'Good Morning · Jai Shri Krishna';
     }
     if (hour >= 12 && hour < 17) {
-      return 'Good Afternoon · Jai Shri Krishna 🙏';
+      return 'Good Afternoon · Jai Shri Krishna';
     }
     if (hour >= 17 && hour < 21) {
-      return 'Good Evening · Jai Shri Krishna 🙏';
+      return 'Good Evening · Jai Shri Krishna';
     }
-    return 'Good Night · Hare Krishna 🌙';
+    return 'Good Night · Hare Krishna';
   }
 
   final List<Map<String, String>> _newFeatures = const [
-    {'title': 'Google Login', 'subtitle': 'Faster onboarding with Google account'},
-    {'title': 'Daily Verse', 'subtitle': 'Automated verse selection every day'},
-    {'title': 'Voice Meditation', 'subtitle': 'Guided sessions and breathing support'},
-    {'title': 'Wisdom Cards', 'subtitle': 'Swipe bite-sized teachings quickly'},
-    {'title': 'Smart Progress', 'subtitle': 'XP, levels and streak tracking'},
-    {'title': 'Updates Center', 'subtitle': 'See latest app announcements instantly'},
+    {'title': 'Adaptive Reading Mode', 'subtitle': 'Cleaner typography and calmer spacing for long study sessions'},
+    {'title': 'Smart Verse Context', 'subtitle': 'Chapter-aware suggestions to continue reading with flow'},
+    {'title': 'Distraction-Free View', 'subtitle': 'Focused layouts to keep attention on verses and meaning'},
+    {'title': 'Accessible Navigation', 'subtitle': 'Improved labels and structure for screen readers'},
+    {'title': 'Linked Account Profile', 'subtitle': 'View connected name and email in one place'},
+    {'title': 'Live Version Awareness', 'subtitle': 'App version and update checks are now easier to track'},
   ];
 
   dynamic _loadAutomatedVerse() {
@@ -78,18 +78,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 12),
-                  Text(
-                    _timeBasedGreeting(),
-                    style: GoogleFonts.crimsonText(
-                      color: kGoldLight,
-                      fontSize: 17,
-                      fontStyle: FontStyle.italic,
+                  Semantics(
+                    label: 'Time-based greeting: ${_timeBasedGreeting()}',
+                    child: Text(
+                      _timeBasedGreeting(),
+                      style: GoogleFonts.crimsonText(
+                        color: kGoldLight,
+                        fontSize: 17,
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                   ),
-                    const SizedBox(height: 8),
+                  const SizedBox(height: 8),
                   if (state.userName.isNotEmpty) ...[
                     Text(
-                      'Namaste, ${state.userName} 🙏',
+                      'Namaste, ${state.userName}',
                       style: GoogleFonts.cinzel(
                         color: kGold,
                         fontSize: 18,
@@ -108,7 +111,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 24),
                   _buildSectionTitle('New Features'),
                   const SizedBox(height: 12),
-                  _buildNewFeatures(),
+                  Semantics(
+                    label: 'New features list',
+                    child: _buildNewFeatures(),
+                  ),
                   const SizedBox(height: 24),
                   _buildSectionTitle("Today's Wisdom"),
                   const SizedBox(height: 12),
@@ -300,7 +306,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.auto_awesome, color: kGold, size: 18),
+                  const ExcludeSemantics(
+                    child: Icon(Icons.auto_awesome, color: kGold, size: 18),
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
