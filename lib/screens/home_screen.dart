@@ -29,6 +29,31 @@ class _HomeScreenState extends State<HomeScreen> {
     _dailyVerse = _loadAutomatedVerse();
   }
 
+
+
+  String _timeBasedGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour >= 5 && hour < 12) {
+      return 'Good Morning · Jai Shri Krishna 🙏';
+    }
+    if (hour >= 12 && hour < 17) {
+      return 'Good Afternoon · Jai Shri Krishna 🙏';
+    }
+    if (hour >= 17 && hour < 21) {
+      return 'Good Evening · Jai Shri Krishna 🙏';
+    }
+    return 'Good Night · Hare Krishna 🌙';
+  }
+
+  final List<Map<String, String>> _newFeatures = const [
+    {'title': 'Google Login', 'subtitle': 'Faster onboarding with Google account'},
+    {'title': 'Daily Verse', 'subtitle': 'Automated verse selection every day'},
+    {'title': 'Voice Meditation', 'subtitle': 'Guided sessions and breathing support'},
+    {'title': 'Wisdom Cards', 'subtitle': 'Swipe bite-sized teachings quickly'},
+    {'title': 'Smart Progress', 'subtitle': 'XP, levels and streak tracking'},
+    {'title': 'Updates Center', 'subtitle': 'See latest app announcements instantly'},
+  ];
+
   dynamic _loadAutomatedVerse() {
     if (allVerses.isEmpty) return null;
     final now = DateTime.now();
@@ -53,6 +78,15 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 12),
+                  Text(
+                    _timeBasedGreeting(),
+                    style: GoogleFonts.crimsonText(
+                      color: kGoldLight,
+                      fontSize: 17,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                    const SizedBox(height: 8),
                   if (state.userName.isNotEmpty) ...[
                     Text(
                       'Namaste, ${state.userName} 🙏',
@@ -71,6 +105,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildSectionTitle('Quick Actions'),
                   const SizedBox(height: 16),
                   _buildQuickActions(context),
+                  const SizedBox(height: 24),
+                  _buildSectionTitle('New Features'),
+                  const SizedBox(height: 12),
+                  _buildNewFeatures(),
                   const SizedBox(height: 24),
                   _buildSectionTitle("Today's Wisdom"),
                   const SizedBox(height: 12),
@@ -245,6 +283,54 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildNewFeatures() {
+    return Column(
+      children: _newFeatures
+          .map(
+            (feature) => Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: kCard,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: kDivider.withOpacity(0.45)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.auto_awesome, color: kGold, size: 18),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          feature['title'] ?? '',
+                          style: GoogleFonts.cinzel(
+                            color: kGold,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          feature['subtitle'] ?? '',
+                          style: const TextStyle(
+                            color: kTextDim,
+                            fontSize: 12,
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 

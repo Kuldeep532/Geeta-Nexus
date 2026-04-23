@@ -37,8 +37,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         throw Exception('cancelled');
       }
       final displayName = account.displayName?.trim() ?? '';
+      final email = account.email.trim();
       if (displayName.isNotEmpty) {
         _nameController.text = displayName;
+      }
+      if (mounted) {
+        final appState = context.read<AppState>();
+        appState.updateGoogleAccount(
+          name: displayName.isNotEmpty ? displayName : _nameController.text,
+          email: email,
+        );
       }
       await _handlePermissions();
     } catch (e) {

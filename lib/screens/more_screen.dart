@@ -89,6 +89,72 @@ class MoreScreen extends StatelessWidget {
     }
   }
 
+
+
+  Widget _buildAccountCard(AppState appState) {
+    final accountName = appState.userName.isNotEmpty ? appState.userName : 'Not connected';
+    final accountEmail = appState.userEmail.isNotEmpty
+        ? appState.userEmail
+        : 'Connect Google sign-in from onboarding';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: kCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: kDivider.withOpacity(0.5)),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: kGold.withOpacity(0.14),
+            child: const Icon(Icons.account_circle, color: kGold, size: 28),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  accountName,
+                  style: const TextStyle(
+                    color: kText,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  accountEmail,
+                  style: const TextStyle(color: kTextDim, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: appState.isGoogleAccountLinked
+                  ? Colors.green.withOpacity(0.18)
+                  : kDivider.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              appState.isGoogleAccountLinked ? 'Google Linked' : 'Local Profile',
+              style: TextStyle(
+                color: appState.isGoogleAccountLinked ? Colors.greenAccent : kTextDim,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
@@ -132,6 +198,10 @@ class MoreScreen extends StatelessWidget {
                 _Item('✨', 'Affirmations', 'Daily affirmations', const AffirmationsScreen()),
                 _Item('🔖', 'Bookmarks', 'Saved verses', const BookmarksScreen()),
               ]),
+              const SizedBox(height: 24),
+              _sectionTitle('Profile Account'),
+              const SizedBox(height: 12),
+              _buildAccountCard(appState),
               const SizedBox(height: 24),
               _sectionTitle('Settings & Info'),
               const SizedBox(height: 12),

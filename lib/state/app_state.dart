@@ -21,10 +21,14 @@ class AppState extends ChangeNotifier {
   List<String> _completedChapters = [];
   int _currentFlashcardIndex = 0;
   String _userName = '';
+  String _userEmail = '';
+  bool _isGoogleAccountLinked = false;
   ThemeMode _themeMode = ThemeMode.system;
 
   // --- Getters ---
   String get userName => _userName;
+  String get userEmail => _userEmail;
+  bool get isGoogleAccountLinked => _isGoogleAccountLinked;
   ThemeMode get themeMode => _themeMode;
   int get xp => _xp;
   int get streak => _streak;
@@ -76,6 +80,8 @@ class AppState extends ChangeNotifier {
     _currentReadingChapter = prefs.getInt('currentReadingChapter') ?? 1;
     _completedChapters = prefs.getStringList('completedChapters') ?? [];
     _userName = prefs.getString('userName') ?? '';
+    _userEmail = prefs.getString('userEmail') ?? '';
+    _isGoogleAccountLinked = prefs.getBool('isGoogleAccountLinked') ?? false;
     final tm = prefs.getString('themeMode') ?? 'system';
     _themeMode = tm == 'light'
         ? ThemeMode.light
@@ -136,6 +142,8 @@ class AppState extends ChangeNotifier {
     await prefs.setInt('currentReadingChapter', _currentReadingChapter);
     await prefs.setStringList('completedChapters', _completedChapters);
     await prefs.setString('userName', _userName);
+    await prefs.setString('userEmail', _userEmail);
+    await prefs.setBool('isGoogleAccountLinked', _isGoogleAccountLinked);
     await prefs.setString(
         'themeMode',
         _themeMode == ThemeMode.light
@@ -248,6 +256,21 @@ class AppState extends ChangeNotifier {
 
   void setUserName(String name) {
     _userName = name.trim();
+    notifyListeners();
+    _save();
+  }
+
+  void updateGoogleAccount({required String name, required String email}) {
+    _userName = name.trim();
+    _userEmail = email.trim();
+    _isGoogleAccountLinked = true;
+    notifyListeners();
+    _save();
+  }
+
+  void clearGoogleAccount() {
+    _userEmail = '';
+    _isGoogleAccountLinked = false;
     notifyListeners();
     _save();
   }
