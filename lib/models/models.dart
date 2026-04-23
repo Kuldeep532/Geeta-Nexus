@@ -149,3 +149,44 @@ class QuizQuestion {
         explanation: m['explanation'] ?? '',
       );
 }
+
+class AppNotification {
+  final String id;
+  final String title;
+  final String body;
+  final DateTime createdAt;
+  final bool isRead;
+
+  const AppNotification({
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.createdAt,
+    required this.isRead,
+  });
+
+  AppNotification copyWith({bool? isRead}) => AppNotification(
+        id: id,
+        title: title,
+        body: body,
+        createdAt: createdAt,
+        isRead: isRead ?? this.isRead,
+      );
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'title': title,
+        'body': body,
+        'createdAt': createdAt.toIso8601String(),
+        'isRead': isRead,
+      };
+
+  factory AppNotification.fromMap(Map<String, dynamic> m) => AppNotification(
+        id: m['id'] ?? '',
+        title: m['title'] ?? '',
+        body: m['body'] ?? '',
+        createdAt: DateTime.tryParse(m['createdAt']?.toString() ?? '') ??
+            DateTime.now(),
+        isRead: m['isRead'] == true,
+      );
+}

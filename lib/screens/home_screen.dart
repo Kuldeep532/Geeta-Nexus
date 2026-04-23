@@ -29,6 +29,33 @@ class _HomeScreenState extends State<HomeScreen> {
     _dailyVerse = _loadAutomatedVerse();
   }
 
+
+
+  String _timeBasedGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour >= 5 && hour < 12) {
+      return 'Good Morning · Jai Shri Krishna';
+    }
+    if (hour >= 12 && hour < 17) {
+      return 'Good Afternoon · Jai Shri Krishna';
+    }
+    if (hour >= 17 && hour < 21) {
+      return 'Good Evening · Jai Shri Krishna';
+    }
+    return 'Good Night · Hare Krishna';
+  }
+
+  final List<Map<String, String>> _newFeatures = const [
+    {'title': 'Adaptive Reading Mode', 'subtitle': 'Cleaner typography and calmer spacing for long study sessions'},
+    {'title': 'Smart Verse Context', 'subtitle': 'Chapter-aware suggestions to continue reading with flow'},
+    {'title': 'Distraction-Free View', 'subtitle': 'Focused layouts to keep attention on verses and meaning'},
+    {'title': 'Accessible Navigation', 'subtitle': 'Improved labels and structure for screen readers'},
+    {'title': 'Linked Account Profile', 'subtitle': 'View connected name and email in one place'},
+    {'title': 'Live Version Awareness', 'subtitle': 'App version and update checks are now easier to track'},
+    {'title': 'Notification Stream', 'subtitle': 'Admin broadcasts appear in the new notifications section'},
+    {'title': 'Astrology Studio', 'subtitle': 'Generate kundli and life-horoscope insights locally'},
+  ];
+
   dynamic _loadAutomatedVerse() {
     if (allVerses.isEmpty) return null;
     final now = DateTime.now();
@@ -53,9 +80,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 12),
+                  Semantics(
+                    label: 'Time-based greeting: ${_timeBasedGreeting()}',
+                    child: Text(
+                      _timeBasedGreeting(),
+                      style: GoogleFonts.crimsonText(
+                        color: kGoldLight,
+                        fontSize: 17,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   if (state.userName.isNotEmpty) ...[
                     Text(
-                      'Namaste, ${state.userName} 🙏',
+                      'Namaste, ${state.userName}',
                       style: GoogleFonts.cinzel(
                         color: kGold,
                         fontSize: 18,
@@ -71,6 +110,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildSectionTitle('Quick Actions'),
                   const SizedBox(height: 16),
                   _buildQuickActions(context),
+                  const SizedBox(height: 24),
+                  _buildSectionTitle('New Features'),
+                  const SizedBox(height: 12),
+                  Semantics(
+                    label: 'New features list',
+                    child: _buildNewFeatures(),
+                  ),
                   const SizedBox(height: 24),
                   _buildSectionTitle("Today's Wisdom"),
                   const SizedBox(height: 12),
@@ -245,6 +291,56 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildNewFeatures() {
+    return Column(
+      children: _newFeatures
+          .map(
+            (feature) => Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: kCard,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: kDivider.withOpacity(0.45)),
+              ),
+              child: Row(
+                children: [
+                  const ExcludeSemantics(
+                    child: Icon(Icons.auto_awesome, color: kGold, size: 18),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          feature['title'] ?? '',
+                          style: GoogleFonts.cinzel(
+                            color: kGold,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          feature['subtitle'] ?? '',
+                          style: const TextStyle(
+                            color: kTextDim,
+                            fontSize: 12,
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+          .toList(),
     );
   }
 
