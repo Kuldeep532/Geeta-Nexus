@@ -53,6 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
     {'title': 'Linked Account Profile', 'subtitle': 'View connected name and email in one place'},
     {'title': 'Live Version Awareness', 'subtitle': 'App version and update checks are now easier to track'},
     {'title': 'Notification Stream', 'subtitle': 'Admin broadcasts appear in the new notifications section'},
+    {'title': 'Astrology Studio', 'subtitle': 'Generate kundli and life-horoscope insights locally'},
   ];
 
   dynamic _loadAutomatedVerse() {

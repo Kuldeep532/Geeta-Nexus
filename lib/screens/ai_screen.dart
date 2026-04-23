@@ -34,9 +34,9 @@ class _AiScreenState extends State<AiScreen> {
   };
 
   static const _personaIcons = {
-    Persona.krishna: '🕉️',
-    Persona.radha: '🌸',
-    Persona.guide: '📖',
+    Persona.krishna: Icons.self_improvement,
+    Persona.radha: Icons.favorite_border,
+    Persona.guide: Icons.menu_book,
   };
 
   static const _greetings = {
@@ -162,12 +162,23 @@ class _AiScreenState extends State<AiScreen> {
   }
 
   Widget _buildPersonaSelector() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: Persona.values.map((p) => IconButton(
-        icon: Text(_personaIcons[p]!, style: const TextStyle(fontSize: 20)),
-        onPressed: () => _changePersona(p),
-      )).toList(),
+    return Semantics(
+      label: 'AI persona selector',
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 6,
+        alignment: WrapAlignment.center,
+        children: Persona.values
+            .map(
+              (p) => ChoiceChip(
+                selected: _persona == p,
+                label: Text(_personaNames[p]!),
+                avatar: Icon(_personaIcons[p] as IconData, size: 18),
+                onSelected: (_) => _changePersona(p),
+              ),
+            )
+            .toList(),
+      ),
     );
   }
 
@@ -199,16 +210,26 @@ class _AiScreenState extends State<AiScreen> {
       child: Row(
         children: [
           Expanded(
-            child: TextField(
-              controller: _controller, 
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                hintText: "Ask...",
-                hintStyle: TextStyle(color: Colors.white54),
-              )
-            )
+            child: Semantics(
+              textField: true,
+              label: 'Ask your question to the AI guide',
+              child: TextField(
+                controller: _controller,
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+                minLines: 1,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  hintText: "Ask your question",
+                  hintStyle: TextStyle(color: Colors.white54),
+                ),
+              ),
+            ),
           ),
-          IconButton(icon: const Icon(Icons.send, color: Colors.orange), onPressed: _sendMessage),
+          IconButton(
+            tooltip: 'Send message',
+            icon: const Icon(Icons.send, color: Colors.orange),
+            onPressed: _sendMessage,
+          ),
         ],
       ),
     );

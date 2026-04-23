@@ -14,6 +14,7 @@ import 'journal_screen.dart';
 import 'glossary_screen.dart';
 import 'bookmarks_screen.dart';
 import 'flashcards_screen.dart';
+import 'astrology_screen.dart';
 import 'reading_plan_screen.dart';
 import 'wisdom_cards_screen.dart';
 import 'affirmations_screen.dart';
@@ -203,6 +204,7 @@ class _MoreScreenState extends State<MoreScreen> {
                 _Item('🎯', 'Quiz', 'Test your knowledge', const QuizScreen()),
                 _Item('📖', 'Glossary', 'Sanskrit terms', const GlossaryScreen()),
                 _Item('🗺️', 'Reading Plan', '30-day journey', const ReadingPlanScreen()),
+                _Item('🔭', 'Astrology', 'Kundli & horoscope', const AstrologyScreen()),
               ]),
               const SizedBox(height: 24),
               _sectionTitle('Practice'),

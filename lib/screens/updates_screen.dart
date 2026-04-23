@@ -19,6 +19,8 @@ const List<String> kNewFeatures = [
   'Live app version display sourced from installed build metadata',
   'Notification stream with admin-only sender controls',
   'Automatic admin rights for kuldeepky538@gmail.com after Google sign-in',
+  'Astrology section with local kundli and horoscope generator',
+  'AI section accessibility upgrades for clearer persona and input controls',
   'Update feed configuration remains available for instant release notes',
 ];
 
