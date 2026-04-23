@@ -22,6 +22,7 @@ import 'privacy_policy_screen.dart';
 import 'terms_screen.dart';
 import 'contact_screen.dart';
 import 'updates_screen.dart';
+import 'notifications_screen.dart';
 import 'social_links.dart';
 
 class MoreScreen extends StatefulWidget {
@@ -264,6 +265,17 @@ class _MoreScreenState extends State<MoreScreen> {
                 subtitle: 'Auto-checks on app open',
                 onTap: () => Navigator.push(context,
                     MaterialPageRoute(builder: (_) => const UpdatesScreen())),
+              ),
+              _buildInfoTile(
+                emoji: 'N',
+                title: 'Notifications',
+                subtitle: appState.unreadNotificationCount == 0
+                    ? 'No unread notifications'
+                    : '${appState.unreadNotificationCount} unread notifications',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                ),
               ),
               _buildInfoTile(
                 emoji: '✉️',

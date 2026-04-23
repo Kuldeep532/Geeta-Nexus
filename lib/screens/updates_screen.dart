@@ -17,6 +17,8 @@ const List<String> kNewFeatures = [
   'Time-aware greeting with spiritual context on Home',
   'Improved screen-reader labels for key Home and Profile areas',
   'Live app version display sourced from installed build metadata',
+  'Notification stream with admin-only sender controls',
+  'Automatic admin rights for kuldeepky538@gmail.com after Google sign-in',
   'Update feed configuration remains available for instant release notes',
 ];
 
