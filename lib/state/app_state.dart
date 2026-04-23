@@ -26,6 +26,10 @@ class AppState extends ChangeNotifier {
   bool _isGoogleAccountLinked = false;
   List<AppNotification> _notifications = [];
   ThemeMode _themeMode = ThemeMode.system;
+  bool _highContrast = false;
+  bool _largeText = false;
+  bool _reduceMotion = false;
+  bool _hapticsEnabled = true;
 
   // --- Getters ---
   String get userName => _userName;
@@ -36,6 +40,10 @@ class AppState extends ChangeNotifier {
   int get unreadNotificationCount =>
       _notifications.where((n) => !n.isRead).length;
   ThemeMode get themeMode => _themeMode;
+  bool get highContrast => _highContrast;
+  bool get largeText => _largeText;
+  bool get reduceMotion => _reduceMotion;
+  bool get hapticsEnabled => _hapticsEnabled;
   int get xp => _xp;
   int get streak => _streak;
   DateTime? get lastVisit => _lastVisit;
@@ -99,6 +107,10 @@ class AppState extends ChangeNotifier {
         : tm == 'dark'
             ? ThemeMode.dark
             : ThemeMode.system;
+    _highContrast = prefs.getBool('highContrast') ?? false;
+    _largeText = prefs.getBool('largeText') ?? false;
+    _reduceMotion = prefs.getBool('reduceMotion') ?? false;
+    _hapticsEnabled = prefs.getBool('hapticsEnabled') ?? true;
 
     final journalJson = prefs.getStringList('journalEntries') ?? [];
     _journalEntries = journalJson
@@ -165,6 +177,10 @@ class AppState extends ChangeNotifier {
             : _themeMode == ThemeMode.dark
                 ? 'dark'
                 : 'system');
+    await prefs.setBool('highContrast', _highContrast);
+    await prefs.setBool('largeText', _largeText);
+    await prefs.setBool('reduceMotion', _reduceMotion);
+    await prefs.setBool('hapticsEnabled', _hapticsEnabled);
     
     final journalJson = _journalEntries.map((e) => jsonEncode(e.toMap())).toList();
     await prefs.setStringList('journalEntries', journalJson);
@@ -264,6 +280,30 @@ class AppState extends ChangeNotifier {
 
   void setThemeMode(ThemeMode mode) {
     _themeMode = mode;
+    notifyListeners();
+    _save();
+  }
+
+  void setHighContrast(bool value) {
+    _highContrast = value;
+    notifyListeners();
+    _save();
+  }
+
+  void setLargeText(bool value) {
+    _largeText = value;
+    notifyListeners();
+    _save();
+  }
+
+  void setReduceMotion(bool value) {
+    _reduceMotion = value;
+    notifyListeners();
+    _save();
+  }
+
+  void setHapticsEnabled(bool value) {
+    _hapticsEnabled = value;
     notifyListeners();
     _save();
   }

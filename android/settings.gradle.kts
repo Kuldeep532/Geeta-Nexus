@@ -18,9 +18,10 @@ pluginManagement {
 
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
-    // Yahan 8.7.3 ko badal kar 8.9.1 kar diya gaya hai
     id("com.android.application") version "8.9.1" apply false
     id("org.jetbrains.kotlin.android") version "2.1.0" apply false
+    // Add this line for Google Services
+    id("com.google.gms.google-services") version "4.4.1" apply false
 }
 
 include(":app")
