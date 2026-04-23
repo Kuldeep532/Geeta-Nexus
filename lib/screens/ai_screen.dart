@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme.dart';
@@ -11,6 +13,27 @@ class _Message {
   final String text;
   final bool isUser;
   _Message({required this.text, required this.isUser});
+}
+
+class _KnowledgeEntry {
+  final String topic;
+  final String question;
+  final String answer;
+  final String source;
+
+  const _KnowledgeEntry({
+    required this.topic,
+    required this.question,
+    required this.answer,
+    required this.source,
+  });
+
+  factory _KnowledgeEntry.fromMap(Map<String, dynamic> m) => _KnowledgeEntry(
+        topic: (m['topic'] ?? '').toString(),
+        question: (m['question'] ?? '').toString(),
+        answer: (m['answer'] ?? '').toString(),
+        source: (m['source'] ?? '').toString(),
+      );
 }
 
 class AiScreen extends StatefulWidget {
@@ -26,6 +49,7 @@ class _AiScreenState extends State<AiScreen> {
   final List<_Message> _messages = [];
   Persona _persona = Persona.krishna;
   bool _thinking = false;
+  List<_KnowledgeEntry> _knowledge = const [];
 
   static const _personaNames = {
     Persona.krishna: 'Lord Krishna',
@@ -34,9 +58,9 @@ class _AiScreenState extends State<AiScreen> {
   };
 
   static const _personaIcons = {
-    Persona.krishna: '🕉️',
-    Persona.radha: '🌸',
-    Persona.guide: '📖',
+    Persona.krishna: Icons.self_improvement,
+    Persona.radha: Icons.favorite_border,
+    Persona.guide: Icons.menu_book,
   };
 
   static const _greetings = {
@@ -48,7 +72,22 @@ class _AiScreenState extends State<AiScreen> {
   @override
   void initState() {
     super.initState();
+    _loadKnowledgeBase();
     _addGreeting();
+  }
+
+  Future<void> _loadKnowledgeBase() async {
+    try {
+      final raw = await rootBundle.loadString('assets/data/ai_knowledge_base.json');
+      final parsed = jsonDecode(raw) as List<dynamic>;
+      final entries = parsed
+          .map((e) => _KnowledgeEntry.fromMap(e as Map<String, dynamic>))
+          .toList();
+      if (!mounted) return;
+      setState(() => _knowledge = entries);
+    } catch (_) {
+      // Fallback silently to built-in response logic.
+    }
   }
 
   void _addGreeting() {
@@ -64,6 +103,9 @@ class _AiScreenState extends State<AiScreen> {
 
     if (verses.isEmpty) return "Keep seeking truth. (Gita 9.27)";
 
+    final dataResponse = _getDatasetResponse(q);
+    if (dataResponse != null) return dataResponse;
+
     if (q.contains('karma') || q.contains('action') || q.contains('duty')) {
       final verse = verses.firstWhere((v) => v.id == '2.47', orElse: () => verses.first);
       return _buildResponse("The essence of karma yoga is acting without attachment.", verse.id);
@@ -75,6 +117,25 @@ class _AiScreenState extends State<AiScreen> {
     }
 
     return "Keep seeking truth. (Gita 9.27)";
+  }
+
+  String? _getDatasetResponse(String q) {
+    if (_knowledge.isEmpty) return null;
+    int bestScore = 0;
+    _KnowledgeEntry? best;
+
+    final words = q.split(RegExp(r'\\s+')).where((w) => w.length > 2).toSet();
+    for (final entry in _knowledge) {
+      final haystack = '${entry.topic} ${entry.question} ${entry.answer}'.toLowerCase();
+      final score = words.where((w) => haystack.contains(w)).length;
+      if (score > bestScore) {
+        bestScore = score;
+        best = entry;
+      }
+    }
+
+    if (best == null || bestScore == 0) return null;
+    return '${best.answer}\\n\\nSource: ${best.source}';
   }
 
   String _buildResponse(String text, String verseId) {
@@ -162,12 +223,23 @@ class _AiScreenState extends State<AiScreen> {
   }
 
   Widget _buildPersonaSelector() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: Persona.values.map((p) => IconButton(
-        icon: Text(_personaIcons[p]!, style: const TextStyle(fontSize: 20)),
-        onPressed: () => _changePersona(p),
-      )).toList(),
+    return Semantics(
+      label: 'AI persona selector',
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 6,
+        alignment: WrapAlignment.center,
+        children: Persona.values
+            .map(
+              (p) => ChoiceChip(
+                selected: _persona == p,
+                label: Text(_personaNames[p]!),
+                avatar: Icon(_personaIcons[p] as IconData, size: 18),
+                onSelected: (_) => _changePersona(p),
+              ),
+            )
+            .toList(),
+      ),
     );
   }
 
@@ -199,16 +271,26 @@ class _AiScreenState extends State<AiScreen> {
       child: Row(
         children: [
           Expanded(
-            child: TextField(
-              controller: _controller, 
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                hintText: "Ask...",
-                hintStyle: TextStyle(color: Colors.white54),
-              )
-            )
+            child: Semantics(
+              textField: true,
+              label: 'Ask your question to the AI guide',
+              child: TextField(
+                controller: _controller,
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+                minLines: 1,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  hintText: "Ask your question",
+                  hintStyle: TextStyle(color: Colors.white54),
+                ),
+              ),
+            ),
           ),
-          IconButton(icon: const Icon(Icons.send, color: Colors.orange), onPressed: _sendMessage),
+          IconButton(
+            tooltip: 'Send message',
+            icon: const Icon(Icons.send, color: Colors.orange),
+            onPressed: _sendMessage,
+          ),
         ],
       ),
     );

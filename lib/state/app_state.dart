@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
 
 class AppState extends ChangeNotifier {
+  static const String kAdminEmail = 'kuldeepky538@gmail.com';
   // --- Private State ---
   int _xp = 0;
   int _streak = 0;
@@ -21,6 +22,9 @@ class AppState extends ChangeNotifier {
   List<String> _completedChapters = [];
   int _currentFlashcardIndex = 0;
   String _userName = '';
+  String _userEmail = '';
+  bool _isGoogleAccountLinked = false;
+  List<AppNotification> _notifications = [];
   ThemeMode _themeMode = ThemeMode.system;
   bool _highContrast = false;
   bool _largeText = false;
@@ -29,6 +33,12 @@ class AppState extends ChangeNotifier {
 
   // --- Getters ---
   String get userName => _userName;
+  String get userEmail => _userEmail;
+  bool get isGoogleAccountLinked => _isGoogleAccountLinked;
+  bool get isAdmin => _userEmail.toLowerCase() == kAdminEmail;
+  List<AppNotification> get notifications => List.unmodifiable(_notifications);
+  int get unreadNotificationCount =>
+      _notifications.where((n) => !n.isRead).length;
   ThemeMode get themeMode => _themeMode;
   bool get highContrast => _highContrast;
   bool get largeText => _largeText;
@@ -84,6 +94,13 @@ class AppState extends ChangeNotifier {
     _currentReadingChapter = prefs.getInt('currentReadingChapter') ?? 1;
     _completedChapters = prefs.getStringList('completedChapters') ?? [];
     _userName = prefs.getString('userName') ?? '';
+    _userEmail = prefs.getString('userEmail') ?? '';
+    _isGoogleAccountLinked = prefs.getBool('isGoogleAccountLinked') ?? false;
+    final notificationJson = prefs.getStringList('notifications') ?? [];
+    _notifications = notificationJson
+        .map((e) => AppNotification.fromMap(jsonDecode(e)))
+        .toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     final tm = prefs.getString('themeMode') ?? 'system';
     _themeMode = tm == 'light'
         ? ThemeMode.light
@@ -148,6 +165,11 @@ class AppState extends ChangeNotifier {
     await prefs.setInt('currentReadingChapter', _currentReadingChapter);
     await prefs.setStringList('completedChapters', _completedChapters);
     await prefs.setString('userName', _userName);
+    await prefs.setString('userEmail', _userEmail);
+    await prefs.setBool('isGoogleAccountLinked', _isGoogleAccountLinked);
+    final notificationsJson =
+        _notifications.map((n) => jsonEncode(n.toMap())).toList();
+    await prefs.setStringList('notifications', notificationsJson);
     await prefs.setString(
         'themeMode',
         _themeMode == ThemeMode.light
@@ -288,6 +310,43 @@ class AppState extends ChangeNotifier {
 
   void setUserName(String name) {
     _userName = name.trim();
+    notifyListeners();
+    _save();
+  }
+
+  void updateGoogleAccount({required String name, required String email}) {
+    _userName = name.trim();
+    _userEmail = email.trim();
+    _isGoogleAccountLinked = true;
+    notifyListeners();
+    _save();
+  }
+
+  void clearGoogleAccount() {
+    _userEmail = '';
+    _isGoogleAccountLinked = false;
+    notifyListeners();
+    _save();
+  }
+
+  void sendAdminNotification({required String title, required String body}) {
+    if (!isAdmin) return;
+    final notification = AppNotification(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      title: title.trim(),
+      body: body.trim(),
+      createdAt: DateTime.now(),
+      isRead: false,
+    );
+    _notifications.insert(0, notification);
+    notifyListeners();
+    _save();
+  }
+
+  void markNotificationRead(String id) {
+    final index = _notifications.indexWhere((n) => n.id == id);
+    if (index < 0 || _notifications[index].isRead) return;
+    _notifications[index] = _notifications[index].copyWith(isRead: true);
     notifyListeners();
     _save();
   }

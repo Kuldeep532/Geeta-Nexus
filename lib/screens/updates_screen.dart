@@ -3,14 +3,26 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme.dart';
 
-const String kCurrentAppVersion = '1.0.0';
-
 const String kDefaultUpdateFeedUrl =
     'https://raw.githubusercontent.com/kuldeepkumar-yadav/geeta-ai-updates/main/updates.json';
+
+const List<String> kNewFeatures = [
+  'Adaptive reading mode with cleaner verse typography',
+  'Google profile summary now visible in account section',
+  'Time-aware greeting with spiritual context on Home',
+  'Improved screen-reader labels for key Home and Profile areas',
+  'Live app version display sourced from installed build metadata',
+  'Notification stream with admin-only sender controls',
+  'Automatic admin rights for kuldeepky538@gmail.com after Google sign-in',
+  'Astrology section with local kundli and horoscope generator',
+  'AI section accessibility upgrades for clearer persona and input controls',
+  'Update feed configuration remains available for instant release notes',
+];
 
 class UpdatesScreen extends StatefulWidget {
   const UpdatesScreen({super.key});
@@ -24,6 +36,7 @@ class _UpdatesScreenState extends State<UpdatesScreen> {
   String? _error;
   Map<String, dynamic>? _info;
   String _feedUrl = kDefaultUpdateFeedUrl;
+  String _currentAppVersion = '3.5.0';
 
   @override
   void initState() {
@@ -32,9 +45,11 @@ class _UpdatesScreenState extends State<UpdatesScreen> {
   }
 
   Future<void> _init() async {
+    final packageInfo = await PackageInfo.fromPlatform();
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _feedUrl = prefs.getString('update_feed_url') ?? kDefaultUpdateFeedUrl;
+      _currentAppVersion = packageInfo.version;
     });
     _check();
   }
@@ -153,6 +168,8 @@ class _UpdatesScreenState extends State<UpdatesScreen> {
               else
                 const SizedBox.shrink(),
               const SizedBox(height: 20),
+              _newFeaturesCard(),
+              const SizedBox(height: 12),
               _howItWorksCard(),
             ],
           ),
@@ -180,7 +197,7 @@ class _UpdatesScreenState extends State<UpdatesScreen> {
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.1)),
           const SizedBox(height: 6),
-          Text('v$kCurrentAppVersion',
+          Text('v$_currentAppVersion',
               style: const TextStyle(
                   color: kText, fontSize: 22, fontWeight: FontWeight.w600)),
         ],
@@ -214,8 +231,7 @@ class _UpdatesScreenState extends State<UpdatesScreen> {
     final latest = (info['version'] ?? '').toString();
     final notes = (info['notes'] ?? info['message'] ?? '').toString();
     final url = (info['url'] ?? info['downloadUrl'] ?? '').toString();
-    final isNewer =
-        latest.isNotEmpty && _isNewer(latest, kCurrentAppVersion);
+    final isNewer = latest.isNotEmpty && _isNewer(latest, _currentAppVersion);
 
     return Container(
       width: double.infinity,
@@ -286,6 +302,52 @@ class _UpdatesScreenState extends State<UpdatesScreen> {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+
+  Widget _newFeaturesCard() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: kCard.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: kDivider.withOpacity(0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('NEW FEATURES',
+              style: GoogleFonts.cinzel(
+                  color: kGold,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.1)),
+          const SizedBox(height: 10),
+          ...kNewFeatures.map(
+            (feature) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(top: 2),
+                    child: Icon(Icons.check_circle, color: kGoldDim, size: 14),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      feature,
+                      style: const TextStyle(color: kText, fontSize: 13, height: 1.35),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
