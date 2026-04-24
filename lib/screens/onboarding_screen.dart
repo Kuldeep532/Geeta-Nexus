@@ -35,18 +35,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     });
 
     try {
-<<<<<<< codex/add-google-login-option-fx4gi5
       final account = await _googleSignIn.signInSilently() ?? await _googleSignIn.signIn();
       if (account == null) {
         setState(() {
           _googleError = 'Google sign-in was cancelled. You can continue by entering your name.';
         });
         return;
-=======
-      final account = await GoogleSignIn(scopes: ['email']).signIn();
-      if (account == null) {
-        throw Exception('cancelled');
->>>>>>> main
       }
       final displayName = account.displayName?.trim() ?? '';
       final email = account.email.trim();
@@ -64,11 +58,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-<<<<<<< codex/add-google-login-option-fx4gi5
         _googleError = 'Google sign-in failed on this device. Please verify Google Play Services / OAuth setup and try again.';
-=======
-        _googleError = 'Google sign-in was cancelled or unavailable. Please enter your name manually.';
->>>>>>> main
       });
     } finally {
       if (mounted) {
