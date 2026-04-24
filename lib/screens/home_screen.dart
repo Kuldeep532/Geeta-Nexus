@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -22,11 +23,40 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   late dynamic _dailyVerse;
+  final FlutterTts _tts = FlutterTts();
+  bool _isPlayingDharmaAudio = false;
 
   @override
   void initState() {
     super.initState();
     _dailyVerse = _loadAutomatedVerse();
+    _initTts();
+  }
+
+  Future<void> _initTts() async {
+    await _tts.setLanguage('en-US');
+    await _tts.setSpeechRate(0.42);
+    _tts.setCompletionHandler(() {
+      if (mounted) setState(() => _isPlayingDharmaAudio = false);
+    });
+    _tts.setCancelHandler(() {
+      if (mounted) setState(() => _isPlayingDharmaAudio = false);
+    });
+  }
+
+
+  String _timeBasedGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour >= 5 && hour < 12) {
+      return 'Good Morning · Jai Shri Krishna';
+    }
+    if (hour >= 12 && hour < 17) {
+      return 'Good Afternoon · Jai Shri Krishna';
+    }
+    if (hour >= 17 && hour < 21) {
+      return 'Good Evening · Jai Shri Krishna';
+    }
+    return 'Good Night · Hare Krishna';
   }
 
   dynamic _loadAutomatedVerse() {
@@ -37,11 +67,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void dispose() {
+    _tts.stop();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -53,9 +90,23 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 12),
+                  Semantics(
+                    label: 'Time-based greeting: ${_timeBasedGreeting()}',
+                    child: Text(
+                      _timeBasedGreeting(),
+                      style: GoogleFonts.crimsonText(
+                        color: theme.brightness == Brightness.dark
+                            ? kGoldLight
+                            : kGoldDim,
+                        fontSize: 17,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   if (state.userName.isNotEmpty) ...[
                     Text(
-                      'Namaste, ${state.userName} 🙏',
+                      'Namaste, ${state.userName}',
                       style: GoogleFonts.cinzel(
                         color: kGold,
                         fontSize: 18,
@@ -67,6 +118,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildStreakBar(state),
                   const SizedBox(height: 24),
                   _buildDailyVerse(context, _dailyVerse),
+                  const SizedBox(height: 16),
+                  _buildDailyDharmaCard(),
                   const SizedBox(height: 24),
                   _buildSectionTitle('Quick Actions'),
                   const SizedBox(height: 16),
@@ -86,11 +139,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildAppBar(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return SliverAppBar(
       expandedHeight: 120,
       floating: false,
       pinned: true,
-      backgroundColor: kBg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
         centerTitle: true,
@@ -104,11 +159,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         background: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFF1A1500), kBg],
+              colors: isDark
+                  ? const [Color(0xFF1A1500), kBg]
+                  : const [Color(0xFFFFF1CE), Color(0xFFFFF8E7)],
             ),
           ),
         ),
@@ -127,16 +184,20 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildStreakBar(AppState state) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Semantics(
       label: "Progress Overview: Level ${state.level}, Streak ${state.streak} days",
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF2A1F00), Color(0xFF1A1500)],
+          gradient: LinearGradient(
+            colors: isDark
+                ? const [Color(0xFF2A1F00), Color(0xFF1A1500)]
+                : const [Color(0xFFFFF6D9), Color(0xFFFFF1CE)],
           ),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: kDivider.withOpacity(0.5)), // FIXED: Removed leading comma
+          border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
         ),
         child: Row(
           children: [
@@ -187,6 +248,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildDailyVerse(BuildContext context, dynamic verse) {
     if (verse == null) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return GestureDetector(
       onTap: () => Navigator.push(
@@ -199,13 +262,15 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
+            gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF2A2000), Color(0xFF1A1500)],
+              colors: isDark
+                  ? const [Color(0xFF2A2000), Color(0xFF1A1500)]
+                  : const [Color(0xFFFFF6DD), Color(0xFFFFF1CF)],
             ),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: kGoldDim.withOpacity(0.2)),
+            border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -224,7 +289,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 verse.sanskrit ?? '',
                 style: GoogleFonts.notoSansDevanagari(
-                  color: kGoldLight,
+                  color: isDark ? kGoldLight : kGoldDim,
                   fontSize: 16,
                   height: 1.5,
                 ),
@@ -233,7 +298,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 '"${verse.translation ?? ''}"',
                 style: GoogleFonts.crimsonText(
-                  color: kText,
+                  color: isDark ? kText : const Color(0xFF2A1F00),
                   fontSize: 15,
                   fontStyle: FontStyle.italic,
                   height: 1.4,
@@ -248,11 +313,87 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _toggleDharmaAudio() async {
+    if (_dailyVerse == null) return;
+    if (_isPlayingDharmaAudio) {
+      await _tts.stop();
+      if (mounted) setState(() => _isPlayingDharmaAudio = false);
+      return;
+    }
+
+    final text =
+        'Daily Dharma verse. ${_dailyVerse.translation ?? ''}';
+    setState(() => _isPlayingDharmaAudio = true);
+    await _tts.speak(text);
+  }
+
+  Widget _buildDailyDharmaCard() {
+    if (_dailyVerse == null) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'DAILY DHARMA AUDIO',
+            style: GoogleFonts.cinzel(
+              color: kGold,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            (_dailyVerse.sanskrit ?? '').toString(),
+            style: GoogleFonts.notoSansDevanagari(
+              color: theme.brightness == Brightness.dark
+                  ? kGoldLight
+                  : kGoldDim,
+              fontSize: 16,
+              height: 1.4,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            (_dailyVerse.translation ?? '').toString(),
+            style: TextStyle(
+              color: theme.brightness == Brightness.dark
+                  ? kTextDim
+                  : const Color(0xFF7A6A3A),
+              fontSize: 13,
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _toggleDharmaAudio,
+              icon: Icon(_isPlayingDharmaAudio ? Icons.stop : Icons.play_arrow),
+              label: Text(_isPlayingDharmaAudio ? 'Stop Audio' : 'Play Daily Sloka'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSectionTitle(String title) {
+    final theme = Theme.of(context);
     return Text(
       title.toUpperCase(),
       style: GoogleFonts.cinzel( // FIXED: Removed leading comma
-        color: kGold,
+        color: theme.colorScheme.primary,
         fontSize: 13,
         fontWeight: FontWeight.bold,
         letterSpacing: 1.2,
@@ -302,13 +443,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildWisdomPreview() {
+    final theme = Theme.of(context);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: kCard,
+        color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: kDivider),
+        border: Border.all(color: theme.dividerColor),
       ),
       child: Row(
         children: [

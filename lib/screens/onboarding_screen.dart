@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,10 +17,55 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email'],
+  );
   int _page = 0;
   final TextEditingController _nameController = TextEditingController();
   final FocusNode _nameFocus = FocusNode();
   String? _nameError;
+
+  bool _googleLoading = false;
+  String? _googleError;
+
+  Future<void> _continueWithGoogle() async {
+    setState(() {
+      _googleLoading = true;
+      _googleError = null;
+    });
+
+    try {
+      final account = await _googleSignIn.signInSilently() ?? await _googleSignIn.signIn();
+      if (account == null) {
+        setState(() {
+          _googleError = 'Google sign-in was cancelled. You can continue by entering your name.';
+        });
+        return;
+      }
+      final displayName = account.displayName?.trim() ?? '';
+      final email = account.email.trim();
+      if (displayName.isNotEmpty) {
+        _nameController.text = displayName;
+      }
+      if (mounted) {
+        final appState = context.read<AppState>();
+        appState.updateGoogleAccount(
+          name: displayName.isNotEmpty ? displayName : _nameController.text,
+          email: email,
+        );
+      }
+      await _handlePermissions();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _googleError = 'Google sign-in failed on this device. Please verify Google Play Services / OAuth setup and try again.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _googleLoading = false);
+      }
+    }
+  }
 
   static const List<_OnboardPageData> _pages = [
     _OnboardPageData(
@@ -337,6 +383,37 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ),
             const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _googleLoading ? null : _continueWithGoogle,
+                icon: _googleLoading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: kGold),
+                      )
+                    : const Icon(Icons.login, color: kGold),
+                label: Text(
+                  _googleLoading ? 'Connecting to Google...' : 'Continue with Google',
+                  style: GoogleFonts.cinzel(color: kGold, fontWeight: FontWeight.w600),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: kGold.withOpacity(0.7)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            if (_googleError != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                _googleError!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+              ),
+            ],
+            const SizedBox(height: 10),
             const Text(
               'You can change this anytime in Settings.',
               style: TextStyle(color: kTextDim, fontSize: 12),
