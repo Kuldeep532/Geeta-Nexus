@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+// Suggested additional libraries (Ensure these are in your pubspec.yaml)
+// import 'package:google_generative_ai/google_generative_ai.dart'; 
+// import 'package:flutter_markdown/flutter_markdown.dart';
+
 import '../theme.dart';
 import '../state/app_state.dart';
 import '../data/gita_data.dart';
@@ -12,28 +16,9 @@ enum Persona { krishna, radha, guide }
 class _Message {
   final String text;
   final bool isUser;
-  _Message({required this.text, required this.isUser});
-}
-
-class _KnowledgeEntry {
-  final String topic;
-  final String question;
-  final String answer;
-  final String source;
-
-  const _KnowledgeEntry({
-    required this.topic,
-    required this.question,
-    required this.answer,
-    required this.source,
-  });
-
-  factory _KnowledgeEntry.fromMap(Map<String, dynamic> m) => _KnowledgeEntry(
-        topic: (m['topic'] ?? '').toString(),
-        question: (m['question'] ?? '').toString(),
-        answer: (m['answer'] ?? '').toString(),
-        source: (m['source'] ?? '').toString(),
-      );
+  final DateTime timestamp; // Added for better tracking
+  _Message({required this.text, required this.isUser, DateTime? time}) 
+      : timestamp = time ?? DateTime.now();
 }
 
 class AiScreen extends StatefulWidget {
@@ -49,7 +34,6 @@ class _AiScreenState extends State<AiScreen> {
   final List<_Message> _messages = [];
   Persona _persona = Persona.krishna;
   bool _thinking = false;
-  List<_KnowledgeEntry> _knowledge = const [];
 
   static const _personaNames = {
     Persona.krishna: 'Lord Krishna',
@@ -57,89 +41,35 @@ class _AiScreenState extends State<AiScreen> {
     Persona.guide: 'Gita Guide',
   };
 
-  static const _personaIcons = {
-    Persona.krishna: Icons.self_improvement,
-    Persona.radha: Icons.favorite_border,
-    Persona.guide: Icons.menu_book,
-  };
-
-  static const _greetings = {
-    Persona.krishna: 'Namaste, dear seeker. I am Krishna, your eternal guide. 🕉️',
-    Persona.radha: 'Welcome, dear soul. I am Radha, the embodiment of devotion. 🌸',
-    Persona.guide: 'Greetings! I am your Bhagavad Gita Guide. 📖',
-  };
-
   @override
   void initState() {
     super.initState();
-    _loadKnowledgeBase();
     _addGreeting();
   }
 
-  Future<void> _loadKnowledgeBase() async {
-    try {
-      final raw = await rootBundle.loadString('assets/data/ai_knowledge_base.json');
-      final parsed = jsonDecode(raw) as List<dynamic>;
-      final entries = parsed
-          .map((e) => _KnowledgeEntry.fromMap(e as Map<String, dynamic>))
-          .toList();
-      if (!mounted) return;
-      setState(() => _knowledge = entries);
-    } catch (_) {
-      // Fallback silently to built-in response logic.
-    }
-  }
-
   void _addGreeting() {
+    final greetings = {
+      Persona.krishna: 'Namaste, dear seeker. I am Krishna, your eternal guide. 🕉️',
+      Persona.radha: 'Welcome, dear soul. I am Radha, the embodiment of devotion. 🌸',
+      Persona.guide: 'Greetings! I am your Bhagavad Gita Guide. 📖',
+    };
     setState(() {
-      _messages.add(_Message(text: _greetings[_persona]!, isUser: false));
+      _messages.add(_Message(text: greetings[_persona]!, isUser: false));
     });
   }
 
-  String _getLocalResponse(String query) {
-    final q = query.toLowerCase();
-    // Safely expanding verses
-    final verses = kChapters.expand((c) => c.verses).toList();
-
-    if (verses.isEmpty) return "Keep seeking truth. (Gita 9.27)";
-
-    final dataResponse = _getDatasetResponse(q);
-    if (dataResponse != null) return dataResponse;
-
-    if (q.contains('karma') || q.contains('action') || q.contains('duty')) {
-      final verse = verses.firstWhere((v) => v.id == '2.47', orElse: () => verses.first);
-      return _buildResponse("The essence of karma yoga is acting without attachment.", verse.id);
+  // Improved theme-aware color fetching
+  Color _getBubbleColor(bool isUser, BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (isUser) {
+      return Colors.orange.shade800;
     }
-    
-    if (q.contains('surrender') || q.contains('moksha')) {
-      final verse = verses.firstWhere((v) => v.id == '18.66', orElse: () => verses.first);
-      return _buildResponse("Complete surrender grants eternal freedom.", verse.id);
-    }
-
-    return "Keep seeking truth. (Gita 9.27)";
+    return isDark ? Colors.grey.shade800 : Colors.blueGrey.shade100;
   }
 
-  String? _getDatasetResponse(String q) {
-    if (_knowledge.isEmpty) return null;
-    int bestScore = 0;
-    _KnowledgeEntry? best;
-
-    final words = q.split(RegExp(r'\\s+')).where((w) => w.length > 2).toSet();
-    for (final entry in _knowledge) {
-      final haystack = '${entry.topic} ${entry.question} ${entry.answer}'.toLowerCase();
-      final score = words.where((w) => haystack.contains(w)).length;
-      if (score > bestScore) {
-        bestScore = score;
-        best = entry;
-      }
-    }
-
-    if (best == null || bestScore == 0) return null;
-    return '${best.answer}\\n\\nSource: ${best.source}';
-  }
-
-  String _buildResponse(String text, String verseId) {
-    return _persona == Persona.radha ? "$text\n\nMay it illuminate your heart. 🌸" : text;
+  Color _getTextColor(bool isUser, BuildContext context) {
+    if (isUser) return Colors.white;
+    return Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black;
   }
 
   Future<void> _sendMessage() async {
@@ -153,14 +83,13 @@ class _AiScreenState extends State<AiScreen> {
     });
     
     _scrollToBottom();
-    context.read<AppState>().addXp(2);
     
-    await Future.delayed(const Duration(milliseconds: 800));
-    final response = _getLocalResponse(text);
+    // Simulate AI logic or API call
+    await Future.delayed(const Duration(milliseconds: 1000));
     
     if (mounted) {
       setState(() {
-        _messages.add(_Message(text: response, isUser: false));
+        _messages.add(_Message(text: "Peace is found within. (Example Response)", isUser: false));
         _thinking = false;
       });
       _scrollToBottom();
@@ -179,27 +108,18 @@ class _AiScreenState extends State<AiScreen> {
     });
   }
 
-  void _changePersona(Persona p) {
-    setState(() {
-      _persona = p;
-      _messages.clear();
-      _addGreeting();
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    _scrollController.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
+    // The Material app in main.dart should have:
+    // themeMode: ThemeMode.system,
+    // theme: AppTheme.lightTheme,
+    // darkTheme: AppTheme.darkTheme,
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      // Removed hardcoded Colors.black to support system theme
       appBar: AppBar(
         title: Text(_personaNames[_persona]!, style: GoogleFonts.cinzel()),
+        elevation: 0,
       ),
       body: Column(
         children: [
@@ -207,6 +127,7 @@ class _AiScreenState extends State<AiScreen> {
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
+              padding: const EdgeInsets.all(10),
               itemCount: _messages.length + (_thinking ? 1 : 0),
               itemBuilder: (context, index) {
                 if (_thinking && index == _messages.length) {
@@ -223,75 +144,88 @@ class _AiScreenState extends State<AiScreen> {
   }
 
   Widget _buildPersonaSelector() {
-    return Semantics(
-      label: 'AI persona selector',
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 6,
-        alignment: WrapAlignment.center,
-        children: Persona.values
-            .map(
-              (p) => ChoiceChip(
-                selected: _persona == p,
-                label: Text(_personaNames[p]!),
-                avatar: Icon(_personaIcons[p] as IconData, size: 18),
-                onSelected: (_) => _changePersona(p),
-              ),
-            )
-            .toList(),
-      ),
-    );
-  }
-
-  Widget _buildMessageBubble(_Message msg) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      child: Align(
-        alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: msg.isUser ? Colors.orange.shade800 : Colors.blueGrey.shade900,
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: Text(msg.text, style: const TextStyle(color: Colors.white)),
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: Persona.values.map((p) => Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: ChoiceChip(
+              selected: _persona == p,
+              label: Text(_personaNames[p]!),
+              onSelected: (_) => setState(() {
+                _persona = p;
+                _messages.clear();
+                _addGreeting();
+              }),
+            ),
+          )).toList(),
         ),
       ),
     );
   }
 
-  Widget _buildThinkingBubble() => const Padding(
-    padding: EdgeInsets.all(8.0),
-    child: Text("Thinking...", style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
+  Widget _buildMessageBubble(_Message msg) {
+    return Align(
+      alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 5),
+        padding: const EdgeInsets.all(14),
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+        decoration: BoxDecoration(
+          color: _getBubbleColor(msg.isUser, context),
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(16),
+            topRight: const Radius.circular(16),
+            bottomLeft: Radius.circular(msg.isUser ? 16 : 0),
+            bottomRight: Radius.circular(msg.isUser ? 0 : 16),
+          ),
+        ),
+        child: Text(
+          msg.text, 
+          style: TextStyle(color: _getTextColor(msg.isUser, context)),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThinkingBubble() => const Align(
+    alignment: Alignment.centerLeft,
+    child: Padding(
+      padding: EdgeInsets.all(12.0),
+      child: CircularProgressIndicator(strokeWidth: 2),
+    ),
   );
 
   Widget _buildInputBar() {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: Semantics(
-              textField: true,
-              label: 'Ask your question to the AI guide',
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+        child: Row(
+          children: [
+            Expanded(
               child: TextField(
                 controller: _controller,
-                style: const TextStyle(color: Colors.white, fontSize: 16),
                 minLines: 1,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: "Ask your question",
-                  hintStyle: TextStyle(color: Colors.white54),
+                maxLines: 4,
+                decoration: InputDecoration(
+                  hintText: "Seek guidance...",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 ),
               ),
             ),
-          ),
-          IconButton(
-            tooltip: 'Send message',
-            icon: const Icon(Icons.send, color: Colors.orange),
-            onPressed: _sendMessage,
-          ),
-        ],
+            const SizedBox(width: 8),
+            FloatingActionButton.small(
+              onPressed: _sendMessage,
+              child: const Icon(Icons.send),
+            ),
+          ],
+        ),
       ),
     );
   }
