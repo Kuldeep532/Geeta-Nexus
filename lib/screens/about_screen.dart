@@ -9,8 +9,9 @@ class AboutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('About the Application'),
         centerTitle: true,
@@ -45,7 +46,7 @@ class AboutScreen extends StatelessWidget {
                     Text(
                       'Bhagavad Gita AI',
                       style: GoogleFonts.cinzel(
-                        color: kGold, 
+                        color: cs.primary, 
                         fontSize: 24, 
                         fontWeight: FontWeight.bold,
                       ),
@@ -61,7 +62,7 @@ class AboutScreen extends StatelessWidget {
                           label: 'Application version $version',
                           child: Text(
                             'Version $version',
-                            style: const TextStyle(color: kTextDim, fontSize: 13),
+                            style: TextStyle(color: cs.onSurface.withOpacity(0.7), fontSize: 13),
                           ),
                         );
                       },
@@ -71,22 +72,22 @@ class AboutScreen extends StatelessWidget {
               ),
               const SizedBox(height: 40),
 
-              _section(
+              _section(context,
                 'Our Mission',
                 'Synthesizing timeless Vedic wisdom with cutting-edge Large Language Models (LLMs). Bhagavad Gita AI provides an immersive, personalized spiritual ecosystem designed to foster self-realization and mental clarity in the modern age.',
               ),
               
-              _section(
+              _section(context,
                 'Core Features',
                 '• High-fidelity translations of all 700 Shlokas.\n• Context-aware AI philosophical guidance.\n• Integrated modules for Prāṇāyāma and Japa meditation.\n• Gamified Vedic learning via cognitive flashcards.\n• Progress analytics and spiritual streak tracking.',
               ),
 
-              _section(
+              _section(context,
                 'Organization',
                 'Satvik Technology\nArchitecting ethical and spiritual-centric AI solutions.',
               ),
 
-              _section(
+              _section(context,
                 'Leadership',
                 'Kuldeep Kumar Yadav\nFounder & Lead Visionary, Satvik Technology.',
               ),
@@ -101,7 +102,7 @@ class AboutScreen extends StatelessWidget {
                   child: const Text(
                     'Made with 🙏 for seekers everywhere',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: kTextDim, fontSize: 13, fontStyle: FontStyle.italic),
+                    style: TextStyle(fontSize: 13, fontStyle: FontStyle.italic),
                   ),
                 ),
               ),
@@ -113,7 +114,8 @@ class AboutScreen extends StatelessWidget {
     );
   }
 
-  Widget _section(String title, String body) {
+  Widget _section(BuildContext context, String title, String body) {
+    final cs = Theme.of(context).colorScheme;
     return MergeSemantics(
       child: Padding(
         padding: const EdgeInsets.only(bottom: 28),
@@ -123,7 +125,7 @@ class AboutScreen extends StatelessWidget {
             Text(
               title.toUpperCase(),
               style: GoogleFonts.cinzel(
-                color: kGold,
+                color: cs.primary,
                 fontSize: 14,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.5,
@@ -133,7 +135,7 @@ class AboutScreen extends StatelessWidget {
             Text(
               body,
               style: GoogleFonts.crimsonText(
-                color: kText,
+                color: cs.onSurface,
                 fontSize: 17,
                 height: 1.6,
               ),

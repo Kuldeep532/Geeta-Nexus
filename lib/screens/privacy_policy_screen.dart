@@ -8,7 +8,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         // FIX 1: Removed 'const' before Semantics because it was causing a build error
         title: Semantics(
@@ -88,6 +88,7 @@ class _Heading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.only(top: 28, bottom: 10),
       child: Semantics(
@@ -95,7 +96,7 @@ class _Heading extends StatelessWidget {
         child: Text(
           text.toUpperCase(),
           style: GoogleFonts.cinzel(
-            color: kGold,
+            color: cs.primary,
             fontSize: 15,
             fontWeight: FontWeight.bold,
             letterSpacing: 1.3,
@@ -112,11 +113,12 @@ class _Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return MergeSemantics( 
       child: Text(
         text,
         style: GoogleFonts.crimsonText(
-          color: kText,
+          color: cs.onSurface,
           fontSize: 17,
           height: 1.6,
         ),

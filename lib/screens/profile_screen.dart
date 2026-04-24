@@ -3,7 +3,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 
 import '../state/app_state.dart';
-import '../theme.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -26,7 +25,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!mounted) return;
     context.read<AppState>().clearGoogleAccount();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Logged out from Google account.')),
+      const SnackBar(content: Text('Logged out from linked account.')),
     );
     setState(() => _loggingOut = false);
   }
@@ -34,9 +33,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Profile'),
         centerTitle: true,
@@ -48,27 +49,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: kCard,
+              color: theme.cardTheme.color,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: kDivider.withOpacity(0.5)),
+              border: Border.all(color: cs.outline.withOpacity(0.5)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Account', style: TextStyle(color: kGold, fontWeight: FontWeight.bold)),
+                Text('Account', style: TextStyle(color: cs.primary, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 10),
                 Text(state.userName.isEmpty ? 'Guest User' : state.userName,
-                    style: const TextStyle(color: kText, fontSize: 16, fontWeight: FontWeight.w600)),
+                    style: TextStyle(color: cs.onSurface, fontSize: 16, fontWeight: FontWeight.w600)),
                 const SizedBox(height: 4),
                 Text(
                   state.userEmail.isEmpty ? 'No email linked' : state.userEmail,
-                  style: const TextStyle(color: kTextDim),
+                  style: TextStyle(color: cs.onSurface.withOpacity(0.7)),
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  state.isGoogleAccountLinked ? 'Google account linked' : 'Local profile only',
+                  state.isGoogleAccountLinked
+                      ? 'Google account linked'
+                      : state.isEmailAccountLinked
+                          ? 'Email account linked'
+                          : 'Local profile only',
                   style: TextStyle(
-                    color: state.isGoogleAccountLinked ? Colors.greenAccent : kTextDim,
+                    color: state.isGoogleAccountLinked
+                        ? Colors.green
+                        : state.isEmailAccountLinked
+                            ? cs.primary
+                            : cs.onSurface.withOpacity(0.7),
                     fontSize: 12,
                   ),
                 ),
@@ -77,7 +86,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 16),
           ElevatedButton.icon(
-            onPressed: state.isGoogleAccountLinked && !_loggingOut
+            onPressed: (state.isGoogleAccountLinked || state.isEmailAccountLinked) && !_loggingOut
                 ? () => _logout(context)
                 : null,
             icon: _loggingOut
@@ -87,7 +96,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.logout),
-            label: Text(_loggingOut ? 'Logging out...' : 'Logout Google Account'),
+            label: Text(_loggingOut ? 'Logging out...' : 'Logout Account'),
           ),
         ],
       ),
