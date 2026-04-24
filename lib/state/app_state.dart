@@ -323,6 +323,10 @@ class AppState extends ChangeNotifier {
   }
 
   void clearGoogleAccount() {
+<<<<<<< codex/add-google-login-option-fx4gi5
+    _userName = '';
+=======
+>>>>>>> main
     _userEmail = '';
     _isGoogleAccountLinked = false;
     notifyListeners();

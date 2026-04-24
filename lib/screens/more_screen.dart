@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
+import 'meditation_screen.dart';
+import 'journal_screen.dart';
+import 'astrology_screen.dart';
+import 'reading_plan_screen.dart';
+import 'about_screen.dart';
 import '../state/app_state.dart';
 import 'about_screen.dart';
 import 'affirmations_screen.dart';
@@ -22,6 +28,7 @@ import 'quiz_screen.dart';
 import 'terms_screen.dart';
 import 'updates_screen.dart';
 import 'notifications_screen.dart';
+import 'profile_screen.dart';
 import 'social_links.dart';
 
 class MoreScreen extends StatefulWidget {
@@ -147,6 +154,72 @@ class _MoreScreenState extends State<MoreScreen> {
     );
   }
 
+
+
+  Widget _buildAccountCard(AppState appState) {
+    final accountName = appState.userName.isNotEmpty ? appState.userName : 'Not connected';
+    final accountEmail = appState.userEmail.isNotEmpty
+        ? appState.userEmail
+        : 'Connect Google sign-in from onboarding';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: kCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: kDivider.withOpacity(0.5)),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: kGold.withOpacity(0.14),
+            child: const Icon(Icons.account_circle, color: kGold, size: 28),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  accountName,
+                  style: const TextStyle(
+                    color: kText,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  accountEmail,
+                  style: const TextStyle(color: kTextDim, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: appState.isGoogleAccountLinked
+                  ? Colors.green.withOpacity(0.18)
+                  : kDivider.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              appState.isGoogleAccountLinked ? 'Google Linked' : 'Local Profile',
+              style: TextStyle(
+                color: appState.isGoogleAccountLinked ? Colors.greenAccent : kTextDim,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
@@ -169,6 +242,141 @@ class _MoreScreenState extends State<MoreScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+<<<<<<< codex/add-google-login-option-fx4gi5
+              _sectionTitle('Profile Account'),
+              const SizedBox(height: 12),
+              Semantics(
+                label: 'Profile account details',
+                child: _buildAccountCard(appState),
+              ),
+              const SizedBox(height: 8),
+              _buildInfoTile(
+                emoji: 'P',
+                title: 'Open Profile',
+                subtitle: 'Manage account and logout',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                ),
+              ),
+              const SizedBox(height: 24),
+              _sectionTitle('Main Features'),
+              const SizedBox(height: 12),
+              _buildInfoTile(
+                emoji: '📚',
+                title: 'Reading Plan',
+                subtitle: '30-day guided journey',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ReadingPlanScreen()),
+                ),
+              ),
+              _buildInfoTile(
+                emoji: '🧘',
+                title: 'Meditation',
+                subtitle: 'Sit in stillness',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MeditationScreen()),
+                ),
+              ),
+              _buildInfoTile(
+                emoji: '✍️',
+                title: 'Journal',
+                subtitle: 'Daily reflection',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const JournalScreen()),
+                ),
+              ),
+              _buildInfoTile(
+                emoji: '🔭',
+                title: 'Astrology',
+                subtitle: 'Kundli and horoscope',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AstrologyScreen()),
+                ),
+              ),
+              const SizedBox(height: 24),
+              _sectionTitle('Settings & Info'),
+              const SizedBox(height: 12),
+              _buildInfoTile(
+                emoji: 'A',
+                title: 'App Version',
+                subtitle: _appVersionLabel,
+                onTap: () {},
+              ),
+              _buildInfoTile(
+                emoji: '👤',
+                title: appState.userName.isEmpty
+                    ? 'Set your name'
+                    : appState.userName,
+                subtitle: 'Tap to edit',
+                onTap: () => _editName(context, appState),
+              ),
+              _buildInfoTile(
+                emoji: appState.themeMode == ThemeMode.dark
+                    ? '🌙'
+                    : appState.themeMode == ThemeMode.light
+                        ? '☀️'
+                        : '🌓',
+                title: 'Theme',
+                subtitle: appState.themeMode == ThemeMode.dark
+                    ? 'Dark'
+                    : appState.themeMode == ThemeMode.light
+                        ? 'Light'
+                        : 'Automatic (system)',
+                onTap: () => _pickTheme(context, appState),
+              ),
+              _buildInfoTile(
+                emoji: '⬆️',
+                title: 'Check for Updates',
+                subtitle: 'Auto-checks on app open',
+                onTap: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const UpdatesScreen())),
+              ),
+              _buildInfoTile(
+                emoji: 'N',
+                title: 'Notifications',
+                subtitle: appState.unreadNotificationCount == 0
+                    ? 'No unread notifications'
+                    : '${appState.unreadNotificationCount} unread notifications',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+                ),
+              ),
+              _buildInfoTile(
+                emoji: '✉️',
+                title: 'Contact Us',
+                subtitle: 'Send a message',
+                onTap: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const ContactScreen())),
+              ),
+              _buildInfoTile(
+                emoji: '🛡️',
+                title: 'Privacy Policy',
+                subtitle: 'How we handle your data',
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const PrivacyPolicyScreen())),
+              ),
+              _buildInfoTile(
+                emoji: '📜',
+                title: 'Terms & Conditions',
+                subtitle: 'Rules of use',
+                onTap: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const TermsScreen())),
+              ),
+              _buildInfoTile(
+                emoji: 'ℹ️',
+                title: 'About',
+                subtitle: 'About this app',
+                onTap: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const AboutScreen())),
+=======
               _sectionTitle('Study & Learn', context),
               const SizedBox(height: 12),
               _buildGrid(context, [
@@ -194,6 +402,7 @@ class _MoreScreenState extends State<MoreScreen> {
               Semantics(
                 label: 'Profile account details',
                 child: _buildAccountCard(context, appState),
+>>>>>>> main
               ),
               const SizedBox(height: 40),
               Center(
