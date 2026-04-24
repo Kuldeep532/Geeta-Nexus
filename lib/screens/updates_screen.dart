@@ -21,10 +21,7 @@ const List<String> kNewFeatures = [
   'Automatic admin rights for kuldeepky538@gmail.com after Google sign-in',
   'Astrology section with local kundli and horoscope generator',
   'AI section accessibility upgrades for clearer persona and input controls',
-<<<<<<< codex/add-google-login-option-fx4gi5
   'Daily Dharma audio player to listen to the day\'s sloka translation',
-=======
->>>>>>> main
   'Update feed configuration remains available for instant release notes',
 ];
 
@@ -258,52 +255,38 @@ class _UpdatesScreenState extends State<UpdatesScreen> {
             children: [
               Icon(
                   isNewer
-                      ? Icons.system_update
-                      : Icons.check_circle_outline,
+                      ? Icons.system_update_alt_rounded
+                      : Icons.verified_rounded,
                   color: isNewer ? kGold : Colors.greenAccent),
               const SizedBox(width: 8),
-              Text(
-                isNewer ? 'Update available' : 'You are up to date',
-                style: GoogleFonts.cinzel(
-                    color: isNewer ? kGold : Colors.greenAccent,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold),
+              Expanded(
+                child: Text(
+                  isNewer ? 'New version available: v$latest' : 'You are up to date',
+                  style: GoogleFonts.cinzel(
+                      color: kText,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          if (latest.isNotEmpty)
-            Text('Latest version: v$latest',
-                style: const TextStyle(color: kText, fontSize: 14)),
           if (notes.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text('What\'s new',
-                style: GoogleFonts.cinzel(
-                    color: kGold,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold)),
-            const SizedBox(height: 6),
+            const SizedBox(height: 10),
             Text(notes,
-                style: GoogleFonts.crimsonText(
-                    color: kText, fontSize: 15, height: 1.5)),
+                style: const TextStyle(
+                    color: kTextDim, fontSize: 13, height: 1.35)),
           ],
           if (isNewer && url.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.download),
-                onPressed: () => launchUrl(Uri.parse(url),
-                    mode: LaunchMode.externalApplication),
-                label: const Text('Download Update'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: kGold,
-                  foregroundColor: kBg,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
+            const SizedBox(height: 14),
+            ElevatedButton.icon(
+              onPressed: () async {
+                final uri = Uri.parse(url);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                }
+              },
+              icon: const Icon(Icons.download_rounded),
+              label: const Text('Download Update'),
             ),
           ],
         ],
@@ -311,47 +294,38 @@ class _UpdatesScreenState extends State<UpdatesScreen> {
     );
   }
 
-
   Widget _newFeaturesCard() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: kCard.withOpacity(0.7),
+        color: kCard,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: kDivider.withOpacity(0.4)),
+        border: Border.all(color: kDivider.withOpacity(0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('NEW FEATURES',
+          Text('NEW IN THIS BUILD',
               style: GoogleFonts.cinzel(
                   color: kGold,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 1.1)),
           const SizedBox(height: 10),
-          ...kNewFeatures.map(
-            (feature) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.only(top: 2),
-                    child: Icon(Icons.check_circle, color: kGoldDim, size: 14),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      feature,
-                      style: const TextStyle(color: kText, fontSize: 13, height: 1.35),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+          ...kNewFeatures.map((f) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('• ', style: TextStyle(color: kGold)),
+                    Expanded(
+                        child: Text(f,
+                            style: const TextStyle(
+                                color: kTextDim, fontSize: 13, height: 1.35))),
+                  ],
+                ),
+              )),
         ],
       ),
     );
@@ -362,29 +336,13 @@ class _UpdatesScreenState extends State<UpdatesScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: kCard.withOpacity(0.6),
+        color: kCard,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: kDivider.withOpacity(0.4)),
+        border: Border.all(color: kDivider.withOpacity(0.5)),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('HOW UPDATES WORK',
-              style: GoogleFonts.cinzel(
-                  color: kGold,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.1)),
-          const SizedBox(height: 8),
-          const Text(
-            'The app checks a small JSON file you host online (the "update feed"). '
-            'Whenever you change that JSON to announce a new version or message, '
-            'every user sees it instantly — no APK rebuild needed.\n\n'
-            'Expected JSON shape:\n'
-            '{ "version": "1.1.0", "notes": "What\'s new…", "url": "https://your-host/app.apk" }',
-            style: TextStyle(color: kTextDim, fontSize: 13, height: 1.45),
-          ),
-        ],
+      child: const Text(
+        'Tip: This screen checks a JSON update feed URL. You can host your own updates.json and point this app to it from the settings icon above.',
+        style: TextStyle(color: kTextDim, fontSize: 13, height: 1.35),
       ),
     );
   }
