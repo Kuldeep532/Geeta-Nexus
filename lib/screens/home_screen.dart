@@ -59,22 +59,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return 'Good Night · Hare Krishna';
   }
 
-
-
-  String _timeBasedGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour >= 5 && hour < 12) {
-      return 'Good Morning · Jai Shri Krishna';
-    }
-    if (hour >= 12 && hour < 17) {
-      return 'Good Afternoon · Jai Shri Krishna';
-    }
-    if (hour >= 17 && hour < 21) {
-      return 'Good Evening · Jai Shri Krishna';
-    }
-    return 'Good Night · Hare Krishna';
-  }
-
   final List<Map<String, String>> _newFeatures = const [
     {'title': 'Adaptive Reading Mode', 'subtitle': 'Cleaner typography and calmer spacing for long study sessions'},
     {'title': 'Smart Verse Context', 'subtitle': 'Chapter-aware suggestions to continue reading with flow'},
@@ -125,7 +109,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: theme.brightness == Brightness.dark
                             ? kGoldLight
                             : kGoldDim,
-                        color: kGoldLight,
                         fontSize: 17,
                         fontStyle: FontStyle.italic,
                       ),
@@ -420,6 +403,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    );
+  }
+
   Widget _buildNewFeatures() {
     return Column(
       children: _newFeatures
@@ -474,7 +460,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
     return Text(
       title.toUpperCase(),
-      style: GoogleFonts.cinzel( // FIXED: Removed leading comma
+      style: GoogleFonts.cinzel(
         color: theme.colorScheme.primary,
         fontSize: 13,
         fontWeight: FontWeight.bold,
