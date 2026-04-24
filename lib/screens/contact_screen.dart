@@ -69,8 +69,9 @@ class _ContactScreenState extends State<ContactScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Contact Us'),
         centerTitle: true,
@@ -87,14 +88,14 @@ class _ContactScreenState extends State<ContactScreen> {
                 header: true,
                 child: Text('Get in touch',
                     style: GoogleFonts.cinzel(
-                        color: kGold,
+                        color: cs.primary,
                         fontSize: 20,
                         fontWeight: FontWeight.bold)),
               ),
               const SizedBox(height: 6),
-              const Text(
+              Text(
                 'Have a question, suggestion, or feedback? Send a message and we\'ll get back to you.',
-                style: TextStyle(color: kTextDim, fontSize: 14, height: 1.4),
+                style: TextStyle(color: cs.onSurface.withOpacity(0.7), fontSize: 14, height: 1.4),
               ),
               const SizedBox(height: 16),
               _infoTile(
@@ -132,8 +133,8 @@ class _ContactScreenState extends State<ContactScreen> {
                         label: Text('Send Message',
                             style: GoogleFonts.cinzel(fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: kGold,
-                          foregroundColor: kBg,
+                          backgroundColor: cs.primary,
+                          foregroundColor: cs.onPrimary,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12)),
@@ -152,6 +153,8 @@ class _ContactScreenState extends State<ContactScreen> {
   }
 
   Widget _infoTile(IconData icon, String text, VoidCallback onTap, String semanticLabel) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Semantics(
       button: true,
       label: semanticLabel,
@@ -161,9 +164,9 @@ class _ContactScreenState extends State<ContactScreen> {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: kCard,
+            color: theme.cardTheme.color,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: kDivider.withOpacity(0.5)),
+            border: Border.all(color: cs.outline.withOpacity(0.5)),
           ),
           child: Row(
             children: [
@@ -171,9 +174,9 @@ class _ContactScreenState extends State<ContactScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(text,
-                    style: const TextStyle(color: kText, fontSize: 14)),
+                    style: TextStyle(color: cs.onSurface, fontSize: 14)),
               ),
-              const Icon(Icons.open_in_new, color: kTextDim, size: 16),
+              Icon(Icons.open_in_new, color: cs.onSurface.withOpacity(0.7), size: 16),
             ],
           ),
         ),
@@ -186,26 +189,25 @@ class _ContactScreenState extends State<ContactScreen> {
       String? hint,
       TextInputType? keyboard,
       String? Function(String?)? validator}) {
+    final cs = Theme.of(context).colorScheme;
     return TextFormField(
       controller: c,
       maxLines: maxLines,
       keyboardType: keyboard,
       validator: validator,
-      style: const TextStyle(color: kText),
+      style: TextStyle(color: cs.onSurface),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        hintStyle: TextStyle(color: kTextDim.withOpacity(0.5)),
-        labelStyle: const TextStyle(color: kTextDim),
-        filled: true,
-        fillColor: kCard,
+        hintStyle: TextStyle(color: cs.onSurface.withOpacity(0.5)),
+        labelStyle: TextStyle(color: cs.onSurface.withOpacity(0.75)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: kDivider.withOpacity(0.5)),
+          borderSide: BorderSide(color: cs.outline.withOpacity(0.5)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: kGold, width: 1.5),
+          borderSide: BorderSide(color: cs.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
