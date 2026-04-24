@@ -2,17 +2,30 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
-import '../theme.dart';
-import '../state/app_state.dart';
 
 import 'meditation_screen.dart';
 import 'journal_screen.dart';
 import 'astrology_screen.dart';
 import 'reading_plan_screen.dart';
 import 'about_screen.dart';
-import 'privacy_policy_screen.dart';
-import 'terms_screen.dart';
+import '../state/app_state.dart';
+import 'about_screen.dart';
+import 'affirmations_screen.dart';
+import 'bookmarks_screen.dart';
+import 'breathing_screen.dart';
+import 'chants_screen.dart';
 import 'contact_screen.dart';
+import 'flashcards_screen.dart';
+import 'astrology_screen.dart';
+import 'reading_plan_screen.dart';
+import 'wisdom_cards_screen.dart';
+import 'geeta_voice_practice_screen.dart';
+import 'glossary_screen.dart';
+import 'journal_screen.dart';
+import 'meditation_screen.dart';
+import 'privacy_policy_screen.dart';
+import 'quiz_screen.dart';
+import 'terms_screen.dart';
 import 'updates_screen.dart';
 import 'notifications_screen.dart';
 import 'profile_screen.dart';
@@ -42,14 +55,14 @@ class _MoreScreenState extends State<MoreScreen> {
     });
   }
 
+  // --- Theme Selection ---
   Future<void> _pickTheme(BuildContext context, AppState state) async {
     final picked = await showDialog<ThemeMode>(
       context: context,
       builder: (ctx) => SimpleDialog(
         title: const Text('Choose Theme'),
         children: [
-          _themeOption(ctx, 'Automatic (system)', '🌓', ThemeMode.system,
-              state.themeMode),
+          _themeOption(ctx, 'Automatic (system)', '🌓', ThemeMode.system, state.themeMode),
           _themeOption(ctx, 'Light', '☀️', ThemeMode.light, state.themeMode),
           _themeOption(ctx, 'Dark', '🌙', ThemeMode.dark, state.themeMode),
         ],
@@ -58,8 +71,8 @@ class _MoreScreenState extends State<MoreScreen> {
     if (picked != null) state.setThemeMode(picked);
   }
 
-  Widget _themeOption(BuildContext context, String label, String emoji,
-      ThemeMode mode, ThemeMode current) {
+  Widget _themeOption(BuildContext context, String label, String emoji, ThemeMode mode, ThemeMode current) {
+    final cs = Theme.of(context).colorScheme;
     return SimpleDialogOption(
       onPressed: () => Navigator.pop(context, mode),
       child: Row(
@@ -67,42 +80,78 @@ class _MoreScreenState extends State<MoreScreen> {
           Text(emoji, style: const TextStyle(fontSize: 20)),
           const SizedBox(width: 12),
           Expanded(child: Text(label)),
-          if (current == mode)
-            const Icon(Icons.check, color: kGold, size: 20),
+          if (current == mode) Icon(Icons.check, color: cs.primary, size: 20),
         ],
       ),
     );
   }
 
-  Future<void> _editName(BuildContext context, AppState state) async {
-    final controller = TextEditingController(text: state.userName);
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: kCard,
-        title: const Text('Your Name', style: TextStyle(color: kGold)),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          style: const TextStyle(color: kText),
-          decoration: const InputDecoration(
-            hintText: 'Enter your name',
-            hintStyle: TextStyle(color: kTextDim),
+  // --- Account Card ---
+  Widget _buildAccountCard(BuildContext context, AppState appState) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    
+    final accountName = appState.userName.isNotEmpty ? appState.userName : 'Not connected';
+    final accountEmail = appState.userEmail.isNotEmpty
+        ? appState.userEmail
+        : 'Connect Google sign-in';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.cardTheme.color, // Uses kCard from theme.dart
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cs.outline.withOpacity(0.5)),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 22,
+            backgroundColor: cs.primary.withOpacity(0.14),
+            child: Icon(Icons.account_circle, color: cs.primary, size: 28),
           ),
-        ),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel')),
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-              child: const Text('Save')),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  accountName,
+                  style: TextStyle(
+                    color: cs.onSurface,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  accountEmail,
+                  style: TextStyle(color: cs.onSurface.withOpacity(0.7), fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: appState.isGoogleAccountLinked
+                  ? Colors.green.withOpacity(0.18)
+                  : cs.outline.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              appState.isGoogleAccountLinked ? 'Google Linked' : 'Local Profile',
+              style: TextStyle(
+                color: appState.isGoogleAccountLinked ? cs.secondary : cs.onSurface.withOpacity(0.6),
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         ],
       ),
     );
-    if (result != null) {
-      state.setUserName(result);
-    }
   }
 
 
@@ -176,12 +225,16 @@ class _MoreScreenState extends State<MoreScreen> {
     final appState = context.watch<AppState>();
 
     return Scaffold(
-      backgroundColor: kBg,
       appBar: AppBar(
         title: const Text('Explore'),
         centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.palette_outlined),
+            onPressed: () => _pickTheme(context, appState),
+            tooltip: 'Change Theme',
+          )
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -189,6 +242,7 @@ class _MoreScreenState extends State<MoreScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+<<<<<<< codex/add-google-login-option-fx4gi5
               _sectionTitle('Profile Account'),
               const SizedBox(height: 12),
               Semantics(
@@ -322,14 +376,41 @@ class _MoreScreenState extends State<MoreScreen> {
                 subtitle: 'About this app',
                 onTap: () => Navigator.push(context,
                     MaterialPageRoute(builder: (_) => const AboutScreen())),
-              ),
-              const SizedBox(height: 20),
-              _sectionTitle('Follow Us'),
+=======
+              _sectionTitle('Study & Learn', context),
               const SizedBox(height: 12),
-              const SocialLinksRow(),
-              const SizedBox(height: 30),
-              _buildQuoteCard(),
+              _buildGrid(context, [
+                _Item('📚', 'Flashcards', 'Master key verses', const FlashcardsScreen()),
+                _Item('🎯', 'Quiz', 'Test your knowledge', const QuizScreen()),
+                _Item('📖', 'Glossary', 'Sanskrit terms', const GlossaryScreen()),
+                _Item('🗺️', 'Reading Plan', '30-day journey', const ReadingPlanScreen()),
+                _Item('🔭', 'Astrology', 'Kundli & horoscope', const AstrologyScreen()),
+              ]),
+              const SizedBox(height: 24),
+              _sectionTitle('Practice', context),
+              const SizedBox(height: 12),
+              _buildGrid(context, [
+                _Item('🧘', 'Meditation', 'Sit in stillness', const MeditationScreen()),
+                _Item('🌬️', 'Breathing', 'Pranayama practice', const BreathingScreen()),
+                _Item('📿', 'Japa Counter', 'Mantra repetition', const ChantsScreen()),
+                _Item('✍️', 'Journal', 'Daily reflection', const JournalScreen()),
+                _Item('🎙️', 'Voice Practice', 'Recite with feedback', const GeetaVoicePracticeScreen()),
+              ]),
+              const SizedBox(height: 24),
+              _sectionTitle('Profile Account', context),
+              const SizedBox(height: 12),
+              Semantics(
+                label: 'Profile account details',
+                child: _buildAccountCard(context, appState),
+>>>>>>> main
+              ),
               const SizedBox(height: 40),
+              Center(
+                child: Text(
+                  _appVersionLabel, 
+                  style: TextStyle(color: Theme.of(context).disabledColor, fontSize: 12)
+                ),
+              ),
             ],
           ),
         ),
@@ -337,156 +418,55 @@ class _MoreScreenState extends State<MoreScreen> {
     );
   }
 
-  Widget _sectionTitle(String t) => Text(
-        t.toUpperCase(),
-        style: GoogleFonts.cinzel(
-          color: kGold,
-          fontSize: 13,
-          fontWeight: FontWeight.bold,
-          letterSpacing: 1.2,
-        ),
-      );
+  Widget _sectionTitle(String title, BuildContext context) => Text(
+    title, 
+    style: TextStyle(
+      fontSize: 18, 
+      fontWeight: FontWeight.bold,
+      color: Theme.of(context).colorScheme.primary, // Dynamically uses kGold
+    ),
+  );
 
   Widget _buildGrid(BuildContext context, List<_Item> items) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: items.length,
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 2.1,
+          crossAxisCount: 2, 
+          crossAxisSpacing: 10, 
+          mainAxisSpacing: 10, 
+          childAspectRatio: 1.4,
       ),
-      itemBuilder: (context, index) {
-        final item = items[index];
-        return InkWell(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => item.screen),
-          ),
-          borderRadius: BorderRadius.circular(14),
-          child: Container(
-            padding: const EdgeInsets.all(12), 
-            decoration: BoxDecoration( // FIXED: Extra comma removed before BoxDecoration
-              color: kCard,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: kDivider.withOpacity(0.5)),
-            ),
-            child: Row(
+      itemCount: items.length,
+      itemBuilder: (context, index) => _buildCard(context, items[index]),
+    );
+  }
+
+  Widget _buildCard(BuildContext context, _Item item) {
+    final theme = Theme.of(context);
+    return Semantics(
+      button: true,
+      label: '${item.title}: ${item.subtitle}',
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => item.screen)),
+        child: Card(
+          // Card color and shape are already defined in your buildTheme()
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(item.emoji, style: const TextStyle(fontSize: 22)),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        item.title,
-                        style: const TextStyle(
-                          color: kText,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        item.subtitle,
-                        style: const TextStyle(color: kTextDim, fontSize: 10),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
+                Text(item.emoji, style: const TextStyle(fontSize: 28)),
+                const SizedBox(height: 6),
+                Text(
+                  item.title, 
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                 ),
               ],
             ),
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildInfoTile({
-    required String emoji,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: kCard,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: kDivider.withOpacity(0.5)),
-          ),
-          child: Row(
-            children: [
-              Text(emoji, style: const TextStyle(fontSize: 22)),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        style: const TextStyle(
-                            color: kText,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600)),
-                    Text(subtitle,
-                        style:
-                            const TextStyle(color: kTextDim, fontSize: 11)),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right, color: kTextDim),
-            ],
-          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildQuoteCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF0A0020), Color(0xFF100030)],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF2A1A5A)),
-      ),
-      child: Column(
-        children: [
-          const Text('🕉️', style: TextStyle(fontSize: 28)),
-          const SizedBox(height: 12),
-          Text(
-            '"Wherever there is Krishna, the master of all mystics, and wherever there is Arjuna, the supreme archer, there will also certainly be opulence, victory, extraordinary power, and morality."',
-            style: GoogleFonts.crimsonText(
-              color: kText,
-              fontSize: 16,
-              fontStyle: FontStyle.italic,
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            '— Bhagavad Gita 18.78',
-            style: TextStyle(color: kTextDim, fontSize: 12, fontWeight: FontWeight.bold),
-          ),
-        ],
       ),
     );
   }
@@ -497,6 +477,5 @@ class _Item {
   final String title;
   final String subtitle;
   final Widget screen;
-
-  const _Item(this.emoji, this.title, this.subtitle, this.screen); // FIXED: Removed extra comma before this.screen
+  const _Item(this.emoji, this.title, this.subtitle, this.screen);
 }

@@ -21,7 +21,10 @@ const List<String> kNewFeatures = [
   'Automatic admin rights for kuldeepky538@gmail.com after Google sign-in',
   'Astrology section with local kundli and horoscope generator',
   'AI section accessibility upgrades for clearer persona and input controls',
+<<<<<<< codex/add-google-login-option-fx4gi5
   'Daily Dharma audio player to listen to the day\'s sloka translation',
+=======
+>>>>>>> main
   'Update feed configuration remains available for instant release notes',
 ];
 

@@ -4,6 +4,15 @@ import 'package:url_launcher/url_launcher.dart';
 import '../theme.dart';
 import 'social_links.dart';
 
+// Assuming kContactEmail and other constants are in theme.dart
+// Mocking openUrl for logic consistency
+void openUrl(String url) async {
+  final uri = Uri.parse(url);
+  if (await canLaunchUrl(uri)) {
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+}
+
 class ContactScreen extends StatefulWidget {
   const ContactScreen({super.key});
 
@@ -31,25 +40,29 @@ class _ContactScreenState extends State<ContactScreen> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final subject = Uri.encodeComponent(
-        _subject.text.trim().isEmpty ? 'Geeta AI – Contact' : _subject.text.trim());
+        _subject.text.trim().isEmpty ? 'Contact Inquiry' : _subject.text.trim());
     final body = Uri.encodeComponent(
       'Name: ${_name.text.trim()}\n'
       'Email: ${_email.text.trim()}\n\n'
       '${_message.text.trim()}\n',
     );
-    final mailto = Uri.parse(
-        'mailto:$kContactEmail?subject=$subject&body=$body');
+    
+    final mailto = Uri.parse('mailto:$kContactEmail?subject=$subject&body=$body');
 
-    final ok = await launchUrl(mailto, mode: LaunchMode.externalApplication);
-    if (!mounted) return;
-    if (ok) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Opening your email app to send the message…'),
-      ));
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text(
-            'Could not open an email app. You can write directly to $kContactEmail'),
+    try {
+      final ok = await launchUrl(mailto, mode: LaunchMode.externalApplication);
+      if (!mounted) return;
+      if (ok) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Opening your email app...'),
+        ));
+      } else {
+        throw 'Could not launch';
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Could not open email app. Email us at $kContactEmail'),
       ));
     }
   }
@@ -70,19 +83,26 @@ class _ContactScreenState extends State<ContactScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Get in touch',
-                  style: GoogleFonts.cinzel(
-                      color: kGold,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold)),
+              Semantics(
+                header: true,
+                child: Text('Get in touch',
+                    style: GoogleFonts.cinzel(
+                        color: kGold,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold)),
+              ),
               const SizedBox(height: 6),
               const Text(
                 'Have a question, suggestion, or feedback? Send a message and we\'ll get back to you.',
                 style: TextStyle(color: kTextDim, fontSize: 14, height: 1.4),
               ),
               const SizedBox(height: 16),
-              _infoTile(Icons.email_outlined, kContactEmail,
-                  () => openUrl('mailto:$kContactEmail')),
+              _infoTile(
+                Icons.email_outlined, 
+                kContactEmail,
+                () => openUrl('mailto:$kContactEmail'),
+                "Email us at $kContactEmail"
+              ),
               const SizedBox(height: 20),
               const SocialLinksRow(),
               const SizedBox(height: 24),
@@ -90,16 +110,19 @@ class _ContactScreenState extends State<ContactScreen> {
                 key: _formKey,
                 child: Column(
                   children: [
-                    _field(_name, 'Your Name', validator: _required),
+                    _field(_name, 'Your Name', hint: 'Enter your full name', validator: _required),
                     const SizedBox(height: 12),
                     _field(_email, 'Your Email',
+                        hint: 'Enter your email address',
                         keyboard: TextInputType.emailAddress,
                         validator: _emailValidator),
                     const SizedBox(height: 12),
-                    _field(_subject, 'Subject (optional)'),
+                    _field(_subject, 'Subject (optional)', hint: 'What is this regarding?'),
                     const SizedBox(height: 12),
                     _field(_message, 'Your Message',
-                        maxLines: 5, validator: _required),
+                        hint: 'Type your message here',
+                        maxLines: 5, 
+                        validator: _required),
                     const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
@@ -107,8 +130,7 @@ class _ContactScreenState extends State<ContactScreen> {
                         onPressed: _send,
                         icon: const Icon(Icons.send),
                         label: Text('Send Message',
-                            style: GoogleFonts.cinzel(
-                                fontWeight: FontWeight.bold)),
+                            style: GoogleFonts.cinzel(fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kGold,
                           foregroundColor: kBg,
@@ -129,27 +151,31 @@ class _ContactScreenState extends State<ContactScreen> {
     );
   }
 
-  Widget _infoTile(IconData icon, String text, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: kCard,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: kDivider.withOpacity(0.5)),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: kGold),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(text,
-                  style: const TextStyle(color: kText, fontSize: 14)),
-            ),
-            const Icon(Icons.open_in_new, color: kTextDim, size: 16),
-          ],
+  Widget _infoTile(IconData icon, String text, VoidCallback onTap, String semanticLabel) {
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: kCard,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: kDivider.withOpacity(0.5)),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: kGold),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(text,
+                    style: const TextStyle(color: kText, fontSize: 14)),
+              ),
+              const Icon(Icons.open_in_new, color: kTextDim, size: 16),
+            ],
+          ),
         ),
       ),
     );
@@ -157,6 +183,7 @@ class _ContactScreenState extends State<ContactScreen> {
 
   Widget _field(TextEditingController c, String label,
       {int maxLines = 1,
+      String? hint,
       TextInputType? keyboard,
       String? Function(String?)? validator}) {
     return TextFormField(
@@ -167,6 +194,8 @@ class _ContactScreenState extends State<ContactScreen> {
       style: const TextStyle(color: kText),
       decoration: InputDecoration(
         labelText: label,
+        hintText: hint,
+        hintStyle: TextStyle(color: kTextDim.withOpacity(0.5)),
         labelStyle: const TextStyle(color: kTextDim),
         filled: true,
         fillColor: kCard,
@@ -187,11 +216,11 @@ class _ContactScreenState extends State<ContactScreen> {
   }
 
   String? _required(String? v) =>
-      (v == null || v.trim().isEmpty) ? 'Required' : null;
+      (v == null || v.trim().isEmpty) ? 'This field is required' : null;
 
   String? _emailValidator(String? v) {
-    if (v == null || v.trim().isEmpty) return 'Required';
+    if (v == null || v.trim().isEmpty) return 'Email is required';
     final ok = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v.trim());
-    return ok ? null : 'Enter a valid email';
+    return ok ? null : 'Enter a valid email address';
   }
 }

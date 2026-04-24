@@ -27,6 +27,11 @@ jobs:
       - name: Install Dependencies
         run: flutter pub get
 
+      # Base64 string se google-services.json file generate karna
+      - name: Create Google Services JSON
+        run: |
+          echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > android/app/google-services.json
+
       - name: Build APK
         run: |
           chmod +x android/gradlew

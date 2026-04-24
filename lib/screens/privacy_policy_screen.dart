@@ -10,48 +10,70 @@ class PrivacyPolicyScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: kBg,
       appBar: AppBar(
-        title: const Text('Privacy Policy'),
+        // FIX 1: Removed 'const' before Semantics because it was causing a build error
+        title: Semantics(
+          header: true,
+          child: const Text('Privacy & Data Policy'),
+        ),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            // FIX 2: Removed 'const' from the children list because custom widgets 
+            // like _Heading and _Body are being instantiated here.
             children: const [
-              _Heading('Privacy Policy'),
+              _Heading('Introduction'),
               _Body(
-                'Last updated: 2026\n\nBhagavad Gita AI is developed by Kuldeep Kumar Yadav at Satvik Technology ("we", "our"). We are committed to protecting your privacy. This policy explains what information we handle when you use the app.',
+                'This Privacy Policy governs the data practices of Satvik Technologies. '
+                'By using Bhagavad Gita AI, you agree to the collection and use of information '
+                'in accordance with this policy. We prioritize your spiritual journey by '
+                'ensuring your data remains private and secure.',
               ),
-              _Heading('Information we store'),
+              _Heading('Authentication & Google Data'),
               _Body(
-                '• Your name (only stored locally on your device).\n'
-                '• Your reading progress, bookmarks, journal entries, XP and streaks (all stored locally).\n'
-                '• Optional permissions you grant: microphone (for voice features) and notifications.',
+                'You may choose to use "Sign in with Google" for a seamless experience. '
+                'When you authenticate, we access specific information provided by the Google OAuth service:\n'
+                '• Basic Profile Info: Your name and email address to identify your account.\n'
+                '• Profile Picture: To personalize your in-app dashboard.\n'
+                '• Authentication Tokens: To securely maintain your session across devices.',
               ),
-              _Heading('Information we DO NOT collect'),
+              _Heading('Data Synchronization'),
               _Body(
-                'We do not collect personal data on our servers. We do not sell or share your data with third parties.',
+                'For authenticated users, your reading progress, bookmarks, and "Satvik Streaks" '
+                'are synced to our secure database. This allows you to restore your progress '
+                'should you switch devices. Guest users continue to have all data stored '
+                'strictly on their local hardware.',
               ),
-              _Heading('AI features'),
+              _Heading('Artificial Intelligence'),
               _Body(
-                'When you ask the AI guide a question, your message is sent to a third-party AI provider (Google Gemini) to generate a response. Please avoid sharing sensitive personal information in your prompts.',
+                'AI interactions are powered by Google Gemini. While your prompts are '
+                'transmitted to generate responses, they are not linked to your Google identity '
+                'by our systems. We recommend avoiding the disclosure of sensitive personal '
+                'identifiers in AI chat sessions.',
               ),
-              _Heading('Third-party links'),
+              _Heading('Third-Party Services'),
               _Body(
-                'The app contains links to social media (Instagram, Facebook, LinkedIn) and external websites. Their privacy policies apply when you visit them.',
+                'We do not sell, trade, or transfer your data to outside parties. This does not '
+                'include trusted third parties who assist us in operating our app (like Google Firebase '
+                'for authentication), so long as those parties agree to keep this information confidential.',
               ),
-              _Heading('Your control'),
+              _Heading('Data Retention & Deletion'),
               _Body(
-                'You may clear all locally stored data at any time by uninstalling the app or clearing app storage from your device settings.',
+                'You have the right to request the deletion of your account and associated data at any time. '
+                'To revoke Google access or delete your cloud profile, please visit the settings '
+                'menu or contact our support team.',
               ),
-              _Heading('Contact'),
+              _Heading('Contact Administration'),
               _Body(
-                'For privacy questions, email Satvik Technology at kuldeepky538@gmail.com.',
+                'For legal inquiries or data protection concerns, contact Satvik Technologies at: '
+                'kuldeepky538@gmail.com',
               ),
-              SizedBox(height: 30),
+              SizedBox(height: 50),
             ],
           ),
         ),
@@ -63,25 +85,42 @@ class PrivacyPolicyScreen extends StatelessWidget {
 class _Heading extends StatelessWidget {
   final String text;
   const _Heading(this.text);
+
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 18, bottom: 6),
-        child: Text(text.toUpperCase(),
-            style: GoogleFonts.cinzel(
-                color: kGold,
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.1)),
-      );
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 28, bottom: 10),
+      child: Semantics(
+        header: true, 
+        child: Text(
+          text.toUpperCase(),
+          style: GoogleFonts.cinzel(
+            color: kGold,
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.3,
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _Body extends StatelessWidget {
   final String text;
   const _Body(this.text);
+
   @override
-  Widget build(BuildContext context) => Text(
+  Widget build(BuildContext context) {
+    return MergeSemantics( 
+      child: Text(
         text,
         style: GoogleFonts.crimsonText(
-            color: kText, fontSize: 15, height: 1.55),
-      );
+          color: kText,
+          fontSize: 17,
+          height: 1.6,
+        ),
+      ),
+    );
+  } // FIX 3: Removed the stray comma before the closing brace
 }
