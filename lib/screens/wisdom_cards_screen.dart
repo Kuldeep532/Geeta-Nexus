@@ -24,7 +24,6 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
   }
 
   void _loadRandomWisdom() {
-    // FIXED: Ensure getAllVerses() is called to fetch the list
     final all = getAllVerses(); 
     if (all.isNotEmpty) {
       final random = Random();
@@ -43,12 +42,14 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final int itemCount = _wisdomList.length;
 
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: theme.scaffoldBackgroundColor, // Adaptive BG
       appBar: AppBar(
-        title: Text('WISDOM CARDS', style: GoogleFonts.cinzel(color: kGold, fontSize: 16)),
+        title: Text('WISDOM CARDS', style: GoogleFonts.cinzel(color: kGold, fontSize: 16, fontWeight: FontWeight.bold)),
         centerTitle: true,
         leading: const BackButton(color: kGold),
         backgroundColor: Colors.transparent,
@@ -57,9 +58,9 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
       body: Column(
         children: [
           const SizedBox(height: 8),
-          const Text(
+          Text(
             'Swipe to explore divine teachings',
-            style: TextStyle(color: kTextDim, fontSize: 12),
+            style: TextStyle(color: isDark ? kTextDim : Colors.grey[700], fontSize: 12),
           ),
           const SizedBox(height: 16),
           Expanded(
@@ -75,7 +76,7 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
                     return AnimatedScale(
                       scale: _currentPage == i ? 1.0 : 0.93,
                       duration: const Duration(milliseconds: 300),
-                      child: _buildCard(verse, colors),
+                      child: _buildCard(verse, colors, isDark, theme),
                     );
                   },
                 )
@@ -89,66 +90,72 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
     );
   }
 
-  Widget _buildCard(Verse verse, List<Color> colors) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: colors,
+  Widget _buildCard(Verse verse, List<Color> colors, bool isDark, ThemeData theme) {
+    return Semantics(
+      label: "Wisdom Card ${_currentPage + 1}. Gita Verse ${verse.id}. ${verse.translation}",
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark ? colors : [Colors.white, Color(0xFFF5F5DC)], // Light Mode Fallback
+          ),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: kGoldDim.withOpacity(0.3)),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 5))
+          ],
         ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: kGoldDim.withOpacity(0.3)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-            decoration: BoxDecoration(
-              color: kGold.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: kGoldDim.withOpacity(0.5)),
-            ),
-            child: Text(
-              'Gita ${verse.id}', // Using verse.id for clean reference
-              style: GoogleFonts.cinzel(color: kGold, fontSize: 11),
-            ),
-          ),
-          const SizedBox(height: 30),
-          Text(
-            "Divine Guidance", // FIXED: Removed extra comma inside string
-            style: GoogleFonts.cinzel(
-              color: kGold,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 15),
-          const Icon(Icons.format_quote, color: kGoldDim, size: 30),
-          const SizedBox(height: 10),
-          Expanded(
-            child: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: kGold.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: kGoldDim.withOpacity(0.5)),
+              ),
               child: Text(
-                verse.translation,
-                style: GoogleFonts.crimsonText(
-                  color: kText,
-                  fontSize: 18,
-                  height: 1.5,
-                  fontStyle: FontStyle.italic,
-                ),
-                textAlign: TextAlign.center,
+                'Gita ${verse.id}',
+                style: GoogleFonts.cinzel(color: kGold, fontSize: 11, fontWeight: FontWeight.bold),
               ),
             ),
-          ),
-          const SizedBox(height: 20),
-          const Divider(color: Colors.white10),
-          const SizedBox(height: 12),
-          const Icon(Icons.auto_awesome, color: kGoldDim, size: 18),
-        ],
+            const SizedBox(height: 30),
+            Text(
+              "Divine Guidance",
+              style: GoogleFonts.cinzel(
+                color: isDark ? kGold : Colors.brown[800],
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 15),
+            Icon(Icons.format_quote, color: kGoldDim.withOpacity(0.6), size: 30),
+            const SizedBox(height: 10),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Text(
+                  verse.translation,
+                  style: GoogleFonts.crimsonText(
+                    color: isDark ? kText : Colors.black87,
+                    fontSize: 18,
+                    height: 1.5,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Divider(color: isDark ? Colors.white10 : Colors.brown.withOpacity(0.1)),
+            const SizedBox(height: 12),
+            const Icon(Icons.auto_awesome, color: kGoldDim, size: 18),
+          ],
+        ),
       ),
     );
   }
@@ -176,5 +183,5 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
     [Color(0xFF001A30), Color(0xFF001020)],
     [Color(0xFF1A0030), Color(0xFF100020)],
     [Color(0xFF2A0A00), Color(0xFF1A0800)],
-  ]; // FIXED: Removed leading comma and closed properly
+  ];
 }
