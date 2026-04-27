@@ -3,7 +3,22 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 import '../state/app_state.dart';
-// Note: Saari screen imports wahi rahengi jo aapne pehle di thi.
+// Note: Ensure all these screen files exist in your screens folder
+import 'flashcards_screen.dart';
+import 'quiz_screen.dart';
+import 'glossary_screen.dart';
+import 'reading_plan_screen.dart';
+import 'astrology_screen.dart';
+import 'meditation_screen.dart';
+import 'breathing_screen.dart';
+import 'chants_screen.dart';
+import 'journal_screen.dart';
+import 'geeta_voice_practice_screen.dart';
+import 'profile_screen.dart';
+import 'about_screen.dart';
+import 'privacy_policy_screen.dart';
+import 'terms_screen.dart';
+import 'contact_screen.dart';
 
 class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
@@ -33,9 +48,35 @@ class _MoreScreenState extends State<MoreScreen> {
     }
   }
 
+  // --- Theme Picker Method (Added Fix) ---
+  void _pickTheme(BuildContext context, AppState state) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.brightness_auto),
+            title: const Text('System Default'),
+            onTap: () { state.updateTheme(ThemeMode.system); Navigator.pop(context); },
+          ),
+          ListTile(
+            leading: const Icon(Icons.light_mode),
+            title: const Text('Light Mode'),
+            onTap: () { state.updateTheme(ThemeMode.light); Navigator.pop(context); },
+          ),
+          ListTile(
+            leading: const Icon(Icons.dark_mode),
+            title: const Text('Dark Mode'),
+            onTap: () { state.updateTheme(ThemeMode.dark); Navigator.pop(context); },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Production Practice: Watch only what's needed
     final appState = context.watch<AppState>();
     final theme = Theme.of(context);
 
@@ -47,12 +88,12 @@ class _MoreScreenState extends State<MoreScreen> {
           IconButton(
             icon: const Icon(Icons.palette_outlined),
             onPressed: () => _pickTheme(context, appState),
-            tooltip: 'Change application theme', // Accessibility tooltip
+            tooltip: 'Change application theme',
           )
         ],
       ),
       body: SafeArea(
-        child: Scrollbar( // Improved UX for long lists
+        child: Scrollbar(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: Column(
@@ -61,7 +102,7 @@ class _MoreScreenState extends State<MoreScreen> {
                 _buildAccountCard(context, appState),
                 const SizedBox(height: 24),
                 
-                _SectionHeader(title: 'Study & Learn'),
+                const _SectionHeader(title: 'Study & Learn'),
                 _buildAccessibleGrid(context, [
                   _Item('📚', 'Flashcards', 'Master key verses', const FlashcardsScreen()),
                   _Item('🎯', 'Quiz', 'Test your knowledge', const QuizScreen()),
@@ -71,7 +112,7 @@ class _MoreScreenState extends State<MoreScreen> {
                 ]),
 
                 const SizedBox(height: 24),
-                _SectionHeader(title: 'Spiritual Practice'),
+                const _SectionHeader(title: 'Spiritual Practice'),
                 _buildAccessibleGrid(context, [
                   _Item('🧘', 'Meditation', 'Guided stillness', const MeditationScreen()),
                   _Item('🌬️', 'Breathing', 'Pranayama sessions', const BreathingScreen()),
@@ -81,7 +122,7 @@ class _MoreScreenState extends State<MoreScreen> {
                 ]),
 
                 const SizedBox(height: 24),
-                _SectionHeader(title: 'Support & Legal'),
+                const _SectionHeader(title: 'Support & Legal'),
                 _buildAccessibleGrid(context, [
                   _Item('👤', 'Profile', 'Account settings', const ProfileScreen()),
                   _Item('ℹ️', 'About', 'App information', const AboutScreen()),
@@ -92,11 +133,9 @@ class _MoreScreenState extends State<MoreScreen> {
 
                 const SizedBox(height: 40),
                 Center(
-                  child: ExcludeSemantics( // Decorative or redundant info for screen readers
-                    child: Text(
-                      _appVersionLabel,
-                      style: theme.textTheme.bodySmall,
-                    ),
+                  child: Text(
+                    _appVersionLabel,
+                    style: theme.textTheme.bodySmall,
                   ),
                 ),
               ],
@@ -109,45 +148,19 @@ class _MoreScreenState extends State<MoreScreen> {
 
   Widget _buildAccountCard(BuildContext context, AppState appState) {
     final cs = Theme.of(context).colorScheme;
-    
-    // Accessibility: Merging all info into one semantic block
-    return Semantics(
-      label: 'Account Status: ${appState.userName.isEmpty ? 'Not connected' : appState.userName}. '
-             'Linked via ${appState.isGoogleAccountLinked ? 'Google' : 'Local Profile'}.',
-      container: true,
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: cs.outlineVariant),
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: cs.outlineVariant),
+      ),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: cs.primaryContainer,
+          child: Icon(Icons.person, color: cs.onPrimaryContainer),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: cs.primaryContainer,
-                child: Icon(Icons.person, color: cs.onPrimaryContainer),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      appState.userName.isEmpty ? 'Guest User' : appState.userName,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    Text(
-                      appState.userEmail.isEmpty ? 'Sign in to sync data' : appState.userEmail,
-                      style: TextStyle(color: cs.onSurfaceVariant, fontSize: 13),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+        title: Text(appState.userName.isEmpty ? 'Guest User' : appState.userName),
+        subtitle: Text(appState.userEmail.isEmpty ? 'Sign in to sync data' : appState.userEmail),
       ),
     );
   }
@@ -165,22 +178,18 @@ class _MoreScreenState extends State<MoreScreen> {
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
-        return Semantics(
-          button: true,
-          label: 'Go to ${item.title}. ${item.subtitle}',
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => item.screen)),
-            child: Card(
-              margin: EdgeInsets.zero,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(item.emoji, style: const TextStyle(fontSize: 24)),
-                  const SizedBox(height: 8),
-                  Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                ],
-              ),
+        return InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => item.screen)),
+          child: Card(
+            margin: EdgeInsets.zero,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(item.emoji, style: const TextStyle(fontSize: 24)),
+                const SizedBox(height: 8),
+                Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+              ],
             ),
           ),
         );
@@ -189,23 +198,14 @@ class _MoreScreenState extends State<MoreScreen> {
   }
 }
 
-// Separate stateless widget for headers to keep build method clean
 class _SectionHeader extends StatelessWidget {
   final String title;
   const _SectionHeader({required this.title});
-
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12, left: 4),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 18, 
-          fontWeight: FontWeight.bold, 
-          color: Theme.of(context).colorScheme.primary,
-        ),
-      ),
+      child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
     );
   }
 }
