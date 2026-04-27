@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// Sahi import path
 import 'data/gita_data.dart'; 
 import 'state/app_state.dart';
 import 'theme.dart';
@@ -18,11 +17,9 @@ import 'screens/update_checker.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   final prefs = await SharedPreferences.getInstance();
   final appState = AppState();
   
-  // AppState load karna aur CSV se data fetch karna
   await Future.wait([
     appState.load(),
     loadGitaData(), 
@@ -47,7 +44,9 @@ class MyApp extends StatelessWidget {
     return Consumer<AppState>(
       builder: (context, state, _) {
         final baseLight = buildLightTheme();
-        final baseDark = buildTheme();
+        final baseDark = buildDarkTheme(); // Corrected name from buildTheme
+        
+        // Dynamic Accessibility Adjustment
         final lightTheme = state.highContrast
             ? baseLight.copyWith(
                 colorScheme: baseLight.colorScheme.copyWith(
@@ -58,6 +57,7 @@ class MyApp extends StatelessWidget {
                 ),
               )
             : baseLight;
+            
         final darkTheme = state.highContrast
             ? baseDark.copyWith(
                 colorScheme: baseDark.colorScheme.copyWith(
@@ -75,28 +75,21 @@ class MyApp extends StatelessWidget {
           theme: lightTheme,
           darkTheme: darkTheme,
           themeMode: state.themeMode,
-          themeAnimationDuration: state.reduceMotion
-              ? Duration.zero
-              : const Duration(milliseconds: 250),
+          themeAnimationDuration: state.reduceMotion ? Duration.zero : const Duration(milliseconds: 250),
           builder: (context, child) {
-            final media = MediaQuery.of(context);
             final brightness = Theme.of(context).brightness;
             final isDark = brightness == Brightness.dark;
             SystemChrome.setSystemUIOverlayStyle(
               SystemUiOverlayStyle(
                 statusBarColor: Colors.transparent,
-                statusBarIconBrightness:
-                    isDark ? Brightness.light : Brightness.dark,
-                statusBarBrightness:
-                    isDark ? Brightness.dark : Brightness.light,
+                statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
                 systemNavigationBarColor: Theme.of(context).scaffoldBackgroundColor,
-                systemNavigationBarIconBrightness:
-                    isDark ? Brightness.light : Brightness.dark,
+                systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
               ),
             );
             return MediaQuery(
-              data: media.copyWith(
-                textScaler: TextScaler.linear(state.largeText ? 1.12 : 1.0),
+              data: MediaQuery.of(context).copyWith(
+                textScaler: TextScaler.linear(state.largeText ? 1.15 : 1.0),
                 highContrast: state.highContrast,
               ),
               child: child ?? const SizedBox.shrink(),
@@ -111,7 +104,6 @@ class MyApp extends StatelessWidget {
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
-
   @override
   State<MainShell> createState() => _MainShellState();
 }
@@ -135,14 +127,6 @@ class _MainShellState extends State<MainShell> {
     MoreScreen(),
   ];
 
-  void _onTabTapped(int index) {
-    if (_currentIndex != index) {
-      setState(() {
-        _currentIndex = index;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -151,71 +135,34 @@ class _MainShellState extends State<MainShell> {
       canPop: _currentIndex == 0,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        // Agar user kisi aur tab par hai, toh Back button se Home (0) par le jayein
         setState(() => _currentIndex = 0);
       },
       child: Scaffold(
-        body: IndexedStack(
-          index: _currentIndex,
-          children: _screens,
-        ),
+        body: IndexedStack(index: _currentIndex, children: _screens),
         bottomNavigationBar: Container(
           decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(
-                color: theme.dividerColor.withOpacity(0.05),
-                width: 1,
-              ),
-            ),
+            border: Border(top: BorderSide(color: theme.dividerColor.withOpacity(0.08))),
           ),
           child: BottomNavigationBar(
             currentIndex: _currentIndex,
-            onTap: _onTabTapped,
+            onTap: (i) => setState(() => _currentIndex = i),
             backgroundColor: theme.scaffoldBackgroundColor,
-            selectedItemColor: const Color(0xFFFFD700), // Pure Gold color
+            selectedItemColor: const Color(0xFFFFD700),
             unselectedItemColor: theme.hintColor,
             type: BottomNavigationBarType.fixed,
             elevation: 0,
-            selectedLabelStyle: GoogleFonts.cinzel(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
+            selectedLabelStyle: GoogleFonts.cinzel(fontSize: 11, fontWeight: FontWeight.bold),
             unselectedLabelStyle: GoogleFonts.cinzel(fontSize: 10),
             items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home_outlined),
-                activeIcon: Icon(Icons.home),
-                label: 'Home',
-                tooltip: 'Home Screen',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.menu_book_outlined),
-                activeIcon: Icon(Icons.menu_book),
-                label: 'Chapters', // FIXED: Removed leading comma
-                tooltip: 'Gita Chapters',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.auto_awesome_outlined),
-                activeIcon: Icon(Icons.auto_awesome),
-                label: 'Ask Krishna',
-                tooltip: 'AI Spiritual Guide',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.trending_up_outlined),
-                activeIcon: Icon(Icons.trending_up),
-                label: 'Progress',
-                tooltip: 'Your Learning Journey',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.apps_outlined),
-                activeIcon: Icon(Icons.apps),
-                label: 'More',
-                tooltip: 'Settings and Extras',
-              ),
+              BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: 'Home'),
+              BottomNavigationBarItem(icon: Icon(Icons.menu_book_outlined), activeIcon: Icon(Icons.menu_book), label: 'Chapters'),
+              BottomNavigationBarItem(icon: Icon(Icons.auto_awesome_outlined), activeIcon: Icon(Icons.auto_awesome), label: 'Ask Krishna'),
+              BottomNavigationBarItem(icon: Icon(Icons.trending_up_outlined), activeIcon: Icon(Icons.trending_up), label: 'Progress'),
+              BottomNavigationBarItem(icon: Icon(Icons.apps_outlined), activeIcon: Icon(Icons.apps), label: 'More'),
             ],
           ),
         ),
       ),
     );
-  } // FIXED: Properly closed build method and class
+  }
 }
