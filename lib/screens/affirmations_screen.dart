@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../theme.dart'; 
 import '../data/gita_data.dart'; 
 
 class AffirmationsScreen extends StatefulWidget {
@@ -32,13 +31,16 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Theme references for automatic switching
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     if (kChapters.isEmpty) {
-      return const Scaffold(
-        backgroundColor: kBg,
+      return Scaffold(
         body: Center(
           child: Text(
             "Wisdom is loading...", 
-            style: TextStyle(color: kGoldDim)
+            style: TextStyle(color: colorScheme.outline)
           )
         )
       );
@@ -49,19 +51,21 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
     final String source = chapter.nameSanskrit; 
 
     return Scaffold(
-      backgroundColor: kBg,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         title: Text(
           'Gita Wisdom',
-          style: GoogleFonts.cinzel(color: kGold, fontWeight: FontWeight.bold),
+          style: GoogleFonts.cinzel(
+            color: colorScheme.primary, 
+            fontWeight: FontWeight.bold
+          ),
         ),
         actions: [
           IconButton(
             tooltip: 'Copy to clipboard',
-            icon: const Icon(Icons.copy_outlined, color: kGold),
+            icon: Icon(Icons.copy_outlined, color: colorScheme.primary),
             onPressed: () {
               Clipboard.setData(ClipboardData(text: '$text\n— $source'));
               ScaffoldMessenger.of(context).showSnackBar(
@@ -75,11 +79,11 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            _buildProgressDots(),
+            _buildProgressDots(colorScheme),
             const SizedBox(height: 8),
             Text(
               'Chapter ${_index + 1} of ${kChapters.length}',
-              style: const TextStyle(color: kTextDim, fontSize: 12),
+              style: TextStyle(color: colorScheme.onSurfaceVariant, fontSize: 12),
             ),
             
             Expanded(
@@ -97,12 +101,12 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
                     ),
                   );
                 },
-                child: _buildAffirmationCard(text, source),
+                child: _buildAffirmationCard(text, source, colorScheme),
               ),
             ),
             
             const SizedBox(height: 24),
-            _buildNavigationButtons(),
+            _buildNavigationButtons(colorScheme),
             const SizedBox(height: 16),
           ],
         ),
@@ -110,7 +114,7 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
     );
   }
 
-  Widget _buildProgressDots() {
+  Widget _buildProgressDots(ColorScheme colorScheme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(
@@ -122,33 +126,35 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
           height: 6,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(3),
-            color: i == _index ? kGold : kDivider,
+            color: i == _index ? colorScheme.primary : colorScheme.outlineVariant,
           ),
         ),
       ),
     );
   }
 
-  Widget _buildAffirmationCard(String text, String source) {
+  Widget _buildAffirmationCard(String text, String source, ColorScheme colorScheme) {
     return Semantics(
       label: "Chapter ${_index + 1}. $text. From $source",
       child: KeyedSubtree(
         key: ValueKey<int>(_index), 
-        // FIXED: Removed the leading comma before Center
         child: Center(
           child: Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF2A1F00), Color(0xFF1A1500)],
+                colors: [
+                  colorScheme.surfaceContainerHighest,
+                  colorScheme.surface,
+                ],
               ),
               borderRadius: BorderRadius.circular(28),
-              border: Border.all(color: kGoldDim.withOpacity(0.3)),
+              border: Border.all(color: colorScheme.primary.withOpacity(0.2)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withOpacity(0.1),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -163,7 +169,7 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
                   text,
                   textAlign: TextAlign.center,
                   style: GoogleFonts.crimsonText(
-                    color: kGoldLight, 
+                    color: colorScheme.onSurface, 
                     fontSize: 20,
                     height: 1.5,
                     fontStyle: FontStyle.italic,
@@ -173,13 +179,13 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
-                    color: kDivider,
+                    color: colorScheme.secondaryContainer,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
                     source,
                     style: GoogleFonts.cinzel(
-                      color: kGoldDim, 
+                      color: colorScheme.onSecondaryContainer, 
                       fontSize: 12,
                       fontWeight: FontWeight.bold
                     ),
@@ -193,7 +199,7 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
     );
   }
 
-  Widget _buildNavigationButtons() {
+  Widget _buildNavigationButtons(ColorScheme colorScheme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
@@ -202,8 +208,8 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
           icon: const Icon(Icons.arrow_back_ios_new, size: 16),
           label: const Text('PREV'),
           style: OutlinedButton.styleFrom(
-            foregroundColor: kGold,
-            side: const BorderSide(color: kGoldDim),
+            foregroundColor: colorScheme.primary,
+            side: BorderSide(color: colorScheme.primary),
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           ),
         ),
@@ -212,13 +218,13 @@ class _AffirmationsScreenState extends State<AffirmationsScreen> {
           icon: const Icon(Icons.arrow_forward_ios, size: 16),
           label: const Text('NEXT'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: kGold,
-            foregroundColor: Colors.black,
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            elevation: 5,
+            elevation: 2,
           ),
         ),
       ],
     );
-  } // FIXED: Removed extra comma before closing bracket
+  }
 }
