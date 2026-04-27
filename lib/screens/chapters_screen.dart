@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../theme.dart';
 import '../data/gita_data.dart';
 import '../state/app_state.dart';
 import 'chapter_detail_screen.dart';
@@ -12,9 +11,12 @@ class ChaptersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      backgroundColor: kBg,
+      // Uses the theme's background color for automatic light/dark support
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('18 Chapters'),
         elevation: 0,
@@ -28,12 +30,15 @@ class ChaptersScreen extends StatelessWidget {
           final bool isCompleted = state.isChapterCompleted(chapter.number);
 
           return Semantics(
-            label: "Chapter ${chapter.number}: ${chapter.name}. ${isCompleted ? 'Completed' : 'Not completed'}",
+            label: "Chapter ${chapter.number}: ${chapter.name}. ${chapter.verseCount} verses. ${isCompleted ? 'Completed' : 'Not completed'}",
             button: true,
+            hint: "Double tap to view chapter details",
             child: Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Material(
-                color: kCard,
+                // Use colorScheme for dynamic colors
+                color: colorScheme.surface,
+                elevation: 1,
                 borderRadius: BorderRadius.circular(16),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(16),
@@ -50,15 +55,19 @@ class ChaptersScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isCompleted ? kGoldDim : kDivider,
+                        color: isCompleted ? Colors.orangeAccent : theme.dividerColor,
                         width: isCompleted ? 1.5 : 1,
                       ),
                     ),
                     child: Row(
                       children: [
-                        _buildChapterIndicator(
-                          chapter.number,
-                          isCompleted,
+                        // Decorative indicator hidden from screen readers to avoid clutter
+                        ExcludeSemantics(
+                          child: _buildChapterIndicator(
+                            context,
+                            chapter.number,
+                            isCompleted,
+                          ),
                         ),
                         const SizedBox(width: 14),
                         Expanded(
@@ -69,27 +78,26 @@ class ChaptersScreen extends StatelessWidget {
                                 chapter.name,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  color: kText,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 15,
+                                style: theme.textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                               Text(
                                 chapter.nameSanskrit,
-                                style: const TextStyle(
-                                  color: kGoldDim,
-                                  fontSize: 12,
+                                style: TextStyle(
+                                  color: colorScheme.primary,
+                                  fontSize: 13,
+                                  fontStyle: FontStyle.italic,
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              _buildChapterMeta(chapter),
+                              _buildChapterMeta(context, chapter),
                             ],
                           ),
                         ),
-                        const Icon(
+                        Icon(
                           Icons.chevron_right,
-                          color: kTextDim,
+                          color: theme.hintColor,
                           size: 20,
                         ),
                       ],
@@ -98,36 +106,38 @@ class ChaptersScreen extends StatelessWidget {
                 ),
               ),
             ),
-          ); // FIXED: Removed leading comma before closing parenthesis
+          );
         },
       ),
     );
   }
 
-  Widget _buildChapterIndicator(int number, bool isCompleted) {
+  Widget _buildChapterIndicator(BuildContext context, int number, bool isCompleted) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Container(
       width: 48,
       height: 48,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: isCompleted
-            ? kGold.withOpacity(0.1)
-            : kDivider.withOpacity(0.3),
+            ? Colors.orangeAccent.withOpacity(0.1)
+            : Theme.of(context).dividerColor.withOpacity(0.1),
         border: Border.all(
-          color: isCompleted ? kGold : kDivider,
+          color: isCompleted ? Colors.orangeAccent : Theme.of(context).dividerColor,
         ),
       ),
       child: Center(
         child: isCompleted
             ? const Icon(
                 Icons.check,
-                color: kGold,
+                color: Colors.orangeAccent,
                 size: 20,
               )
             : Text(
                 '$number',
                 style: GoogleFonts.cinzel(
-                  color: kGold,
+                  color: colorScheme.onSurface,
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
@@ -136,7 +146,9 @@ class ChaptersScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildChapterMeta(dynamic chapter) {
+  Widget _buildChapterMeta(BuildContext context, dynamic chapter) {
+    final theme = Theme.of(context);
+    
     return Row(
       children: [
         Flexible(
@@ -146,15 +158,15 @@ class ChaptersScreen extends StatelessWidget {
               vertical: 2,
             ),
             decoration: BoxDecoration(
-              color: kDivider,
+              color: theme.dividerColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
               chapter.theme,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: kGoldDim,
+              style: TextStyle(
+                color: theme.colorScheme.secondary,
                 fontSize: 10,
               ),
             ),
@@ -163,12 +175,9 @@ class ChaptersScreen extends StatelessWidget {
         const SizedBox(width: 8),
         Text(
           '${chapter.verseCount} verses',
-          style: const TextStyle(
-            color: kTextDim,
-            fontSize: 11,
-          ),
+          style: theme.textTheme.bodySmall,
         ),
       ],
     );
-  } // FIXED: Removed extra comma before closing bracket
+  }
 }
