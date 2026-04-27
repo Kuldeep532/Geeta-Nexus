@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// --- GLOBAL COLORS ---
+// --- GLOBAL COLORS (The DNA) ---
 const Color kBg = Color(0xFF0D0A04);
 const Color kGold = Color(0xFFFFD700);
 const Color kGoldLight = Color(0xFFFFEC6E);
@@ -21,9 +21,7 @@ const List<String> kSpiritualTopics = [
   'Meditation', 'Peace', 'Soul', 'Duty', 'Mind'
 ];
 
-class AppColors {
-  static Color autoDefine(Color? input, {Color fallback = kGold}) => input ?? fallback;
-}
+// --- ADAPTIVE THEME BUILDERS ---
 
 ThemeData buildLightTheme() {
   const Color lBg = Color(0xFFFFF8E7);
@@ -32,12 +30,13 @@ ThemeData buildLightTheme() {
   const Color lText = Color(0xFF2A1F00);
   const Color lTextDim = Color(0xFF7A6A3A);
   const Color lDivider = Color(0xFFE5D499);
+
   return ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
     scaffoldBackgroundColor: lBg,
     primaryColor: kGoldDim,
-    colorScheme: const ColorScheme.light(
+    colorScheme: ColorScheme.light(
       primary: kGoldDim,
       secondary: kSaffron,
       surface: lSurface,
@@ -86,13 +85,12 @@ ThemeData buildLightTheme() {
   );
 }
 
-ThemeData buildTheme() {
+ThemeData buildDarkTheme() {
   return ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
     scaffoldBackgroundColor: kBg,
     primaryColor: kGold,
-    
     colorScheme: const ColorScheme.dark(
       primary: kGold,
       secondary: kSaffron,
@@ -102,7 +100,6 @@ ThemeData buildTheme() {
       onSurface: kText,
       outline: kDivider,
     ),
-
     textTheme: GoogleFonts.crimsonTextTextTheme(
       const TextTheme(
         displayLarge: TextStyle(color: kGold, fontWeight: FontWeight.bold),
@@ -110,7 +107,6 @@ ThemeData buildTheme() {
         bodySmall: TextStyle(color: kTextDim),
       ),
     ),
-
     appBarTheme: AppBarTheme(
       backgroundColor: kBg,
       centerTitle: true,
@@ -121,8 +117,6 @@ ThemeData buildTheme() {
       ),
       iconTheme: const IconThemeData(color: kGold),
     ),
-
-    // FIX: CardTheme ko CardThemeData kar diya hai error hatane ke liye
     cardTheme: CardThemeData(
       color: kCard,
       elevation: 0,
@@ -131,7 +125,6 @@ ThemeData buildTheme() {
         side: const BorderSide(color: kDivider),
       ),
     ),
-
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: kSurface,
