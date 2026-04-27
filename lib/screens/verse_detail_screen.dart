@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../theme.dart';
+import 'package:flutter_tts/flutter_tts.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+
 import '../models/models.dart';
 import '../state/app_state.dart';
 
@@ -18,12 +20,20 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabs;
   bool _showTransliteration = true;
+  
+  // Audio & Speech objects
+  final FlutterTts _tts = FlutterTts();
+  final stt.SpeechToText _stt = stt.SpeechToText();
+  bool _isListening = false;
+  String _userSpokenText = "";
 
   @override
   void initState() {
     super.initState();
     _tabs = TabController(length: 3, vsync: this);
+    _initSpeech();
     
+    // Mark as read
     Future.microtask(() {
       if (mounted) {
         context.read<AppState>().markVerseRead(widget.verse.id);
@@ -31,118 +41,141 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
     });
   }
 
+  void _initSpeech() async {
+    await _stt.initialize();
+    await _tts.setLanguage("hi-IN"); // Best for Sanskrit/Hindi pronunciation
+    await _tts.setSpeechRate(0.4);   // Slow rate for better learning
+  }
+
   @override
   void dispose() {
     _tabs.dispose();
+    _tts.stop();
+    _stt.stop();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<AppState>(
-      builder: (context, state, child) {
-        final verse = widget.verse;
-        final isBookmarked = state.isBookmarked(verse.id);
+  // --- Logic Features ---
 
-        return Scaffold(
-          backgroundColor: kBg,
-          appBar: AppBar(
-            elevation: 0,
-            title: Text(
-              'Verse ${verse.id}',
-              style: GoogleFonts.cinzel(
-                color: kGold, 
-                fontSize: 18, 
-                fontWeight: FontWeight.bold
-              ),
-            ),
-            actions: [
-              IconButton(
-                tooltip: isBookmarked ? 'Remove Bookmark' : 'Add Bookmark',
-                icon: Icon(
-                  isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-                  color: kGold,
-                ),
-                onPressed: () => _handleBookmark(context, state, isBookmarked),
-              ),
-              IconButton(
-                tooltip: 'Copy to Clipboard',
-                icon: const Icon(Icons.copy, color: kGold),
-                onPressed: () => _copyToClipboard(context, verse),
-              ),
-            ],
-          ),
-          body: Column(
-            children: [
-              _buildVerseHeader(verse),
-              _buildTabBar(),
-              _buildTabContent(verse),
-            ],
-          ),
+  Future<void> _speakVerse(String text) async {
+    HapticFeedback.selectionClick();
+    await _tts.speak(text);
+  }
+
+  void _startPractice() async {
+    if (!_isListening) {
+      bool available = await _stt.initialize();
+      if (available) {
+        setState(() {
+          _isListening = true;
+          _userSpokenText = "";
+        });
+        _stt.listen(
+          localeId: "hi_IN",
+          onResult: (val) => setState(() {
+            _userSpokenText = val.recognizedWords;
+            if (val.finalResult) {
+              _isListening = false;
+              _validateSpeech();
+            }
+          }),
         );
-      },
+      }
+    } else {
+      setState(() => _isListening = false);
+      _stt.stop();
+    }
+  }
+
+  void _validateSpeech() {
+    // Normalizing text for comparison
+    String original = widget.verse.transliteration.toLowerCase().replaceAll(RegExp(r'[^\w\s]'), '');
+    String spoken = _userSpokenText.toLowerCase().replaceAll(RegExp(r'[^\w\s]'), '');
+
+    if (spoken.isEmpty) return;
+
+    if (original.contains(spoken) || spoken.contains(original)) {
+      _showSnack("Sahi Uchcharan! ✨", Colors.green);
+    } else {
+      HapticFeedback.heavyImpact(); // Physical error feedback
+      _showSnack("Galti hui! Phir se koshish karein.", Colors.red);
+    }
+  }
+
+  void _showSnack(String msg, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: color, behavior: SnackBarBehavior.floating),
     );
   }
 
-  Widget _buildVerseHeader(Verse verse) {
+  // --- UI Components ---
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+    final Color goldColor = isDark ? const Color(0xFFFFD700) : const Color(0xFFB8860B);
+
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        elevation: 0,
+        title: Text('Verse ${widget.verse.id}', 
+          style: GoogleFonts.cinzel(color: goldColor, fontWeight: FontWeight.bold)),
+        actions: [
+          IconButton(
+            tooltip: "Listen to Verse",
+            icon: Icon(Icons.volume_up, color: goldColor),
+            onPressed: () => _speakVerse(_showTransliteration ? widget.verse.transliteration : widget.verse.sanskrit),
+          ),
+          IconButton(
+            icon: const Icon(Icons.copy),
+            onPressed: () => _copyVerse(widget.verse),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          _buildHeroCard(context, goldColor, isDark),
+          _buildPracticeBar(goldColor),
+          _buildTabSystem(goldColor),
+        ],
+      ),
+      bottomNavigationBar: _buildBottomNav(goldColor),
+    );
+  }
+
+  Widget _buildHeroCard(BuildContext context, Color gold, bool isDark) {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF2A1F00), Color(0xFF1A1500)],
+        gradient: LinearGradient(
+          colors: isDark ? [const Color(0xFF2A1F00), const Color(0xFF1A1500)] : [Colors.white, const Color(0xFFFFF9E6)],
         ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: kGoldDim.withOpacity(0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: gold.withOpacity(0.3)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween, // FIXED: Valid enum
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Text(
-                  'Chapter ${verse.chapter}, Verse ${verse.verse}',
-                  style: GoogleFonts.cinzel(
-                    color: kGold,
-                    fontSize: 14,
-                    letterSpacing: 1.0,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-              _buildLanguageToggle(),
+              Text('BG ${widget.verse.chapter}.${widget.verse.verse}', 
+                style: GoogleFonts.cinzel(color: gold, fontSize: 14)),
+              _languageToggle(gold),
             ],
           ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
+          const SizedBox(height: 20),
+          Semantics(
+            label: "Verse Text",
             child: Text(
-              _showTransliteration ? verse.transliteration : verse.sanskrit,
-              textAlign: TextAlign.center, // FIXED: Removed leading comma
-              style: _showTransliteration
-                  ? GoogleFonts.crimsonText(
-                      color: kGoldLight,
-                      fontSize: 18,
-                      fontStyle: FontStyle.italic,
-                      height: 1.5,
-                    )
-                  : GoogleFonts.notoSansDevanagari(
-                      color: kGoldLight,
-                      fontSize: 20,
-                      height: 1.6,
-                    ),
+              _showTransliteration ? widget.verse.transliteration : widget.verse.sanskrit,
+              textAlign: TextAlign.center,
+              style: _showTransliteration 
+                ? GoogleFonts.crimsonText(fontSize: 20, fontStyle: FontStyle.italic)
+                : GoogleFonts.notoSansDevanagari(fontSize: 22, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -150,75 +183,34 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
     );
   }
 
-  Widget _buildLanguageToggle() {
+  Widget _languageToggle(Color gold) {
     return InkWell(
       onTap: () => setState(() => _showTransliteration = !_showTransliteration),
-      borderRadius: BorderRadius.circular(8),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: kDivider.withOpacity(0.5),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: kGoldDim.withOpacity(0.2)),
-        ),
-        child: Text(
-          _showTransliteration ? 'IAST' : 'Sanskrit',
-          style: const TextStyle(
-            color: kGoldDim,
-            fontSize: 11,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        decoration: BoxDecoration(border: Border.all(color: gold), borderRadius: BorderRadius.circular(20)),
+        child: Text(_showTransliteration ? "IAST" : "Sanskrit", style: TextStyle(color: gold, fontSize: 12)),
       ),
     );
   }
 
-  Widget _buildTabBar() {
-    return TabBar(
-      controller: _tabs,
-      labelColor: kGold,
-      unselectedLabelColor: kTextDim,
-      indicatorColor: kGold,
-      indicatorWeight: 3,
-      tabs: const [
-        Tab(child: Text('Translation', style: TextStyle(fontSize: 13))),
-        Tab(child: Text('Meaning', style: TextStyle(fontSize: 13))),
-        Tab(child: Text('Keywords', style: TextStyle(fontSize: 13))),
-      ],
-    );
-  }
-
-  Widget _buildTabContent(Verse verse) {
-    return Expanded(
-      child: TabBarView(
-        controller: _tabs,
+  Widget _buildPracticeBar(Color gold) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
         children: [
-          _scrollablePadding(
+          Expanded(
             child: Text(
-              '"${verse.translation}"',
-              style: GoogleFonts.crimsonText(
-                color: kText,
-                fontSize: 19,
-                fontStyle: FontStyle.italic,
-                height: 1.7,
-              ),
+              _isListening ? "Listening..." : "Practice Pronunciation:",
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
-          _scrollablePadding(
-            child: Text(
-              verse.meaning,
-              style: GoogleFonts.crimsonText(
-                color: kText,
-                fontSize: 17,
-                height: 1.6,
-              ),
-            ),
-          ),
-          _scrollablePadding(
-            child: Wrap(
-              spacing: 10,
-              runSpacing: 12,
-              children: verse.keywords.map((k) => _buildChip(k)).toList(),
+          Semantics(
+            label: "Mic for practice",
+            child: IconButton(
+              icon: Icon(_isListening ? Icons.stop_circle : Icons.mic, 
+                color: _isListening ? Colors.red : gold, size: 30),
+              onPressed: _startPractice,
             ),
           ),
         ],
@@ -226,56 +218,48 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
     );
   }
 
-  Widget _buildChip(String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: kCard,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: kGoldDim.withOpacity(0.5)),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          color: kGold, 
-          fontSize: 14, 
-          fontWeight: FontWeight.w400
-        ),
-      ),
-    );
-  }
-
-  Widget _scrollablePadding({required Widget child}) {
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-      child: child,
-    );
-  }
-
-  void _handleBookmark(BuildContext context, AppState state, bool isBookmarked) {
-    state.toggleBookmark(widget.verse.id);
-    HapticFeedback.mediumImpact();
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        backgroundColor: kCard,
-        content: Text(
-          isBookmarked ? 'Removed from bookmarks' : 'Verse Bookmarked',
-          style: const TextStyle(color: kGold),
-        ),
+  Widget _buildTabSystem(Color gold) {
+    return Expanded(
+      child: Column(
+        children: [
+          TabBar(
+            controller: _tabs,
+            labelColor: gold,
+            indicatorColor: gold,
+            tabs: const [Tab(text: "Translation"), Tab(text: "Meaning"), Tab(text: "Tags")],
+          ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabs,
+              children: [
+                _tabPadding(Text(widget.verse.translation, style: GoogleFonts.crimsonText(fontSize: 18))),
+                _tabPadding(Text(widget.verse.meaning, style: const TextStyle(height: 1.5))),
+                _tabPadding(Wrap(spacing: 8, children: widget.verse.keywords.map((k) => Chip(label: Text(k))).toList())),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  void _copyToClipboard(BuildContext context, Verse verse) { // FIXED: Corrected parameters
-    Clipboard.setData(ClipboardData(
-      text: '${verse.sanskrit}\n\n${verse.translation}\n— Bhagavad Gita ${verse.chapter}.${verse.verse}',
-    ));
-    HapticFeedback.lightImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Verse details copied')),
+  Widget _tabPadding(Widget child) => SingleChildScrollView(padding: const EdgeInsets.all(24), child: child);
+
+  Widget _buildBottomNav(Color gold) {
+    return BottomAppBar(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          TextButton.icon(onPressed: () {}, icon: const Icon(Icons.arrow_back_ios), label: const Text("Prev")),
+          const VerticalDivider(),
+          TextButton.icon(onPressed: () {}, label: const Text("Next"), icon: const Icon(Icons.arrow_forward_ios)),
+        ],
+      ),
     );
+  }
+
+  void _copyVerse(Verse v) {
+    Clipboard.setData(ClipboardData(text: "${v.sanskrit}\n${v.translation}"));
+    _showSnack("Copied to clipboard", Colors.grey[800]!);
   }
 }
