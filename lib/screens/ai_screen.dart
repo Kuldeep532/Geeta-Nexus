@@ -1,22 +1,13 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
-// Suggested additional libraries (Ensure these are in your pubspec.yaml)
-// import 'package:google_generative_ai/google_generative_ai.dart'; 
-// import 'package:flutter_markdown/flutter_markdown.dart';
-
-import '../theme.dart';
-import '../state/app_state.dart';
-import '../data/gita_data.dart';
+import '../services/ai_service.dart'; // सुनिश्चित करें कि पाथ सही है
 
 enum Persona { krishna, radha, guide }
 
 class _Message {
   final String text;
   final bool isUser;
-  final DateTime timestamp; // Added for better tracking
+  final DateTime timestamp;
   _Message({required this.text, required this.isUser, DateTime? time}) 
       : timestamp = time ?? DateTime.now();
 }
@@ -32,6 +23,7 @@ class _AiScreenState extends State<AiScreen> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   final List<_Message> _messages = [];
+  final AIService _aiService = AIService(); 
   Persona _persona = Persona.krishna;
   bool _thinking = false;
 
@@ -58,23 +50,9 @@ class _AiScreenState extends State<AiScreen> {
     });
   }
 
-  // Improved theme-aware color fetching
-  Color _getBubbleColor(bool isUser, BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    if (isUser) {
-      return Colors.orange.shade800;
-    }
-    return isDark ? Colors.grey.shade800 : Colors.blueGrey.shade100;
-  }
-
-  Color _getTextColor(bool isUser, BuildContext context) {
-    if (isUser) return Colors.white;
-    return Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black;
-  }
-
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || _thinking) return; // Error Fix: खाली मैसेज या थिंकिंग के दौरान रोकें
     
     _controller.clear();
     setState(() {
@@ -84,20 +62,29 @@ class _AiScreenState extends State<AiScreen> {
     
     _scrollToBottom();
     
-    // Simulate AI logic or API call
-    await Future.delayed(const Duration(milliseconds: 1000));
-    
-    if (mounted) {
-      setState(() {
-        _messages.add(_Message(text: "Peace is found within. (Example Response)", isUser: false));
-        _thinking = false;
-      });
-      _scrollToBottom();
+    try {
+      // AIService से रिस्पांस लेना
+      final response = await _aiService.getSmartResponse(text);
+      if (mounted) {
+        setState(() {
+          _messages.add(_Message(text: response, isUser: false));
+          _thinking = false;
+        });
+        _scrollToBottom();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _thinking = false;
+          _messages.add(_Message(text: "क्षमा करें, कुछ तकनीकी त्रुटि हुई।", isUser: false));
+        });
+      }
     }
   }
 
   void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Accessibility Fix: स्क्रीन रीडर को नए मैसेज पर फोकस करने में मदद करता है
+    Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
@@ -110,16 +97,13 @@ class _AiScreenState extends State<AiScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // The Material app in main.dart should have:
-    // themeMode: ThemeMode.system,
-    // theme: AppTheme.lightTheme,
-    // darkTheme: AppTheme.darkTheme,
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      // Removed hardcoded Colors.black to support system theme
       appBar: AppBar(
         title: Text(_personaNames[_persona]!, style: GoogleFonts.cinzel()),
-        elevation: 0,
+        centerTitle: true,
       ),
       body: Column(
         children: [
@@ -127,105 +111,125 @@ class _AiScreenState extends State<AiScreen> {
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              // itemCount Error Fix: यहाँ index आउट ऑफ बाउंड हो सकता था
               itemCount: _messages.length + (_thinking ? 1 : 0),
               itemBuilder: (context, index) {
                 if (_thinking && index == _messages.length) {
                   return _buildThinkingBubble();
                 }
-                return _buildMessageBubble(_messages[index]);
+                return _buildMessageBubble(_messages[index], theme, isDark);
               },
             ),
           ),
-          _buildInputBar(),
+          _buildInputBar(theme),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMessageBubble(_Message msg, ThemeData theme, bool isDark) {
+    return Align(
+      alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Semantics(
+        label: "${msg.isUser ? 'You' : _personaNames[_persona]}: ${msg.text}",
+        child: Container(
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.all(14),
+          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
+          decoration: BoxDecoration(
+            color: msg.isUser 
+                ? theme.colorScheme.primary 
+                : (isDark ? Colors.grey[850] : Colors.grey[200]),
+            borderRadius: BorderRadius.circular(15).copyWith(
+              bottomRight: msg.isUser ? const Radius.circular(0) : null,
+              bottomLeft: !msg.isUser ? const Radius.circular(0) : null,
+            ),
+          ),
+          child: Text(
+            msg.text, 
+            style: TextStyle(
+              color: msg.isUser ? Colors.white : (isDark ? Colors.white : Colors.black87),
+              fontSize: 16
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThinkingBubble() => const Padding(
+    padding: EdgeInsets.all(12.0),
+    child: Align(
+      alignment: Alignment.centerLeft,
+      child: Semantics(
+        label: "AI is thinking",
+        child: SizedBox(
+          width: 20, 
+          height: 20, 
+          child: CircularProgressIndicator(strokeWidth: 2)
+        ),
+      ),
+    ),
+  );
+
+  Widget _buildInputBar(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(8.0),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)]
+      ),
+      child: SafeArea(
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _sendMessage(), // कीबोर्ड से एंटर दबाने पर सेंड होगा
+                decoration: InputDecoration(
+                  hintText: "पूछिए...",
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              icon: const Icon(Icons.send),
+              color: theme.colorScheme.primary,
+              onPressed: _sendMessage,
+              tooltip: "Send Message",
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildPersonaSelector() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: SingleChildScrollView(
+      height: 50,
+      margin: const EdgeInsets.symmetric(vertical: 5),
+      child: ListView(
         scrollDirection: Axis.horizontal,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: Persona.values.map((p) => Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: ChoiceChip(
-              selected: _persona == p,
-              label: Text(_personaNames[p]!),
-              onSelected: (_) => setState(() {
-                _persona = p;
-                _messages.clear();
-                _addGreeting();
-              }),
-            ),
-          )).toList(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMessageBubble(_Message msg) {
-    return Align(
-      alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 5),
-        padding: const EdgeInsets.all(14),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-        decoration: BoxDecoration(
-          color: _getBubbleColor(msg.isUser, context),
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft: Radius.circular(msg.isUser ? 16 : 0),
-            bottomRight: Radius.circular(msg.isUser ? 0 : 16),
+        children: Persona.values.map((p) => Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: ChoiceChip(
+            selected: _persona == p,
+            label: Text(_personaNames[p]!),
+            onSelected: (selected) {
+              if (selected) {
+                setState(() {
+                  _persona = p;
+                  _messages.clear();
+                  _addGreeting();
+                });
+              }
+            },
           ),
-        ),
-        child: Text(
-          msg.text, 
-          style: TextStyle(color: _getTextColor(msg.isUser, context)),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildThinkingBubble() => const Align(
-    alignment: Alignment.centerLeft,
-    child: Padding(
-      padding: EdgeInsets.all(12.0),
-      child: CircularProgressIndicator(strokeWidth: 2),
-    ),
-  );
-
-  Widget _buildInputBar() {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-        child: Row(
-          children: [
-            Expanded(
-              child: TextField(
-                controller: _controller,
-                minLines: 1,
-                maxLines: 4,
-                decoration: InputDecoration(
-                  hintText: "Seek guidance...",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            FloatingActionButton.small(
-              onPressed: _sendMessage,
-              child: const Icon(Icons.send),
-            ),
-          ],
-        ),
+        )).toList(),
       ),
     );
   }
