@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../theme.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
 import 'verse_detail_screen.dart';
@@ -12,12 +11,15 @@ class ChapterDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     if (chapter.name.isEmpty) {
       return const _ErrorStateWidget(message: "Chapter data not found");
     }
 
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: colorScheme.surface,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -25,17 +27,24 @@ class ChapterDetailScreen extends StatelessWidget {
             expandedHeight: 220,
             pinned: true,
             elevation: 0,
-            backgroundColor: kBg,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios, color: kGold, size: 20),
-              onPressed: () => Navigator.pop(context),
+            backgroundColor: colorScheme.surface,
+            leading: Semantics(
+              label: "Back",
+              button: true,
+              child: IconButton(
+                icon: Icon(Icons.arrow_back_ios, 
+                  color: colorScheme.primary, 
+                  size: 20
+                ),
+                onPressed: () => Navigator.pop(context),
+              ),
             ),
             flexibleSpace: FlexibleSpaceBar(
               centerTitle: true,
               title: Text(
                 'Chapter ${chapter.number}',
                 style: GoogleFonts.cinzel(
-                  color: kGold,
+                  color: colorScheme.primary,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
@@ -53,16 +62,19 @@ class ChapterDetailScreen extends StatelessWidget {
                   const SizedBox(height: 20),
                   _SummaryCard(summary: chapter.summary),
                   const SizedBox(height: 28),
-                  Text(
-                    'VERSES',
-                    style: GoogleFonts.cinzel(
-                      color: kGold,
-                      fontSize: 16,
-                      letterSpacing: 2,
-                      fontWeight: FontWeight.bold,
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      'VERSES',
+                      style: GoogleFonts.cinzel(
+                        color: colorScheme.primary,
+                        fontSize: 16,
+                        letterSpacing: 2,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                  const Divider(color: kGoldDim, thickness: 0.5),
+                  Divider(color: colorScheme.outlineVariant, thickness: 0.5),
                   const SizedBox(height: 12),
                   _VerseList(verses: chapter.verses),
                   const SizedBox(height: 32),
@@ -84,14 +96,19 @@ class _HeaderBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Stack(
       children: [
         Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFF2A1F00), kBg],
+              colors: [
+                colorScheme.primaryContainer.withOpacity(0.4),
+                colorScheme.surface
+              ],
             ),
           ),
         ),
@@ -103,7 +120,7 @@ class _HeaderBackground extends StatelessWidget {
               Text(
                 chapter.name,
                 style: GoogleFonts.cinzel(
-                  color: kGold,
+                  color: colorScheme.primary,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
@@ -113,7 +130,7 @@ class _HeaderBackground extends StatelessWidget {
               Text(
                 chapter.nameSanskrit,
                 style: GoogleFonts.notoSansDevanagari(
-                  color: kGoldDim,
+                  color: colorScheme.onSurfaceVariant,
                   fontSize: 16,
                   letterSpacing: 1.2,
                 ),
@@ -128,7 +145,7 @@ class _HeaderBackground extends StatelessWidget {
 
 class _VerseList extends StatelessWidget {
   final List<Verse> verses;
-  const _VerseList({required this.verses}); // FIXED: Removed leading comma
+  const _VerseList({required this.verses});
 
   @override
   Widget build(BuildContext context) {
@@ -136,7 +153,7 @@ class _VerseList extends StatelessWidget {
       return const Center(
         child: Padding(
           padding: EdgeInsets.symmetric(vertical: 40),
-          child: Text("No verses found", style: TextStyle(color: kTextDim)),
+          child: Text("No verses found"),
         ),
       );
     }
@@ -157,37 +174,49 @@ class _VerseRowItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: kCard,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: kDivider.withOpacity(0.5)),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: CircleAvatar(
-          backgroundColor: kBg,
-          child: Text(
-            '${verse.verseNumber}', 
-            style: const TextStyle(color: kGold, fontSize: 12),
-          ),
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Semantics(
+      label: "Verse ${verse.verseNumber}",
+      button: true,
+      child: Card(
+        color: colorScheme.surfaceContainerHigh,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: colorScheme.outlineVariant),
         ),
-        title: Text(
-          verse.translation.split('\n').first,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: GoogleFonts.crimsonText(color: kText, fontSize: 16),
-        ),
-        trailing: const Icon(Icons.arrow_forward_ios, color: kGoldDim, size: 14),
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => VerseDetailScreen(verse: verse),
+        child: ListTile(
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          leading: CircleAvatar(
+            backgroundColor: colorScheme.primary.withOpacity(0.1),
+            child: Text(
+              '${verse.verseNumber}', 
+              style: TextStyle(color: colorScheme.primary, fontSize: 12),
             ),
-          );
-        },
+          ),
+          title: Text(
+            verse.translation.split('\n').first,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: GoogleFonts.crimsonText(
+              color: colorScheme.onSurface, 
+              fontSize: 16
+            ),
+          ),
+          trailing: Icon(Icons.arrow_forward_ios, 
+            color: colorScheme.onSurfaceVariant, 
+            size: 14
+          ),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => VerseDetailScreen(verse: verse),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -199,24 +228,30 @@ class _CompletionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return SizedBox(
       width: double.infinity,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: kGold,
-          foregroundColor: kBg,
-          padding: const EdgeInsets.symmetric(vertical: 18),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-        onPressed: () {
-          context.read<AppState>().markChapterComplete(chapterNumber);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Chapter Marked as Completed!")),
-          );
-        },
-        child: Text(
-          "MARK AS COMPLETED",
-          style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, letterSpacing: 1.5),
+      child: Semantics(
+        label: "Mark chapter $chapterNumber as completed",
+        button: true,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          onPressed: () {
+            context.read<AppState>().markChapterComplete(chapterNumber);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Chapter $chapterNumber Marked as Completed!")),
+            );
+          },
+          child: Text(
+            "MARK AS COMPLETED",
+            style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, letterSpacing: 1.5),
+          ),
         ),
       ),
     );
@@ -231,27 +266,29 @@ class _ChapterStats extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _pill(chapter.theme, Icons.auto_awesome),
+        _pill(context, chapter.theme, Icons.auto_awesome),
         const SizedBox(width: 10),
-        _pill('${chapter.verses.length} Verses', Icons.menu_book),
+        _pill(context, '${chapter.verses.length} Verses', Icons.menu_book),
       ],
     );
   }
 
-  Widget _pill(String text, IconData icon) {
+  Widget _pill(BuildContext context, String text, IconData icon) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: kCard,
+        color: colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: kGoldDim.withOpacity(0.3)),
+        border: Border.all(color: colorScheme.primary.withOpacity(0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: kGold, size: 14),
+          Icon(icon, color: colorScheme.primary, size: 14),
           const SizedBox(width: 8),
-          Text(text, style: const TextStyle(color: kGold, fontSize: 12)),
+          Text(text, style: TextStyle(color: colorScheme.primary, fontSize: 12)),
         ],
       ),
     );
@@ -264,27 +301,33 @@ class _SummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration( // FIXED: Removed leading comma
-        color: kCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: kDivider),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.format_quote, color: kGoldDim),
-          Text(
-            summary,
-            style: GoogleFonts.crimsonText(
-              color: kText,
-              fontSize: 17,
-              height: 1.6,
-              fontStyle: FontStyle.italic,
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Semantics(
+      label: "Chapter Summary",
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colorScheme.outlineVariant),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.format_quote, color: colorScheme.primary),
+            const SizedBox(height: 8),
+            Text(
+              summary,
+              style: GoogleFonts.crimsonText(
+                color: colorScheme.onSurface,
+                fontSize: 17,
+                height: 1.6,
+                fontStyle: FontStyle.italic,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -296,11 +339,12 @@ class _ErrorStateWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: colorScheme.surface,
       body: Center(
-        child: Text(message, style: const TextStyle(color: kGold)),
+        child: Text(message, style: TextStyle(color: colorScheme.error)),
       ),
     );
-  } // FIXED: Closed the method and class properly
+  }
 }
