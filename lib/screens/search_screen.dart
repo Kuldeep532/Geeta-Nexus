@@ -43,7 +43,7 @@ class _SearchScreenState extends State<SearchScreen> {
     return Scaffold(
       backgroundColor: kBg,
       appBar: AppBar(
-        title: const Text('Search Verses'),
+        title: Text('Search Verses', style: GoogleFonts.cinzel(fontWeight: FontWeight.bold)),
         leading: const BackButton(),
         elevation: 0,
       ),
@@ -68,6 +68,12 @@ class _SearchScreenState extends State<SearchScreen> {
                         },
                       )
                     : null,
+                filled: true,
+                fillColor: kCard,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
               ),
             ),
           ),
@@ -86,8 +92,7 @@ class _SearchScreenState extends State<SearchScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Popular Topics',
-              style: GoogleFonts.cinzel(
-                  color: kGold, fontSize: 13, fontWeight: FontWeight.w600)),
+              style: GoogleFonts.cinzel(color: kGold, fontSize: 13, fontWeight: FontWeight.w600)),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
@@ -97,7 +102,6 @@ class _SearchScreenState extends State<SearchScreen> {
                 label: Text(t),
                 labelStyle: const TextStyle(color: kGold, fontSize: 13),
                 backgroundColor: kCard,
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                   side: const BorderSide(color: kDivider),
@@ -119,7 +123,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (_results.isEmpty) {
       return Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: Main => MainAxisAlignment.center,
           children: [
             const Icon(Icons.search_off, color: kTextDim, size: 48),
             const SizedBox(height: 12),
@@ -136,7 +140,7 @@ class _SearchScreenState extends State<SearchScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              Text( // FIXED: Removed leading comma
+              Text(
                 '${_results.length} verse${_results.length != 1 ? 's' : ''} found',
                 style: const TextStyle(color: kTextDim, fontSize: 12),
               ),
@@ -186,8 +190,7 @@ class _SearchScreenState extends State<SearchScreen> {
               const SizedBox(height: 10),
               Text(
                 verse.translation,
-                style: GoogleFonts.crimsonText(
-                    color: kText, fontSize: 15, height: 1.4),
+                style: GoogleFonts.crimsonText(color: kText, fontSize: 15, height: 1.4),
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -196,5 +199,5 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       ),
     );
-  } // FIXED: Closed the method and class properly
+  }
 }
