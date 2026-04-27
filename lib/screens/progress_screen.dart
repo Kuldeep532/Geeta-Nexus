@@ -12,29 +12,30 @@ class ProgressScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
+    final theme = Theme.of(context);
     
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('My Spiritual Progress'),
+        title: Text('My Spiritual Progress', style: GoogleFonts.cinzel(fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
         children: [
-          _buildLevelCard(state),
+          _buildLevelCard(state, theme),
           const SizedBox(height: 30),
           _buildSectionHeader('Your Statistics'),
           const SizedBox(height: 12),
-          _buildStatsGrid(state),
+          _buildStatsGrid(state, theme),
           const SizedBox(height: 30),
           _buildSectionHeader('Achievements'),
           const SizedBox(height: 12),
-          _buildBadges(state),
+          _buildBadges(state, theme),
           const SizedBox(height: 30),
           _buildSectionHeader('Chapter Progress'),
           const SizedBox(height: 12),
-          _buildChapterList(state),
+          _buildChapterList(state, theme),
           const SizedBox(height: 100),
         ],
       ),
@@ -56,7 +57,7 @@ class ProgressScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLevelCard(AppState state) {
+  Widget _buildLevelCard(AppState state, ThemeData theme) {
     final int nextLevelXP = state.level * 100;
     final double progress = (state.xpInLevel / nextLevelXP).clamp(0.0, 1.0);
     final String levelTitle = _getLevelTitle(state.level);
@@ -86,8 +87,7 @@ class ProgressScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(levelTitle,
-                            style: GoogleFonts.cinzel(color: kGold, fontSize: 22, fontWeight: FontWeight.bold)),
+                        Text(levelTitle, style: GoogleFonts.cinzel(color: kGold, fontSize: 22, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 4),
                         Text('Total XP: ${state.xp}', style: const TextStyle(color: kTextDim, fontSize: 14)),
                       ],
@@ -120,7 +120,7 @@ class ProgressScreen extends StatelessWidget {
   }
 
   Widget _buildProgressSection(int current, int max, double value) {
-    return Semantics( // FIXED: Removed leading comma before return
+    return Semantics(
       label: "Progress to next level: ${(value * 100).toInt()} percent.",
       child: Column(
         children: [
@@ -147,14 +147,11 @@ class ProgressScreen extends StatelessWidget {
   }
 
   Widget _buildStreakWidget(int streak) {
-    return Semantics(
-      label: "Daily Learning Streak: $streak days",
-      child: Column(
-        children: [
-          const Text('🔥', style: TextStyle(fontSize: 26)),
-          Text('$streak', style: GoogleFonts.cinzel(color: kGold, fontSize: 20, fontWeight: FontWeight.bold)),
-        ],
-      ),
+    return Column(
+      children: [
+        const Text('🔥', style: TextStyle(fontSize: 26)),
+        Text('$streak', style: GoogleFonts.cinzel(color: kGold, fontSize: 20, fontWeight: FontWeight.bold)),
+      ],
     );
   }
 
@@ -163,7 +160,7 @@ class ProgressScreen extends StatelessWidget {
     return titles[(level - 1).clamp(0, titles.length - 1)];
   }
 
-  Widget _buildStatsGrid(AppState state) {
+  Widget _buildStatsGrid(AppState state, ThemeData theme) {
     final stats = [
       {'label': 'Verses Read', 'value': '${state.readVerses.length}', 'icon': '📖'},
       {'label': 'Quiz Score', 'value': '${state.quizScore}', 'icon': '🎯'},
@@ -188,7 +185,7 @@ class ProgressScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              ExcludeSemantics(child: Text(stats[i]['icon']!, style: const TextStyle(fontSize: 24))),
+              Text(stats[i]['icon']!, style: const TextStyle(fontSize: 24)),
               const SizedBox(height: 8),
               Text(stats[i]['value']!, style: GoogleFonts.cinzel(color: kGold, fontSize: 18, fontWeight: FontWeight.bold)),
               Text(stats[i]['label']!, style: const TextStyle(color: kTextDim, fontSize: 10), textAlign: TextAlign.center),
@@ -199,7 +196,7 @@ class ProgressScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBadges(AppState state) {
+  Widget _buildBadges(AppState state, ThemeData theme) {
     if (state.badges.isEmpty) return const Text("No badges earned yet.", style: TextStyle(color: kTextDim));
     return SizedBox(
       height: 130,
@@ -208,20 +205,17 @@ class ProgressScreen extends StatelessWidget {
         itemCount: state.badges.length,
         itemBuilder: (context, i) {
           final b = state.badges[i];
-          return Semantics(
-            label: "Badge earned: ${b['name']}",
-            child: Container(
-              width: 110,
-              margin: const EdgeInsets.only(right: 15),
-              decoration: BoxDecoration(color: kCard, borderRadius: BorderRadius.circular(18)),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(b['icon']!, style: const TextStyle(fontSize: 32)),
-                  const SizedBox(height: 8),
-                  Text(b['name']!, style: const TextStyle(color: kGold, fontSize: 11), textAlign: TextAlign.center),
-                ],
-              ),
+          return Container(
+            width: 110,
+            margin: const EdgeInsets.only(right: 15),
+            decoration: BoxDecoration(color: kCard, borderRadius: BorderRadius.circular(18)),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(b['icon']!, style: const TextStyle(fontSize: 32)),
+                const SizedBox(height: 8),
+                Text(b['name']!, style: const TextStyle(color: kGold, fontSize: 11), textAlign: TextAlign.center),
+              ],
             ),
           );
         },
@@ -229,7 +223,7 @@ class ProgressScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildChapterList(AppState state) {
+  Widget _buildChapterList(AppState state, ThemeData theme) {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -237,21 +231,18 @@ class ProgressScreen extends StatelessWidget {
       itemBuilder: (context, i) {
         final ch = kChapters[i];
         final bool isDone = state.isChapterCompleted(ch.number);
-        return Semantics(
-          label: "Chapter ${ch.number}: ${ch.name}. ${isDone ? 'Completed' : 'Incomplete'}",
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
-              color: kCard,
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: isDone ? kGold.withOpacity(0.5) : kDivider),
-            ),
-            child: ListTile(
-              leading: Icon(isDone ? Icons.stars : Icons.circle_outlined, color: isDone ? kGold : kTextDim),
-              title: Text('Chapter ${ch.number}', style: TextStyle(color: isDone ? kGold : kText)),
-              subtitle: Text(ch.name, style: const TextStyle(color: kTextDim, fontSize: 13)),
-              onTap: () => HapticFeedback.lightImpact(),
-            ),
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: kCard,
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: isDone ? kGold.withOpacity(0.5) : kDivider),
+          ),
+          child: ListTile(
+            leading: Icon(isDone ? Icons.stars : Icons.circle_outlined, color: isDone ? kGold : kTextDim),
+            title: Text('Chapter ${ch.number}', style: TextStyle(color: isDone ? kGold : kText)),
+            subtitle: Text(ch.name, style: const TextStyle(color: kTextDim, fontSize: 13)),
+            onTap: () => HapticFeedback.lightImpact(),
           ),
         );
       },
