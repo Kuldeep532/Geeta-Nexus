@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // Haptic feedback ke liye
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:uuid/uuid.dart'; 
-import '../theme.dart';
+import 'package:uuid/uuid.dart';
 import '../state/app_state.dart';
 import '../models/models.dart';
 
@@ -17,11 +17,14 @@ class JournalScreen extends StatefulWidget {
 class _JournalScreenState extends State<JournalScreen> {
   final _formKey = GlobalKey<FormState>();
   final _contentController = TextEditingController();
+  final _searchController = TextEditingController();
   final _uuid = const Uuid();
   
   bool _showForm = false;
+  bool _isSearching = false;
   String _selectedMood = '😌';
   late String _currentPrompt;
+  String _searchQuery = '';
 
   static const _moods = [
     {'emoji': '😌', 'label': 'Calm'},
@@ -43,25 +46,33 @@ class _JournalScreenState extends State<JournalScreen> {
   @override
   void initState() {
     super.initState();
-    _currentPrompt = _prompts[DateTime.now().day % _prompts.length];
+    _refreshPrompt();
+  }
+
+  void _refreshPrompt() {
+    setState(() {
+      _currentPrompt = (List.from(_prompts)..shuffle()).first;
+    });
   }
 
   @override
   void dispose() {
     _contentController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
   void _submit(AppState state) {
     if (_formKey.currentState!.validate()) {
-      final cleanContent = _contentController.text
-          .trim()
-          .replaceAll(RegExp(r'\n{3,}'), '\n\n'); 
+      HapticFeedback.mediumImpact(); // Masti Feature: Vibration
+      
+      final cleanContent = _contentController.text.trim();
 
       state.addJournalEntry(
         id: _uuid.v4(),
         content: cleanContent,
         mood: _selectedMood,
+        date: DateTime.now(), // Ensure date is passed
       );
 
       _contentController.clear();
@@ -69,40 +80,60 @@ class _JournalScreenState extends State<JournalScreen> {
       FocusManager.instance.primaryFocus?.unfocus();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Reflection saved.'),
-          behavior: SnackBarBehavior.floating,
-        ),
+        const SnackBar(content: Text('Reflection saved.'), behavior: SnackBarBehavior.floating),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final goldColor = const Color(0xFFFFD700);
     final state = context.watch<AppState>();
-    final entries = state.journalEntries;
+    
+    // Search Filter Logic
+    final entries = state.journalEntries.where((e) => 
+      e.content.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
 
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('Spiritual Journal', style: GoogleFonts.cinzel()),
+        title: _isSearching 
+          ? TextField(
+              controller: _searchController,
+              autofocus: true,
+              style: TextStyle(color: goldColor),
+              decoration: const InputDecoration(hintText: "Search thoughts...", border: InputBorder.none),
+              onChanged: (v) => setState(() => _searchQuery = v),
+            )
+          : Text('Spiritual Journal', style: GoogleFonts.cinzel(color: goldColor, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
-            icon: Icon(_showForm ? Icons.close : Icons.add_comment, color: kGold),
-            onPressed: () => setState(() => _showForm = !_showForm),
+            icon: Icon(_isSearching ? Icons.close : Icons.search, color: goldColor),
+            onPressed: () => setState(() {
+              _isSearching = !_isSearching;
+              if (!_isSearching) _searchQuery = '';
+            }),
+          ),
+          IconButton(
+            icon: Icon(_showForm ? Icons.expand_less : Icons.add_comment, color: goldColor),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              setState(() => _showForm = !_showForm);
+            },
           ),
         ],
       ),
       body: Column(
         children: [
-          if (_showForm) _buildForm(state),
+          if (_showForm) _buildForm(state, theme, goldColor),
           Expanded(
             child: entries.isEmpty 
-              ? _buildEmptyState() 
+              ? _buildEmptyState(goldColor) 
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: entries.length,
-                  itemBuilder: (ctx, i) => _buildEntryCard(entries[i], state),
+                  itemBuilder: (ctx, i) => _buildEntryCard(entries[i], state, theme, goldColor),
                 ),
           ),
         ],
@@ -110,39 +141,49 @@ class _JournalScreenState extends State<JournalScreen> {
     );
   }
 
-  Widget _buildForm(AppState state) {
+  Widget _buildForm(AppState state, ThemeData theme, Color goldColor) {
     return Container(
       padding: const EdgeInsets.all(20),
-      color: kCard, // Consistent with theme
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        border: Border(bottom: BorderSide(color: theme.dividerColor)),
+      ),
       child: Form(
         key: _formKey,
         child: Column(
           children: [
-            Text(_currentPrompt, style: GoogleFonts.lato(fontStyle: FontStyle.italic, color: kGoldDim)),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(child: Text(_currentPrompt, style: GoogleFonts.lato(fontStyle: FontStyle.italic, color: goldColor.withOpacity(0.8)))),
+                IconButton(icon: const Icon(Icons.refresh, size: 20), onPressed: _refreshPrompt),
+              ],
+            ),
             const SizedBox(height: 15),
             TextFormField(
               controller: _contentController,
-              autofocus: true,
               maxLines: 4,
-              style: const TextStyle(color: kText),
-              validator: (val) => val == null || val.trim().isEmpty ? "Please write your thoughts" : null,
-              decoration: const InputDecoration(
-                hintText: "Begin writing...",
-                hintStyle: TextStyle(color: kTextDim),
-                border: OutlineInputBorder(),
+              style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+              validator: (val) => val == null || val.trim().isEmpty ? "Kripya apne vichar likhein" : null,
+              decoration: InputDecoration(
+                hintText: "Dhyan se likhna shuru karein...",
+                fillColor: theme.brightness == Brightness.dark ? Colors.white10 : Colors.black12,
+                filled: true,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
               ),
             ),
-            const SizedBox(height: 15), // FIXED: Removed leading comma
-            _buildMoodSelector(),
             const SizedBox(height: 15),
+            _buildMoodSelector(theme, goldColor),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () => _submit(state),
               style: ElevatedButton.styleFrom(
-                backgroundColor: kGold,
-                foregroundColor: kBg,
-                minimumSize: const Size(double.infinity, 48),
+                backgroundColor: goldColor,
+                foregroundColor: Colors.black,
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text("Save Entry"),
+              child: const Text("SAVE TO SOUL", style: TextStyle(fontWeight: FontWeight.bold)),
             )
           ],
         ),
@@ -150,24 +191,27 @@ class _JournalScreenState extends State<JournalScreen> {
     );
   }
 
-  Widget _buildMoodSelector() {
+  Widget _buildMoodSelector(ThemeData theme, Color goldColor) {
     return Wrap(
-      spacing: 15,
+      spacing: 12,
       children: _moods.map((m) {
         final isSelected = _selectedMood == m['emoji'];
         return GestureDetector(
-          onTap: () => setState(() => _selectedMood = m['emoji']!),
+          onTap: () {
+            HapticFeedback.selectionClick();
+            setState(() => _selectedMood = m['emoji']!);
+          },
           child: Semantics(
             label: "Mood: ${m['label']}",
             selected: isSelected,
             child: Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isSelected ? kGold.withOpacity(0.2) : Colors.transparent,
-                border: Border.all(color: isSelected ? kGold : kDivider),
+                color: isSelected ? goldColor.withOpacity(0.2) : theme.dividerColor.withOpacity(0.1),
+                border: Border.all(color: isSelected ? goldColor : Colors.transparent),
               ),
-              child: Text(m['emoji']!, style: const TextStyle(fontSize: 22)),
+              child: Text(m['emoji']!, style: const TextStyle(fontSize: 24)),
             ),
           ),
         );
@@ -175,33 +219,35 @@ class _JournalScreenState extends State<JournalScreen> {
     );
   }
 
-  Widget _buildEntryCard(JournalEntry entry, AppState state) {
+  Widget _buildEntryCard(JournalEntry entry, AppState state, ThemeData theme, Color goldColor) {
     return Dismissible(
       key: ValueKey(entry.id),
       direction: DismissDirection.endToStart,
+      onUpdate: (details) { if (details.reached) HapticFeedback.heavyImpact(); },
       confirmDismiss: (direction) async {
         return await showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
-            backgroundColor: kCard,
-            title: const Text("Delete entry?", style: TextStyle(color: kText)),
+            title: const Text("Delete Reflection?"),
+            content: const Text("Kya aap ise hamesha ke liye mita dena chahte hain?"),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancel", style: TextStyle(color: kGold))),
-              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Delete", style: TextStyle(color: Colors.red))),
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Nahin")),
+              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Haan, Delete", style: TextStyle(color: Colors.red))),
             ],
           ),
         );
       },
       onDismissed: (_) => state.deleteJournalEntry(entry.id),
       background: Container(
-        color: Colors.red.shade900,
+        decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(12)),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        child: const Icon(Icons.delete, color: Colors.white),
+        child: const Icon(Icons.delete_sweep, color: Colors.white, size: 30),
       ),
       child: Card(
-        color: kCard,
-        margin: const EdgeInsets.symmetric(vertical: 8),
+        color: theme.cardColor,
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -210,12 +256,14 @@ class _JournalScreenState extends State<JournalScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(entry.mood, style: const TextStyle(fontSize: 24)),
-                  Text(DateFormat('MMM d, h:mm a').format(entry.date), style: const TextStyle(fontSize: 12, color: kTextDim)),
+                  Text(entry.mood, style: const TextStyle(fontSize: 26)),
+                  Text(DateFormat('d MMM, hh:mm a').format(entry.date), 
+                    style: TextStyle(fontSize: 12, color: theme.hintColor)),
                 ],
               ),
-              const Divider(height: 20, color: kDivider),
-              Text(entry.content, style: GoogleFonts.crimsonText(fontSize: 17, height: 1.4, color: kText)),
+              const Divider(height: 25),
+              Text(entry.content, 
+                style: GoogleFonts.lora(fontSize: 16, height: 1.5, color: theme.textTheme.bodyMedium?.color)),
             ],
           ),
         ),
@@ -223,16 +271,17 @@ class _JournalScreenState extends State<JournalScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(Color goldColor) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.auto_stories, size: 60, color: kDivider),
-          const SizedBox(height: 10),
-          Text("No entries yet", style: GoogleFonts.cinzel(color: kGoldDim)),
+          Icon(Icons.auto_stories, size: 80, color: goldColor.withOpacity(0.3)),
+          const SizedBox(height: 20),
+          Text("No memories found...", style: GoogleFonts.cinzel(color: goldColor, fontSize: 18)),
+          Text("Kuch achha likhein aaj?", style: TextStyle(color: Colors.grey.shade500)),
         ],
       ),
     );
-  } // FIXED: Removed extra comma before closing bracket
+  }
 }
