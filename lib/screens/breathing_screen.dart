@@ -1,11 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/rendering.dart'; // Isse SemanticsService ka error solve hoga
+import 'package:flutter/rendering.dart';
 import 'package:google_fonts/google_fonts.dart';
-
-// Import your theme file
-import '../theme.dart'; 
 
 enum Phase { inhale, hold, exhale, rest }
 
@@ -47,27 +44,18 @@ class _BreathingScreenState extends State<BreathingScreen>
   static const Map<String, BreathPattern> patterns = {
     '4-4-4-4': BreathPattern(
       name: 'Box Breathing',
-      inhale: 4,
-      hold: 4,
-      exhale: 4,
-      rest: 4,
-      description: 'Calm & control for nervous system',
+      inhale: 4, hold: 4, exhale: 4, rest: 4,
+      description: 'Nervous system ko balance karne ke liye',
     ),
     '4-7-8': BreathPattern(
-      name: 'Relaxation',
-      inhale: 4,
-      hold: 7,
-      exhale: 8,
-      rest: 0,
-      description: 'Effective for falling asleep',
+      name: 'Deep Sleep',
+      inhale: 4, hold: 7, exhale: 8, rest: 0,
+      description: 'Acchi neend aur relaxation ke liye',
     ),
-    '6-0-6': BreathPattern(
-      name: 'Equal Breathing',
-      inhale: 6,
-      hold: 0,
-      exhale: 6,
-      rest: 0,
-      description: 'Enhances focus and balance',
+    '1-4-2': BreathPattern(
+      name: 'Purification',
+      inhale: 4, hold: 16, exhale: 8, rest: 0,
+      description: 'Sharir ki shuddhi (Yoga style)',
     ),
   };
 
@@ -80,8 +68,8 @@ class _BreathingScreenState extends State<BreathingScreen>
       vsync: this,
       duration: const Duration(seconds: 1),
     );
-    _anim = Tween<double>(begin: 0.85, end: 1.1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    _anim = Tween<double>(begin: 0.8, end: 1.2).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutQuart),
     );
   }
 
@@ -93,7 +81,6 @@ class _BreathingScreenState extends State<BreathingScreen>
   }
 
   void start() {
-    if (!mounted) return;
     setState(() {
       _running = true;
       _cycles = 0;
@@ -103,15 +90,15 @@ class _BreathingScreenState extends State<BreathingScreen>
   }
 
   void stop() {
-    if (!mounted) return;
     _timer?.cancel();
+    _controller.stop();
     _controller.reset();
     setState(() {
       _running = false;
       _secondsRemaining = 0;
     });
-    // Announcement for accessibility
-    SemanticsService.announce("Exercise stopped", TextDirection.ltr);
+    HapticFeedback.heavyImpact();
+    SemanticsService.announce("Sadhana samapt", TextDirection.ltr);
   }
 
   void _runPhase() {
@@ -124,9 +111,9 @@ class _BreathingScreenState extends State<BreathingScreen>
     }
 
     setState(() => _secondsRemaining = duration);
-
-    // Ye line ab error nahi degi
-    SemanticsService.announce("${_phase.name} for $duration seconds", TextDirection.ltr);
+    
+    // Accessibility announcement
+    SemanticsService.announce("${_phase.name} shuru: $duration seconds", TextDirection.ltr);
 
     _controller.duration = Duration(seconds: duration);
 
@@ -134,8 +121,6 @@ class _BreathingScreenState extends State<BreathingScreen>
       _controller.forward(from: 0);
     } else if (_phase == Phase.exhale) {
       _controller.reverse(from: 1);
-    } else {
-      _controller.stop();
     }
 
     _timer?.cancel();
@@ -145,7 +130,12 @@ class _BreathingScreenState extends State<BreathingScreen>
         return;
       }
 
-      HapticFeedback.lightImpact();
+      // Advance Vibration Logic
+      if (_phase == Phase.inhale) {
+        HapticFeedback.lightImpact(); // Saans lete waqt halki vibration
+      } else if (_phase == Phase.exhale) {
+        HapticFeedback.mediumImpact(); // Saans chhodte waqt thodi heavy vibration
+      }
 
       if (_secondsRemaining > 1) {
         setState(() => _secondsRemaining--);
@@ -159,7 +149,9 @@ class _BreathingScreenState extends State<BreathingScreen>
   void _nextPhase() {
     if (!mounted || !_running) return;
 
-    HapticFeedback.vibrate(); 
+    // Transition Vibration (Double Tap feel)
+    HapticFeedback.selectionClick();
+    Future.delayed(const Duration(milliseconds: 100), () => HapticFeedback.selectionClick());
 
     setState(() {
       switch (_phase) {
@@ -169,7 +161,6 @@ class _BreathingScreenState extends State<BreathingScreen>
         case Phase.rest:
           _phase = Phase.inhale;
           _cycles++;
-          HapticFeedback.heavyImpact();
           break;
       }
     });
@@ -192,29 +183,40 @@ class _BreathingScreenState extends State<BreathingScreen>
     final progress = total > 0 ? (_secondsRemaining / total).clamp(0.0, 1.0) : 0.0;
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: Text(
-          'DIVINE BREATH',
-          style: GoogleFonts.cinzel(
-            color: theme.colorScheme.primary,
-            letterSpacing: 2,
-            fontWeight: FontWeight.bold,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              theme.colorScheme.surface,
+              theme.colorScheme.surfaceContainerHighest,
+            ],
           ),
         ),
-        centerTitle: true,
-      ),
-      body: Column(
-        children: [
-          const SizedBox(height: 20),
-          _patternSelector(theme),
-          const Spacer(),
-          _visual(progress, theme),
-          const Spacer(),
-          _controls(theme),
-          const SizedBox(height: 40),
-        ],
+        child: SafeArea(
+          child: Column(
+            children: [
+              const SizedBox(height: 20),
+              Text(
+                'PRANA FLOW',
+                style: GoogleFonts.cinzel(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  color: theme.colorScheme.primary,
+                  letterSpacing: 4,
+                ),
+              ),
+              const SizedBox(height: 30),
+              _patternSelector(theme),
+              const Spacer(),
+              _visual(progress, theme),
+              const Spacer(),
+              _controls(theme),
+              const SizedBox(height: 40),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -228,56 +230,59 @@ class _BreathingScreenState extends State<BreathingScreen>
             Stack(
               alignment: Alignment.center,
               children: [
-                SizedBox(
-                  width: 260,
-                  height: 260,
-                  child: CircularProgressIndicator(
-                    value: _running ? progress : 0,
-                    strokeWidth: 4,
-                    color: theme.colorScheme.primary.withOpacity(0.3),
-                  ),
-                ),
+                // Inner breathing circle
                 ScaleTransition(
                   scale: _anim,
                   child: Container(
-                    width: 200,
-                    height: 200,
+                    width: 220,
+                    height: 220,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: theme.colorScheme.primary, width: 3),
-                      boxShadow: [
-                        BoxShadow(
-                          color: theme.colorScheme.primary.withOpacity(0.1),
-                          blurRadius: 15,
-                        )
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        _running ? "$_secondsRemaining" : "Ready",
-                        style: GoogleFonts.cinzel(
-                          fontSize: 40,
-                          color: theme.textTheme.bodyLarge?.color,
-                        ),
+                      gradient: RadialGradient(
+                        colors: [
+                          theme.colorScheme.primary.withOpacity(0.4),
+                          theme.colorScheme.primary.withOpacity(0.0),
+                        ],
                       ),
                     ),
                   ),
                 ),
+                // Timer Circle
+                SizedBox(
+                  width: 250,
+                  height: 250,
+                  child: CircularProgressIndicator(
+                    value: _running ? progress : 1,
+                    strokeWidth: 8,
+                    strokeCap: StrokeCap.round,
+                    backgroundColor: theme.colorScheme.outlineVariant,
+                    color: theme.colorScheme.primary,
+                  ),
+                ),
+                Text(
+                  _running ? "$_secondsRemaining" : "OM",
+                  style: GoogleFonts.cinzel(
+                    fontSize: 56,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.onSurface,
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 50),
             Text(
-              _running ? _phase.name.toUpperCase() : "Peace",
+              _running ? _phase.name.toUpperCase() : "SHANTI",
               style: GoogleFonts.cinzel(
-                fontSize: 24,
+                fontSize: 32,
                 color: theme.colorScheme.secondary,
-                letterSpacing: 4,
+                letterSpacing: 8,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            Text(
-              "Cycles: $_cycles",
-              style: TextStyle(color: theme.textTheme.bodySmall?.color, fontSize: 16),
+            const SizedBox(height: 10),
+            Chip(
+              label: Text("Cycles Done: $_cycles"),
+              backgroundColor: theme.colorScheme.primaryContainer.withOpacity(0.5),
             ),
           ],
         );
@@ -287,7 +292,7 @@ class _BreathingScreenState extends State<BreathingScreen>
 
   Widget _patternSelector(ThemeData theme) {
     return SizedBox(
-      height: 100,
+      height: 120,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -296,27 +301,47 @@ class _BreathingScreenState extends State<BreathingScreen>
           return GestureDetector(
             onTap: _running ? null : () {
               setState(() => _selectedKey = e.key);
-              HapticFeedback.mediumImpact();
+              HapticFeedback.heavyImpact();
             },
-            child: Container(
-              width: 160,
-              margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.all(12),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 400),
+              width: 150,
+              margin: const EdgeInsets.only(right: 15),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: selected ? theme.colorScheme.primary.withOpacity(0.1) : theme.cardTheme.color,
-                borderRadius: BorderRadius.circular(15),
+                color: selected ? theme.colorScheme.primary : theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
+                ],
                 border: Border.all(
-                  color: selected ? theme.colorScheme.primary : theme.colorScheme.outline,
+                  color: selected ? Colors.transparent : theme.colorScheme.outline,
                 ),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(e.value.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  Text(e.value.description, 
-                       textAlign: TextAlign.center, 
-                       style: const TextStyle(fontSize: 10), 
-                       maxLines: 2),
+                  Text(
+                    e.value.name,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: selected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    e.value.description,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: selected ? theme.colorScheme.onPrimary.withOpacity(0.8) : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -327,15 +352,32 @@ class _BreathingScreenState extends State<BreathingScreen>
   }
 
   Widget _controls(ThemeData theme) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: theme.colorScheme.primary,
-        foregroundColor: theme.colorScheme.onPrimary,
-        padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+    return InkWell(
+      onTap: _running ? stop : start,
+      borderRadius: BorderRadius.circular(40),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(40),
+          color: _running ? theme.colorScheme.errorContainer : theme.colorScheme.primaryContainer,
+          boxShadow: [
+            BoxShadow(
+              color: (_running ? theme.colorScheme.error : theme.colorScheme.primary).withOpacity(0.3),
+              blurRadius: 20,
+              spreadRadius: 2,
+            )
+          ],
+        ),
+        child: Text(
+          _running ? "STOP" : "START SADHANA",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            letterSpacing: 2,
+            color: _running ? theme.colorScheme.onErrorContainer : theme.colorScheme.onPrimaryContainer,
+          ),
+        ),
       ),
-      onPressed: _running ? stop : start,
-      child: Text(_running ? "STOP" : "START SESSION"),
     );
   }
 }
