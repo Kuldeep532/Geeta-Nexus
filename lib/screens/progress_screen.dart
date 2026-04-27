@@ -58,8 +58,9 @@ class ProgressScreen extends StatelessWidget {
   }
 
   Widget _buildLevelCard(AppState state, ThemeData theme) {
-    final int nextLevelXP = state.level * 100;
-    final double progress = (state.xpInLevel / nextLevelXP).clamp(0.0, 1.0);
+    // Synchronized with AppState Logic: Level = (XP / 100) + 1
+    const int xpPerLevel = 100;
+    final double progress = state.xpinLevel; // Uses getter from AppState (0.0 to 1.0)
     final String levelTitle = _getLevelTitle(state.level);
 
     return GestureDetector(
@@ -97,7 +98,7 @@ class ProgressScreen extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 25),
-              _buildProgressSection(state.xpInLevel, nextLevelXP, progress),
+              _buildProgressSection((state.xp % xpPerLevel), xpPerLevel, progress),
             ],
           ),
         ),
@@ -204,7 +205,7 @@ class ProgressScreen extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         itemCount: state.badges.length,
         itemBuilder: (context, i) {
-          final b = state.badges[i];
+          final String badgeName = state.badges[i];
           return Container(
             width: 110,
             margin: const EdgeInsets.only(right: 15),
@@ -212,9 +213,9 @@ class ProgressScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(b['icon']!, style: const TextStyle(fontSize: 32)),
+                const Text('🎖️', style: TextStyle(fontSize: 32)),
                 const SizedBox(height: 8),
-                Text(b['name']!, style: const TextStyle(color: kGold, fontSize: 11), textAlign: TextAlign.center),
+                Text(badgeName, style: const TextStyle(color: kGold, fontSize: 11), textAlign: TextAlign.center),
               ],
             ),
           );
