@@ -1,17 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../theme.dart';
-import 'social_links.dart';
-
-// Assuming kContactEmail and other constants are in theme.dart
-// Mocking openUrl for logic consistency
-void openUrl(String url) async {
-  final uri = Uri.parse(url);
-  if (await canLaunchUrl(uri)) {
-    await launchUrl(uri, mode: LaunchMode.externalApplication);
-  }
-}
+import 'package:http/http.dart' as http;
 
 class ContactScreen extends StatefulWidget {
   const ContactScreen({super.key});
@@ -24,127 +14,140 @@ class _ContactScreenState extends State<ContactScreen> {
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
   final _email = TextEditingController();
-  final _subject = TextEditingController();
   final _message = TextEditingController();
+  
+  bool _isSending = false;
 
-  @override
-  void dispose() {
-    _name.dispose();
-    _email.dispose();
-    _subject.dispose();
-    _message.dispose();
-    super.dispose();
-  }
+  // --- EmailJS Credentials (Verified) ---
+  final String serviceId = 'service_xl2dqul'; 
+  final String templateId = 'template_pvmgb8b'; 
+  final String publicKey = 'RcmOLUdDv-w3TCtgb'; // Aapki update ki hui Public Key
 
-  Future<void> _send() async {
+  Future<void> _sendEmailJS() async {
+    // Basic Validation Check
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    final subject = Uri.encodeComponent(
-        _subject.text.trim().isEmpty ? 'Contact Inquiry' : _subject.text.trim());
-    final body = Uri.encodeComponent(
-      'Name: ${_name.text.trim()}\n'
-      'Email: ${_email.text.trim()}\n\n'
-      '${_message.text.trim()}\n',
-    );
-    
-    final mailto = Uri.parse('mailto:$kContactEmail?subject=$subject&body=$body');
+    setState(() => _isSending = true);
 
     try {
-      final ok = await launchUrl(mailto, mode: LaunchMode.externalApplication);
-      if (!mounted) return;
-      if (ok) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Opening your email app...'),
-        ));
+      final response = await http.post(
+        Uri.parse('https://api.emailjs.com/api/v1.0/email/send'),
+        headers: {
+          'Origin': 'http://localhost', // Flutter web compatibility ke liye
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'service_id': serviceId,
+          'template_id': templateId,
+          'user_id': publicKey,
+          'template_params': {
+            'user_name': _name.text.trim(),
+            'user_email': _email.text.trim(),
+            'message': _message.text.trim(),
+            'reply_to': _email.text.trim(),
+          }
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        _name.clear();
+        _email.clear();
+        _message.clear();
+        _showSuccessDialog();
       } else {
-        throw 'Could not launch';
+        // Server error detail handle karne ke liye
+        debugPrint("EmailJS Error Response: ${response.body}");
+        _showSnackBar("Maaf kijiye, server se contact nahi ho paya.");
       }
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Could not open email app. Email us at $kContactEmail'),
-      ));
+      debugPrint("Connection Error: $e");
+      _showSnackBar("Internet connection ya setup check karein.");
+    } finally {
+      if (mounted) setState(() => _isSending = false);
     }
+  }
+
+  void _showSnackBar(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg), backgroundColor: Colors.redAccent),
+    );
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Icon(Icons.check_circle, color: Colors.green, size: 60),
+        content: Text(
+          "Aapka sandesh seedha Kuldeep ke paas pahunch gaya hai! Dhanyawad.",
+          textAlign: TextAlign.center,
+          style: GoogleFonts.poppins(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("OK", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber)),
+          )
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final goldColor = const Color(0xFFFFD700);
+
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Contact Us'),
+        title: Text('Contact Me', style: GoogleFonts.cinzel(fontWeight: FontWeight.bold)),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Semantics(
-                header: true,
-                child: Text('Get in touch',
-                    style: GoogleFonts.cinzel(
-                        color: cs.primary,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold)),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Have a question, suggestion, or feedback? Send a message and we\'ll get back to you.',
-                style: TextStyle(color: cs.onSurface.withOpacity(0.7), fontSize: 14, height: 1.4),
+              _buildField(context, _name, "Aapka Naam", Icons.person),
+              const SizedBox(height: 16),
+              _buildField(context, _email, "Aapka Email", Icons.email, 
+                keyboard: TextInputType.emailAddress,
+                validator: (v) {
+                  if (v == null || v.isEmpty) return "Kripya email bhariye";
+                  if (!v.contains('@')) return "Sahi email format use karein";
+                  return null;
+                }
               ),
               const SizedBox(height: 16),
-              _infoTile(
-                Icons.email_outlined, 
-                kContactEmail,
-                () => openUrl('mailto:$kContactEmail'),
-                "Email us at $kContactEmail"
-              ),
-              const SizedBox(height: 20),
-              const SocialLinksRow(),
-              const SizedBox(height: 24),
-              Form(
-                key: _formKey,
-                child: Column(
-                  children: [
-                    _field(_name, 'Your Name', hint: 'Enter your full name', validator: _required),
-                    const SizedBox(height: 12),
-                    _field(_email, 'Your Email',
-                        hint: 'Enter your email address',
-                        keyboard: TextInputType.emailAddress,
-                        validator: _emailValidator),
-                    const SizedBox(height: 12),
-                    _field(_subject, 'Subject (optional)', hint: 'What is this regarding?'),
-                    const SizedBox(height: 12),
-                    _field(_message, 'Your Message',
-                        hint: 'Type your message here',
-                        maxLines: 5, 
-                        validator: _required),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _send,
-                        icon: const Icon(Icons.send),
-                        label: Text('Send Message',
-                            style: GoogleFonts.cinzel(fontWeight: FontWeight.bold)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: cs.primary,
-                          foregroundColor: cs.onPrimary,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                      ),
-                    ),
-                  ],
+              _buildField(context, _message, "Message", Icons.message, maxLines: 5),
+              const SizedBox(height: 32),
+              
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton(
+                  onPressed: _isSending ? null : _sendEmailJS,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: goldColor,
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: isDark ? 0 : 4,
+                  ),
+                  child: _isSending 
+                    ? const SizedBox(
+                        height: 20, width: 20, 
+                        child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2)
+                      )
+                    : const Text("SEND DIRECT MESSAGE 🕉️", 
+                        style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                 ),
               ),
-              const SizedBox(height: 30),
             ],
           ),
         ),
@@ -152,77 +155,30 @@ class _ContactScreenState extends State<ContactScreen> {
     );
   }
 
-  Widget _infoTile(IconData icon, String text, VoidCallback onTap, String semanticLabel) {
+  Widget _buildField(BuildContext context, TextEditingController ctrl, String label, IconData icon, 
+      {int maxLines = 1, TextInputType? keyboard, String? Function(String?)? validator}) {
+    
     final theme = Theme.of(context);
-    final cs = theme.colorScheme;
-    return Semantics(
-      button: true,
-      label: semanticLabel,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: theme.cardTheme.color,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: cs.outline.withOpacity(0.5)),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, color: kGold),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(text,
-                    style: TextStyle(color: cs.onSurface, fontSize: 14)),
-              ),
-              Icon(Icons.open_in_new, color: cs.onSurface.withOpacity(0.7), size: 16),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+    final goldColor = const Color(0xFFFFD700);
 
-  Widget _field(TextEditingController c, String label,
-      {int maxLines = 1,
-      String? hint,
-      TextInputType? keyboard,
-      String? Function(String?)? validator}) {
-    final cs = Theme.of(context).colorScheme;
     return TextFormField(
-      controller: c,
+      controller: ctrl,
       maxLines: maxLines,
       keyboardType: keyboard,
-      validator: validator,
-      style: TextStyle(color: cs.onSurface),
+      validator: validator ?? (v) => (v == null || v.isEmpty) ? "Ye khali nahi ho sakta" : null,
       decoration: InputDecoration(
         labelText: label,
-        hintText: hint,
-        hintStyle: TextStyle(color: cs.onSurface.withOpacity(0.5)),
-        labelStyle: TextStyle(color: cs.onSurface.withOpacity(0.75)),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: cs.outline.withOpacity(0.5)),
-        ),
+        prefixIcon: Icon(icon, color: goldColor),
+        filled: true,
+        fillColor: theme.brightness == Brightness.dark 
+            ? Colors.white.withOpacity(0.05) 
+            : Colors.grey.withOpacity(0.05),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: cs.primary, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.redAccent),
+          borderSide: BorderSide(color: goldColor, width: 1.5),
         ),
       ),
     );
-  }
-
-  String? _required(String? v) =>
-      (v == null || v.trim().isEmpty) ? 'This field is required' : null;
-
-  String? _emailValidator(String? v) {
-    if (v == null || v.trim().isEmpty) return 'Email is required';
-    final ok = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v.trim());
-    return ok ? null : 'Enter a valid email address';
   }
 }
