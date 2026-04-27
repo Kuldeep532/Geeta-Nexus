@@ -1,5 +1,4 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -14,8 +13,7 @@ class GeetaVoicePracticeScreen extends StatefulWidget {
   const GeetaVoicePracticeScreen({super.key});
 
   @override
-  State<GeetaVoicePracticeScreen> createState() =>
-      _GeetaVoicePracticeScreenState();
+  State<GeetaVoicePracticeScreen> createState() => _GeetaVoicePracticeScreenState();
 }
 
 class _GeetaVoicePracticeScreenState extends State<GeetaVoicePracticeScreen> {
@@ -39,39 +37,33 @@ class _GeetaVoicePracticeScreenState extends State<GeetaVoicePracticeScreen> {
 
   Future<void> _initVoice() async {
     final ready = await _speech.initialize();
-    await _tts.setLanguage('en-US');
-    await _tts.setSpeechRate(0.43);
+    await _tts.setLanguage('en-IN'); // Hindi/Indian accent support
+    await _tts.setSpeechRate(0.5);
     await _tts.setPitch(1.0);
-    _tts.setStartHandler(() {
-      if (mounted) setState(() => _isSpeaking = true);
-    });
-    _tts.setCompletionHandler(() {
-      if (mounted) setState(() => _isSpeaking = false);
-    });
-    _tts.setCancelHandler(() {
-      if (mounted) setState(() => _isSpeaking = false);
-    });
+    
+    _tts.setStartHandler(() => setState(() => _isSpeaking = true));
+    _tts.setCompletionHandler(() => setState(() => _isSpeaking = false));
 
-    if (mounted) {
-      setState(() => _speechReady = ready);
-    }
+    if (mounted) setState(() => _speechReady = ready);
   }
 
   void _loadRandomVerse() {
     final verses = getAllVerses().where((v) => v.translation.isNotEmpty).toList();
     if (verses.isEmpty) return;
+    HapticFeedback.lightImpact();
     setState(() {
       _targetVerse = verses[_random.nextInt(verses.length)];
       _spoken = '';
       _similarity = 0;
     });
+    // Blind User Feature: Naya verse aate hi uska reference bol kar sunaye
+    _tts.speak("Practice verse from Chapter ${_targetVerse!.chapter}, Verse ${_targetVerse!.verse}");
   }
 
   Future<void> _speakTarget() async {
-    final verse = _targetVerse;
-    if (verse == null) return;
+    if (_targetVerse == null) return;
     await _tts.stop();
-    await _tts.speak(verse.translation);
+    await _tts.speak(_targetVerse!.translation);
   }
 
   Future<void> _toggleListen() async {
@@ -79,26 +71,28 @@ class _GeetaVoicePracticeScreenState extends State<GeetaVoicePracticeScreen> {
 
     if (_listening) {
       await _speech.stop();
-      if (mounted) setState(() => _listening = false);
+      HapticFeedback.mediumImpact();
+      setState(() => _listening = false);
       return;
     }
 
+    HapticFeedback.mediumImpact();
     await _speech.listen(
       listenFor: const Duration(seconds: 25),
       pauseFor: const Duration(seconds: 4),
       onResult: (result) {
-        final words = result.recognizedWords;
-        final verse = _targetVerse;
-        if (!mounted || verse == null) return;
+        if (!mounted || _targetVerse == null) return;
 
         setState(() {
-          _spoken = words;
-          _similarity = _calculateSimilarity(verse.translation, words);
+          _spoken = result.recognizedWords;
+          _similarity = _calculateSimilarity(_targetVerse!.translation, _spoken);
           _listening = !result.finalResult;
         });
 
         if (result.finalResult) {
           context.read<AppState>().addXp(10 + (_similarity * 10).round());
+          // Final Feedback for Blind Users
+          _tts.speak("Accuracy is ${(_similarity * 100).round()} percent.");
         }
       },
     );
@@ -118,11 +112,7 @@ class _GeetaVoicePracticeScreenState extends State<GeetaVoicePracticeScreen> {
   }
 
   String _normalize(String input) {
-    return input
-        .toLowerCase()
-        .replaceAll(RegExp(r'[^a-z0-9\s]'), ' ')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
+    return input.toLowerCase().replaceAll(RegExp(r'[^a-z0-9\s]'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 
   @override
@@ -134,8 +124,8 @@ class _GeetaVoicePracticeScreenState extends State<GeetaVoicePracticeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final verse = _targetVerse;
-    final cs = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Geeta Voice Practice')),
@@ -148,93 +138,78 @@ class _GeetaVoicePracticeScreenState extends State<GeetaVoicePracticeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Card(
+                      elevation: 4,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                       child: Padding(
                         padding: const EdgeInsets.all(16),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'Chapter ${verse.chapter}, Verse ${verse.verse}',
-                              style: Theme.of(context).textTheme.titleMedium,
+                              style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.primary),
                             ),
-                            const SizedBox(height: 8),
-                            Text(verse.translation),
                             const SizedBox(height: 12),
-                            Wrap(
-                              spacing: 8,
+                            Text(verse.translation, textAlign: TextAlign.center, style: const TextStyle(fontSize: 18)),
+                            const SizedBox(height: 20),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                FilledButton.icon(
-                                  onPressed: _isSpeaking ? null : _speakTarget,
-                                  icon: const Icon(Icons.volume_up),
-                                  label: const Text('Listen'),
-                                ),
-                                OutlinedButton.icon(
-                                  onPressed: _loadRandomVerse,
-                                  icon: const Icon(Icons.shuffle),
-                                  label: const Text('New Verse'),
-                                ),
+                                IconButton.filled(onPressed: _isSpeaking ? null : _speakTarget, icon: const Icon(Icons.volume_up)),
+                                IconButton.outlined(onPressed: _loadRandomVerse, icon: const Icon(Icons.shuffle)),
                               ],
                             ),
                           ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Semantics(
-                      label: 'Speech accuracy',
-                      value: '${(_similarity * 100).round()} percent',
-                      child: LinearProgressIndicator(
-                        value: _similarity,
-                        minHeight: 10,
-                        backgroundColor: cs.surfaceContainerHighest,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text('Accuracy: ${(_similarity * 100).round()}%'),
+                    const SizedBox(height: 24),
+                    _buildAccuracyMeter(theme),
                     const SizedBox(height: 12),
                     Expanded(
-                      child: Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: SingleChildScrollView(
-                            child: Text(
-                              _spoken.isEmpty
-                                  ? 'Tap Start Practice and recite the verse aloud. Your spoken words will appear here.'
-                                  : _spoken,
-                            ),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: theme.dividerColor)),
+                        child: SingleChildScrollView(
+                          child: Text(
+                            _spoken.isEmpty ? 'Tap mic to start reciting...' : _spoken,
+                            style: TextStyle(color: _spoken.isEmpty ? theme.hintColor : theme.textTheme.bodyLarge?.color, fontStyle: _spoken.isEmpty ? FontStyle.italic : FontStyle.normal),
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    FilledButton.icon(
+                    const SizedBox(height: 20),
+                    ElevatedButton.icon(
                       onPressed: _speechReady ? _toggleListen : null,
                       icon: Icon(_listening ? Icons.stop : Icons.mic),
-                      label: Text(_listening ? 'Stop Practice' : 'Start Practice'),
-                    ),
-                    if (!_speechReady)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Text(
-                          'Microphone permission unavailable. Enable microphone access to practice.',
-                          style: TextStyle(color: cs.error),
-                        ),
+                      label: Text(_listening ? 'STOP PRACTICE' : 'START PRACTICE'),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        backgroundColor: _listening ? Colors.redAccent : theme.colorScheme.primary,
+                        foregroundColor: theme.colorScheme.onPrimary,
                       ),
+                    ),
                   ],
                 ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          final state = context.read<AppState>();
-          if (state.hapticsEnabled) {
-            HapticFeedback.mediumImpact();
-          }
-          _loadRandomVerse();
-        },
-        icon: const Icon(Icons.refresh),
-        label: const Text('Refresh Verse'),
-      ),
+    );
+  }
+
+  Widget _buildAccuracyMeter(ThemeData theme) {
+    return Column(
+      children: [
+        Semantics(
+          label: "Accuracy level",
+          value: "${(_similarity * 100).round()}%",
+          child: LinearProgressIndicator(
+            value: _similarity,
+            minHeight: 12,
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text('Accuracy: ${(_similarity * 100).round()}%', style: const TextStyle(fontWeight: FontWeight.bold)),
+      ],
     );
   }
 }
