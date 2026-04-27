@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../services/ai_service.dart'; // सुनिश्चित करें कि पाथ सही है
+import '../services/ai_service.dart'; 
 
 enum Persona { krishna, radha, guide }
 
@@ -29,7 +29,7 @@ class _AiScreenState extends State<AiScreen> {
 
   static const _personaNames = {
     Persona.krishna: 'Lord Krishna',
-    Persona.radha: 'Radha',
+    Persona.radha: 'Radha Rani',
     Persona.guide: 'Gita Guide',
   };
 
@@ -52,7 +52,7 @@ class _AiScreenState extends State<AiScreen> {
 
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
-    if (text.isEmpty || _thinking) return; // Error Fix: खाली मैसेज या थिंकिंग के दौरान रोकें
+    if (text.isEmpty || _thinking) return;
     
     _controller.clear();
     setState(() {
@@ -63,7 +63,6 @@ class _AiScreenState extends State<AiScreen> {
     _scrollToBottom();
     
     try {
-      // AIService से रिस्पांस लेना
       final response = await _aiService.getSmartResponse(text);
       if (mounted) {
         setState(() {
@@ -76,14 +75,13 @@ class _AiScreenState extends State<AiScreen> {
       if (mounted) {
         setState(() {
           _thinking = false;
-          _messages.add(_Message(text: "क्षमा करें, कुछ तकनीकी त्रुटि हुई।", isUser: false));
+          _messages.add(_Message(text: "Something went wrong. Please try again.", isUser: false));
         });
       }
     }
   }
 
   void _scrollToBottom() {
-    // Accessibility Fix: स्क्रीन रीडर को नए मैसेज पर फोकस करने में मदद करता है
     Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -102,7 +100,7 @@ class _AiScreenState extends State<AiScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_personaNames[_persona]!, style: GoogleFonts.cinzel()),
+        title: Text(_personaNames[_persona]!, style: GoogleFonts.cinzel(fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
       body: Column(
@@ -112,7 +110,6 @@ class _AiScreenState extends State<AiScreen> {
             child: ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              // itemCount Error Fix: यहाँ index आउट ऑफ बाउंड हो सकता था
               itemCount: _messages.length + (_thinking ? 1 : 0),
               itemBuilder: (context, index) {
                 if (_thinking && index == _messages.length) {
@@ -132,19 +129,20 @@ class _AiScreenState extends State<AiScreen> {
     return Align(
       alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Semantics(
-        label: "${msg.isUser ? 'You' : _personaNames[_persona]}: ${msg.text}",
+        label: "${msg.isUser ? 'Your question' : 'Response from ${_personaNames[_persona]}'}: ${msg.text}",
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 6),
           padding: const EdgeInsets.all(14),
-          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
+          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.85),
           decoration: BoxDecoration(
             color: msg.isUser 
                 ? theme.colorScheme.primary 
-                : (isDark ? Colors.grey[850] : Colors.grey[200]),
+                : (isDark ? Colors.grey[900] : Colors.grey[200]),
             borderRadius: BorderRadius.circular(15).copyWith(
               bottomRight: msg.isUser ? const Radius.circular(0) : null,
               bottomLeft: !msg.isUser ? const Radius.circular(0) : null,
             ),
+            border: !msg.isUser ? Border.all(color: theme.dividerColor.withOpacity(0.1)) : null,
           ),
           child: Text(
             msg.text, 
@@ -163,22 +161,18 @@ class _AiScreenState extends State<AiScreen> {
     child: Align(
       alignment: Alignment.centerLeft,
       child: Semantics(
-        label: "AI is thinking",
-        child: SizedBox(
-          width: 20, 
-          height: 20, 
-          child: CircularProgressIndicator(strokeWidth: 2)
-        ),
+        label: "Krishna is reflecting on your question...",
+        child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
       ),
     ),
   );
 
   Widget _buildInputBar(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(10.0),
       decoration: BoxDecoration(
-        color: theme.cardColor,
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)]
+        color: theme.scaffoldBackgroundColor,
+        border: Border(top: BorderSide(color: theme.dividerColor.withOpacity(0.1))),
       ),
       child: SafeArea(
         child: Row(
@@ -187,20 +181,21 @@ class _AiScreenState extends State<AiScreen> {
               child: TextField(
                 controller: _controller,
                 textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _sendMessage(), // कीबोर्ड से एंटर दबाने पर सेंड होगा
+                onSubmitted: (_) => _sendMessage(),
                 decoration: InputDecoration(
-                  hintText: "पूछिए...",
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(30)),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                  hintText: "Ask your soul's query...",
+                  filled: true,
+                  fillColor: theme.cardColor,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 ),
               ),
             ),
             const SizedBox(width: 8),
-            IconButton(
-              icon: const Icon(Icons.send),
-              color: theme.colorScheme.primary,
+            FloatingActionButton.small(
               onPressed: _sendMessage,
-              tooltip: "Send Message",
+              elevation: 0,
+              child: const Icon(Icons.send),
             ),
           ],
         ),
@@ -210,12 +205,13 @@ class _AiScreenState extends State<AiScreen> {
 
   Widget _buildPersonaSelector() {
     return Container(
-      height: 50,
-      margin: const EdgeInsets.symmetric(vertical: 5),
+      height: 60,
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: ListView(
         scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
         children: Persona.values.map((p) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 4),
           child: ChoiceChip(
             selected: _persona == p,
             label: Text(_personaNames[p]!),
