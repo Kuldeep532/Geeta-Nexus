@@ -13,8 +13,9 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
 
-  # --- Firebase Core & Messaging ---
+  # --- Firebase Core, Firestore & Messaging ---
   firebase_core: ^3.1.0
+  cloud_firestore: ^5.0.0          # ZAROORI: AppState mein iska use ho raha hai
   firebase_messaging: ^15.0.0
   flutter_local_notifications: ^17.2.2
 
@@ -66,9 +67,25 @@ dependencies:
   wakelock_plus: ^1.2.8
   vibration: ^2.0.1
 
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
 flutter:
   uses-material-design: true
+  
+  # Fonts section (Humein Cinzel aur Lora use karna hai as per code)
+  fonts:
+    - family: Cinzel
+      fonts:
+        - asset: google_fonts/Cinzel-Regular.ttf
+    - family: Lora
+      fonts:
+        - asset: google_fonts/Lora-Regular.ttf
+
   assets:
     - assets/data/Bhagwad_Gita.csv
     - assets/data/ai_knowledge_base.json
     - assets/data/training_data.csv
+    - assets/images/  # Agar aapne icons ya images rakhi hain
