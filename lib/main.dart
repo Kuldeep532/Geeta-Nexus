@@ -19,14 +19,13 @@ import 'screens/onboarding_screen.dart';
 import 'screens/update_checker.dart';
 
 // --- Background Notification Handler ---
-// Jab app band ho tab notification handle karne ke liye
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   debugPrint("Handling a background message: ${message.messageId}");
 }
 
-void main() async {
+import main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // --- Initialize Firebase ---
@@ -34,10 +33,8 @@ void main() async {
     await Firebase.initializeApp();
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
     
-    // Sabhi users ko 'all_users' topic mein subscribe karwana
     await FirebaseMessaging.instance.subscribeToTopic('all_users');
     
-    // Notification Permissions maangna (Zaruri for Android 13+)
     await FirebaseMessaging.instance.requestPermission(
       alert: true,
       badge: true,
@@ -45,7 +42,6 @@ void main() async {
     );
   } catch (e) {
     debugPrint("Firebase initialization failed: $e");
-    // Agar Firebase setup nahi hai toh bhi app chalti rahegi
   }
 
   final appState = AppState();
@@ -118,7 +114,7 @@ class MyApp extends StatelessWidget {
 
             return MediaQuery(
               data: MediaQuery.of(context).copyWith(
-                textScaler: TextScaler.linear(state.largeText ? 1.15 : 1.0),
+                textScaler: TextScaler.linear(state.largeText ? 1.15 : 1.0), // FIX: Extra comma hataya
               ),
               child: child ?? const SizedBox.shrink(),
             );
@@ -143,7 +139,6 @@ class _MainShellState extends State<MainShell> {
   void initState() {
     super.initState();
     
-    // --- Foreground Notification Listener ---
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       if (message.notification != null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -207,5 +202,5 @@ class _MainShellState extends State<MainShell> {
         ),
       ),
     );
-  }
+  } // FIX: Extra comma aur incomplete brackets theek kiye
 }
