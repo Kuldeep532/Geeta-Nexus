@@ -23,7 +23,6 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
 
   void _generateGlossaryFromData() {
     _dynamicGlossary = List.from(_kDefaultSpiritualTerms);
-    // Initial sort
     _dynamicGlossary.sort((a, b) => (a['term'] ?? '').compareTo(b['term'] ?? ''));
   }
 
@@ -37,6 +36,7 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // ✅ Note: Yahan const color define hai, isliye niche variables ke sath const nahi aayega
     const goldColor = Color(0xFFFFD700);
 
     final filtered = _dynamicGlossary.where((item) {
@@ -113,7 +113,8 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),
-              borderSide: const BorderSide(color: goldColor, width: 1.5),
+              // ✅ FIXED: Removed 'const' because goldColor is used
+              borderSide: BorderSide(color: goldColor, width: 1.5),
             ),
           ),
         ),
@@ -124,61 +125,56 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
   Widget _buildGlossaryTile(BuildContext context, String term, String meaning, bool isExpanded, Color goldColor) {
     final theme = Theme.of(context);
 
-    return Semantics(
-      button: true,
-      expanded: isExpanded,
-      label: "$term. ${isExpanded ? 'Showing meaning' : 'Click to see meaning'}",
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isExpanded ? goldColor : theme.dividerColor.withOpacity(0.1), 
-            width: 1
-          ),
-          boxShadow: isExpanded 
-            ? [BoxShadow(color: goldColor.withOpacity(0.05), blurRadius: 10, spreadRadius: 2)] 
-            : null,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isExpanded ? goldColor : theme.dividerColor.withOpacity(0.1), 
+          width: 1
         ),
-        child: InkWell(
-          onTap: () {
-            setState(() => _expandedTerm = isExpanded ? null : term);
-            if (_searchFocus.hasFocus) _searchFocus.unfocus();
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ListTile(
-                leading: _buildLeadingAvatar(term, goldColor),
-                title: Text(term, 
-                  style: GoogleFonts.cinzel(
-                    color: goldColor, 
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16
-                  )
-                ),
-                trailing: Icon(
-                  isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, 
-                  color: goldColor.withOpacity(0.5)
-                ),
+        boxShadow: isExpanded 
+          ? [BoxShadow(color: goldColor.withOpacity(0.05), blurRadius: 10, spreadRadius: 2)] 
+          : null,
+      ),
+      child: InkWell(
+        onTap: () {
+          setState(() => _expandedTerm = isExpanded ? null : term);
+          if (_searchFocus.hasFocus) _searchFocus.unfocus();
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              leading: _buildLeadingAvatar(term, goldColor),
+              title: Text(term, 
+                style: GoogleFonts.cinzel(
+                  color: goldColor, 
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16
+                )
               ),
-              if (isExpanded)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                  child: Text(
-                    meaning,
-                    style: GoogleFonts.lora(
-                      color: theme.textTheme.bodyMedium?.color, 
-                      fontSize: 15, 
-                      height: 1.5
-                    ),
+              trailing: Icon(
+                isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, 
+                color: goldColor.withOpacity(0.5)
+              ),
+            ),
+            if (isExpanded)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: Text(
+                  meaning,
+                  style: GoogleFonts.lora(
+                    color: theme.textTheme.bodyMedium?.color, 
+                    fontSize: 15, 
+                    height: 1.5
                   ),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
