@@ -17,8 +17,11 @@ class ProgressScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('My Spiritual Progress', style: GoogleFonts.cinzel(fontWeight: FontWeight.bold)),
+        title: Text('MY SPIRITUAL PROGRESS', 
+          style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
         centerTitle: true,
+        elevation: 0,
+        backgroundColor: Colors.transparent,
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -36,7 +39,7 @@ class ProgressScreen extends StatelessWidget {
           _buildSectionHeader('Chapter Progress'),
           const SizedBox(height: 12),
           _buildChapterList(state, theme),
-          const SizedBox(height: 100),
+          const SizedBox(height: 100), // Space for FAB or Bottom Nav
         ],
       ),
     );
@@ -49,7 +52,7 @@ class ProgressScreen extends StatelessWidget {
         title.toUpperCase(),
         style: GoogleFonts.cinzel(
           color: kGold,
-          fontSize: 15,
+          fontSize: 14,
           fontWeight: FontWeight.w800,
           letterSpacing: 1.5,
         ),
@@ -58,9 +61,8 @@ class ProgressScreen extends StatelessWidget {
   }
 
   Widget _buildLevelCard(AppState state, ThemeData theme) {
-    // Synchronized with AppState Logic: Level = (XP / 100) + 1
     const int xpPerLevel = 100;
-    final double progress = state.xpinLevel; // Uses getter from AppState (0.0 to 1.0)
+    final double progress = state.xpinLevel; 
     final String levelTitle = _getLevelTitle(state.level);
 
     return GestureDetector(
@@ -70,13 +72,18 @@ class ProgressScreen extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF332600), Color(0xFF1A1500)],
+            gradient: LinearGradient(
+              colors: theme.brightness == Brightness.dark 
+                ? [const Color(0xFF332600), const Color(0xFF1A1500)]
+                : [const Color(0xFFFFF9E6), const Color(0xFFFFF1C1)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(color: kGold.withOpacity(0.4), width: 2),
+            boxShadow: [
+              BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))
+            ]
           ),
           child: Column(
             children: [
@@ -88,9 +95,11 @@ class ProgressScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(levelTitle, style: GoogleFonts.cinzel(color: kGold, fontSize: 22, fontWeight: FontWeight.bold)),
+                        Text(levelTitle, 
+                          style: GoogleFonts.cinzel(color: kGold, fontSize: 22, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 4),
-                        Text('Total XP: ${state.xp}', style: const TextStyle(color: kTextDim, fontSize: 14)),
+                        Text('Total XP: ${state.xp}', 
+                          style: TextStyle(color: theme.hintColor, fontSize: 14)),
                       ],
                     ),
                   ),
@@ -115,7 +124,8 @@ class ProgressScreen extends StatelessWidget {
         border: Border.all(color: kGold, width: 2.5),
       ),
       child: Center(
-        child: Text('$level', style: GoogleFonts.cinzel(color: kGold, fontSize: 28, fontWeight: FontWeight.bold)),
+        child: Text('$level', 
+          style: GoogleFonts.cinzel(color: kGold, fontSize: 28, fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -129,7 +139,8 @@ class ProgressScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text('Level Progress', style: TextStyle(color: kTextDim, fontSize: 13)),
-              Text('$current / $max XP', style: const TextStyle(color: kGoldDim, fontSize: 13, fontWeight: FontWeight.bold)),
+              Text('$current / $max XP', 
+                style: const TextStyle(color: kGoldDim, fontSize: 13, fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 10),
@@ -137,9 +148,9 @@ class ProgressScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             child: LinearProgressIndicator(
               value: value,
-              backgroundColor: kDivider,
+              backgroundColor: kDivider.withOpacity(0.2),
               color: kGold,
-              minHeight: 12,
+              minHeight: 10,
             ),
           ),
         ],
@@ -151,7 +162,8 @@ class ProgressScreen extends StatelessWidget {
     return Column(
       children: [
         const Text('🔥', style: TextStyle(fontSize: 26)),
-        Text('$streak', style: GoogleFonts.cinzel(color: kGold, fontSize: 20, fontWeight: FontWeight.bold)),
+        Text('$streak', 
+          style: GoogleFonts.cinzel(color: kGold, fontSize: 20, fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -164,32 +176,39 @@ class ProgressScreen extends StatelessWidget {
   Widget _buildStatsGrid(AppState state, ThemeData theme) {
     final stats = [
       {'label': 'Verses Read', 'value': '${state.readVerses.length}', 'icon': '📖'},
-      {'label': 'Quiz Score', 'value': '${state.quizScore}', 'icon': '🎯'},
-      {'label': 'Japa Rounds', 'value': '${state.japaCount}', 'icon': '📿'},
+      {'label': 'Meditation', 'value': '${state.totalMeditationMinutes}m', 'icon': '🧘'},
+      {'label': 'Japa Count', 'value': '${state.japaCount}', 'icon': '📿'},
     ];
 
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 0.9,
+        crossAxisCount: 3, 
+        crossAxisSpacing: 12, 
+        mainAxisSpacing: 12, 
+        childAspectRatio: 0.85,
       ),
       itemCount: stats.length,
       itemBuilder: (context, i) => Semantics(
         label: "${stats[i]['label']}: ${stats[i]['value']}",
         child: Container(
           decoration: BoxDecoration(
-            color: kCard,
+            color: theme.cardColor,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: kDivider, width: 1.5),
+            border: Border.all(color: kDivider.withOpacity(0.5), width: 1.5),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(stats[i]['icon']!, style: const TextStyle(fontSize: 24)),
               const SizedBox(height: 8),
-              Text(stats[i]['value']!, style: GoogleFonts.cinzel(color: kGold, fontSize: 18, fontWeight: FontWeight.bold)),
-              Text(stats[i]['label']!, style: const TextStyle(color: kTextDim, fontSize: 10), textAlign: TextAlign.center),
+              Text(stats[i]['value']!, 
+                style: GoogleFonts.cinzel(color: kGold, fontSize: 16, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text(stats[i]['label']!, 
+                style: const TextStyle(color: kTextDim, fontSize: 10), 
+                textAlign: TextAlign.center),
             ],
           ),
         ),
@@ -198,24 +217,35 @@ class ProgressScreen extends StatelessWidget {
   }
 
   Widget _buildBadges(AppState state, ThemeData theme) {
-    if (state.badges.isEmpty) return const Text("No badges earned yet.", style: TextStyle(color: kTextDim));
+    if (state.badges.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(20.0),
+        child: Text("Start your journey to earn badges.", style: TextStyle(color: kTextDim)),
+      );
+    }
     return SizedBox(
-      height: 130,
+      height: 120,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: state.badges.length,
         itemBuilder: (context, i) {
           final String badgeName = state.badges[i];
           return Container(
-            width: 110,
+            width: 100,
             margin: const EdgeInsets.only(right: 15),
-            decoration: BoxDecoration(color: kCard, borderRadius: BorderRadius.circular(18)),
+            decoration: BoxDecoration(
+              color: theme.cardColor, 
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: kGold.withOpacity(0.2))
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Text('🎖️', style: TextStyle(fontSize: 32)),
                 const SizedBox(height: 8),
-                Text(badgeName, style: const TextStyle(color: kGold, fontSize: 11), textAlign: TextAlign.center),
+                Text(badgeName, 
+                  style: const TextStyle(color: kGold, fontSize: 12, fontWeight: FontWeight.w600), 
+                  textAlign: TextAlign.center),
               ],
             ),
           );
@@ -235,14 +265,24 @@ class ProgressScreen extends StatelessWidget {
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
-            color: kCard,
+            color: theme.cardColor,
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: isDone ? kGold.withOpacity(0.5) : kDivider),
+            border: Border.all(color: isDone ? kGold.withOpacity(0.5) : kDivider.withOpacity(0.3)),
           ),
           child: ListTile(
-            leading: Icon(isDone ? Icons.stars : Icons.circle_outlined, color: isDone ? kGold : kTextDim),
-            title: Text('Chapter ${ch.number}', style: TextStyle(color: isDone ? kGold : kText)),
+            leading: CircleAvatar(
+              backgroundColor: isDone ? kGold.withOpacity(0.2) : Colors.transparent,
+              child: Icon(
+                isDone ? Icons.check_circle : Icons.radio_button_unchecked, 
+                color: isDone ? kGold : kTextDim
+              ),
+            ),
+            title: Text('Chapter ${ch.number}', 
+              style: TextStyle(color: isDone ? kGold : theme.textTheme.bodyLarge?.color, fontWeight: isDone ? FontWeight.bold : FontWeight.normal)),
             subtitle: Text(ch.name, style: const TextStyle(color: kTextDim, fontSize: 13)),
+            trailing: isDone 
+              ? const Text('+100 XP', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold))
+              : null,
             onTap: () => HapticFeedback.lightImpact(),
           ),
         );
