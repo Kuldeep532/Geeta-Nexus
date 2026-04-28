@@ -20,6 +20,9 @@ class AppState extends ChangeNotifier {
   List<String> _completedChapters = [];
   List<String> _badges = [];
   
+  // Flashcards state
+  int _currentFlashcardIndex = 0;
+
   bool _highContrast = false;
   bool _largeText = false;
   bool _reduceMotion = false;
@@ -29,7 +32,6 @@ class AppState extends ChangeNotifier {
   String _userEmail = '';
   String _userRole = 'seeker';
 
-  // Firebase Instance
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // --- Getters ---
@@ -48,13 +50,13 @@ class AppState extends ChangeNotifier {
   int get japaCount => _japaCount;
   List<JournalEntry> get journalEntries => _journalEntries;
   List<String> get badges => _badges; 
+  int get currentFlashcardIndex => _currentFlashcardIndex;
   
   bool get highContrast => _highContrast;
   bool get largeText => _largeText;
   bool get reduceMotion => _reduceMotion;
   
-  // Placeholder for meditation logic (Error fix)
-  int get totalMeditationMinutes => 0; 
+  int get totalMeditationMinutes => 0; // Placeholder fix
 
   double get xpinLevel => (_xp % 100) / 100.0; 
   List<Verse> get allVerses => kAllVerses; 
@@ -81,9 +83,36 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Flashcards Logic (Fix for line 328-331)
+  void updateFlashcardIndex(int index) {
+    _currentFlashcardIndex = index;
+    notifyListeners();
+  }
+
+  // Japa Logic (Fix for line 351-360)
+  void incrementJapa() {
+    _japaCount++;
+    if (_japaCount % 108 == 0) addXp(10);
+    _save();
+    notifyListeners();
+  }
+
+  void resetJapa() {
+    _japaCount = 0;
+    _save();
+    notifyListeners();
+  }
+
   void markVerseRead(String verseId) {
     _readVerses.add(verseId);
     addXp(5);
+    _save();
+    notifyListeners();
+  }
+
+  // Required for some screens (Fix)
+  void markVerseReadNoXp(String verseId) {
+    _readVerses.add(verseId);
     _save();
     notifyListeners();
   }
@@ -119,7 +148,14 @@ class AppState extends ChangeNotifier {
 
   bool isChapterCompleted(String chapterNumber) => _completedChapters.contains(chapterNumber);
 
-  void addJournalEntry(JournalEntry entry) {
+  // Journal Fix (Matching arguments from screenshots)
+  void addJournalEntry({required String content, required String mood}) {
+    final entry = JournalEntry(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      content: content,
+      mood: mood,
+      date: DateTime.now(),
+    );
     _journalEntries.insert(0, entry);
     addXp(20);
     _save();
@@ -164,26 +200,13 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> sendGlobalNotification({required String title, required String body}) async {
-    if (!isAdmin) return;
-    try {
-      await _firestore.collection('notifications').add({
-        'title': title,
-        'body': body,
-        'timestamp': FieldValue.serverTimestamp(),
-        'sentBy': _userEmail,
-      });
-    } catch (e) {
-      debugPrint("Notification Failure");
-    }
-  }
-
   // --- Persistence ---
 
   Future<void> load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       _xp = prefs.getInt('xp') ?? 0;
+      _japaCount = prefs.getInt('japaCount') ?? 0;
       _userName = prefs.getString('userName') ?? '';
       _userEmail = prefs.getString('userEmail') ?? '';
       _userRole = prefs.getString('userRole') ?? 'seeker';
@@ -207,6 +230,7 @@ class AppState extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('xp', _xp);
+      await prefs.setInt('japaCount', _japaCount);
       await prefs.setString('userName', _userName);
       await prefs.setString('userEmail', _userEmail);
       await prefs.setString('userRole', _userRole);
