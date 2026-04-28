@@ -11,16 +11,12 @@ class AppState extends ChangeNotifier {
   // --- State Variables ---
   int _xp = 0;
   int _streak = 0;
-  DateTime? _lastVisit;
   Set<String> _bookmarks = {};
   Set<String> _readVerses = {};
   List<JournalEntry> _journalEntries = [];
-  int _quizScore = 0;
   int _japaCount = 0;
-  int _totalMeditationMinutes = 0;
   bool _onboardingComplete = false;
   List<String> _completedChapters = [];
-  int _currentFlashcardIndex = 0;
   
   bool _highContrast = false;
   bool _largeText = false;
@@ -47,16 +43,15 @@ class AppState extends ChangeNotifier {
   List<String> get completedChapters => _completedChapters;
   List<JournalEntry> get journalEntries => _journalEntries;
 
-  // IMPORTANT: Missing Getters for Screens
-  List<Verse> get allVerses => kAllVerses; // Error Fix: 'allVerses' getter added
-  int get userCurrentDay => _streak + 1; // Reading Plan ke liye
+  // IMPORTANT: Corrected Getters
+  List<Verse> get allVerses => kAllVerses; 
+  int get userCurrentDay => _streak + 1; 
 
   int get level => (_xp / 100).floor() + 1;
   double get xpinlevel => (_xp % 100) / 100.0;
 
-  // --- Methods (Missing Methods added here) ---
+  // --- Methods ---
 
-  // Fix for: 'markChapterComplete' not defined
   void markChapterComplete(String chapterNumber) {
     if (!_completedChapters.contains(chapterNumber)) {
       _completedChapters.add(chapterNumber);
@@ -66,25 +61,19 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  // Fix for: 'deleteJournalEntry' not defined
   void deleteJournalEntry(String id) {
     _journalEntries.removeWhere((entry) => entry.id == id);
     _save();
     notifyListeners();
   }
 
-  // Fix for: 'sendGlobalNotification' not defined
   Future<void> sendGlobalNotification({required String title, required String body}) async {
-    // Yahan actual notification service ka logic aayega
-    debugPrint("Global Notification Sent: $title - $body");
-    notifyListeners();
+    debugPrint("Admin Notification: $title - $body");
+    // Actual Firebase logic can be integrated here
   }
 
   void recordQuizAnswer(bool isCorrect) {
-    if (isCorrect) {
-      addXp(10);
-      _quizScore += 1;
-    }
+    if (isCorrect) addXp(10);
     _save();
     notifyListeners();
   }
@@ -101,28 +90,14 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleLargeText() {
-    _largeText = !_largeText;
-    _save();
-    notifyListeners();
-  }
-
-  void toggleReduceMotion() {
-    _reduceMotion = !_reduceMotion;
-    _save();
-    notifyListeners();
-  }
-
-  bool isChapterCompleted(String chapterNumber) => _completedChapters.contains(chapterNumber);
-
   void markVerseRead(String verseId) {
-    _readVerses.add(verseId);
-    addXp(5);
-    _save();
-    notifyListeners();
+    if (!_readVerses.contains(verseId)) {
+      _readVerses.add(verseId);
+      addXp(5);
+      _save();
+      notifyListeners();
+    }
   }
-
-  bool isBookmarked(String verseId) => _bookmarks.contains(verseId);
 
   void toggleBookmark(String verseId) {
     if (_bookmarks.contains(verseId)) {
@@ -149,37 +124,51 @@ class AppState extends ChangeNotifier {
   }
 
   void addXp(int amount) {
-    _xp += amount;
+    _xp += amount; // ERROR FIX: Extra comma removed
+    _save();
+    notifyListeners();
+  }
+
+  void completeOnboarding(String name, String email) {
+    _userName = name;
+    _userEmail = email;
+    _onboardingComplete = true;
     _save();
     notifyListeners();
   }
 
   // --- Persistence ---
   Future<void> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    _xp = prefs.getInt('xp') ?? 0;
-    _userName = prefs.getString('userName') ?? '';
-    _userEmail = prefs.getString('userEmail') ?? '';
-    _highContrast = prefs.getBool('highContrast') ?? false;
-    _largeText = prefs.getBool('largeText') ?? false;
-    _reduceMotion = prefs.getBool('reduceMotion') ?? false;
-    _completedChapters = prefs.getStringList('completedChapters') ?? [];
-    _bookmarks = Set<String>.from(prefs.getStringList('bookmarks') ?? []);
-    _readVerses = Set<String>.from(prefs.getStringList('readVerses') ?? []);
-    
-    // Load Journal
-    final journalData = prefs.getString('journalEntries');
-    if (journalData != null) {
-      final List decoded = jsonDecode(journalData);
-      _journalEntries = decoded.map((e) => JournalEntry.fromJson(e)).toList();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _xp = prefs.getInt('xp') ?? 0;
+      _userName = prefs.getString('userName') ?? '';
+      _userEmail = prefs.getString('userEmail') ?? '';
+      _onboardingComplete = prefs.getBool('onboardingComplete') ?? false;
+      _highContrast = prefs.getBool('highContrast') ?? false;
+      _largeText = prefs.getBool('largeText') ?? false;
+      _reduceMotion = prefs.getBool('reduceMotion') ?? false;
+      _completedChapters = prefs.getStringList('completedChapters') ?? [];
+      _bookmarks = Set<String>.from(prefs.getStringList('bookmarks') ?? []);
+      _readVerses = Set<String>.from(prefs.getStringList('readVerses') ?? []);
+      
+      final journalData = prefs.getString('journalEntries');
+      if (journalData != null) {
+        final List decoded = jsonDecode(journalData);
+        _journalEntries = decoded.map((e) => JournalEntry.fromJson(e)).toList();
+      }
+    } catch (e) {
+      debugPrint("Error loading state: $e");
     }
-
     notifyListeners();
   }
 
   Future<void> _save() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('xp', _xp);
+    await prefs.setString('userName', _userName);
+    await prefs.setString('userEmail', _userEmail);
+    await prefs.setBool('onboardingComplete', _onboardingComplete);
     await prefs.setStringList('bookmarks', _bookmarks.toList());
     await prefs.setStringList('readVerses', _readVerses.toList());
     await prefs.setStringList('completedChapters', _completedChapters);
@@ -187,7 +176,6 @@ class AppState extends ChangeNotifier {
     await prefs.setBool('largeText', _largeText);
     await prefs.setBool('reduceMotion', _reduceMotion);
     
-    // Save Journal
     final journalJson = jsonEncode(_journalEntries.map((e) => e.toJson()).toList());
     await prefs.setString('journalEntries', journalJson);
   }
