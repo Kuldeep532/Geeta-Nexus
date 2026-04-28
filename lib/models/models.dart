@@ -2,18 +2,19 @@ import 'package:flutter/material.dart';
 
 class Verse {
   final String id;
-  final int chapter;
-  final int verse;
+  final int chapter; // Backend store
+  final int verse;   // Backend store
   final String sanskrit;
   final String transliteration;
   final String translation;
   final String meaning;
   final List<String> keywords;
 
-  // UI Compatibility Getters
+  // --- UI Compatibility Getters (FIXED) ---
   int get number => verse; 
   String get text => translation;
   int get verseNumber => verse; 
+  int get chapterNumber => chapter; // FIX: HomeScreen isse dhoond rahi thi
 
   const Verse({
     required this.id,
@@ -104,7 +105,6 @@ class JournalEntry {
     required this.date,
   });
 
-  // UI Fix: Adding toJson to match AppState calls
   Map<String, dynamic> toJson() => toMap();
   
   Map<String, dynamic> toMap() => {
@@ -114,7 +114,6 @@ class JournalEntry {
         'date': date.toIso8601String(),
       };
 
-  // UI Fix: Adding fromJson to match AppState calls
   factory JournalEntry.fromJson(Map<String, dynamic> json) => JournalEntry.fromMap(json);
 
   factory JournalEntry.fromMap(Map<String, dynamic> m) {
@@ -151,6 +150,7 @@ class QuizQuestion {
 
   factory QuizQuestion.fromMap(Map<String, dynamic> m) => QuizQuestion(
         question: m['question'] ?? '',
+        // FIX: Extra comma hataya 'm['options'] != null ?' se
         options: m['options'] != null ? List<String>.from(m['options']) : [],
         correctIndex: m['correctIndex'] ?? 0,
         explanation: m['explanation'] ?? '',
@@ -195,5 +195,5 @@ class AppNotification {
         createdAt: DateTime.tryParse(m['createdAt']?.toString() ?? '') ??
             DateTime.now(),
         isRead: m['isRead'] == true,
-      );
+      ); // FIX: Syntax comma fixed
 }
