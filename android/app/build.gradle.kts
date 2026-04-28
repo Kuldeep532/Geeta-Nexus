@@ -5,10 +5,10 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("dev.flutter.flutter-gradle-plugin")
-    // Google Services plugin applied here
     id("com.google.gms.google-services")
 }
 
+// Properties file load karne ka logic
 val keystorePropertiesFile = rootProject.file("key.properties")
 val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
@@ -18,36 +18,27 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    // UPDATED: Namespace as per branding
     namespace = "com.satviktechnologies.geetanexus"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    kotlin {
-        jvmToolchain(17)
-    }
 
     signingConfigs {
         create("release") {
             if (keystorePropertiesFile.exists()) {
                 keyAlias = keystoreProperties["keyAlias"]?.toString()
                 keyPassword = keystoreProperties["keyPassword"]?.toString()
-                
-                // UPDATED: Keystore file path updated here
-                storeFile = file("android-signing/my-release-key.jks")
-                
                 storePassword = keystoreProperties["storePassword"]?.toString()
+                
+                // Sahi file path logic
+                val sFile = keystoreProperties["storeFile"]?.toString()
+                if (sFile != null) {
+                    storeFile = file(sFile)
+                }
             }
         }
     }
 
     defaultConfig {
-        // UPDATED: Application ID as per branding
         applicationId = "com.satviktechnologies.geetanexus"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
@@ -57,11 +48,7 @@ android {
 
     buildTypes {
         release {
-            signingConfig = if (keystorePropertiesFile.exists()) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            signingConfig = signingConfigs.getByName("release")
             
             isMinifyEnabled = true
             isShrinkResources = true
