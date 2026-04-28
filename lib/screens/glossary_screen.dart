@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../theme.dart'; // ERROR FIX: Theme import added
 
 class GlossaryScreen extends StatefulWidget {
   const GlossaryScreen({super.key});
@@ -36,8 +37,6 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // ✅ Note: Yahan const color define hai, isliye niche variables ke sath const nahi aayega
-    const goldColor = Color(0xFFFFD700);
 
     final filtered = _dynamicGlossary.where((item) {
       final term = (item['term'] ?? '').toLowerCase();
@@ -50,16 +49,16 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text('GLOSSARY', 
-          style: GoogleFonts.cinzel(color: goldColor, fontSize: 18, fontWeight: FontWeight.bold)
+          style: GoogleFonts.cinzel(color: kGold, fontSize: 18, fontWeight: FontWeight.bold)
         ),
         centerTitle: true,
-        leading: BackButton(color: goldColor, onPressed: () => Navigator.pop(context)),
+        leading: BackButton(color: kGold, onPressed: () => Navigator.pop(context)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: Column(
         children: [
-          _buildSearchBar(context, goldColor),
+          _buildSearchBar(context),
           Expanded(
             child: filtered.isEmpty
                 ? _buildEmptyState(theme)
@@ -72,7 +71,7 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
                       final String meaning = item['meaning'] ?? 'No definition available.';
                       final bool isExpanded = _expandedTerm == term;
 
-                      return _buildGlossaryTile(context, term, meaning, isExpanded, goldColor);
+                      return _buildGlossaryTile(context, term, meaning, isExpanded);
                     },
                   ),
           ),
@@ -81,48 +80,44 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
     );
   }
 
-  Widget _buildSearchBar(BuildContext context, Color goldColor) {
+  Widget _buildSearchBar(BuildContext context) {
     final theme = Theme.of(context);
     
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-      child: Semantics(
-        label: "Search Sanskrit terms here",
-        child: TextField(
-          controller: _searchController,
-          focusNode: _searchFocus,
-          onChanged: (v) => setState(() => _query = v),
-          style: TextStyle(color: theme.textTheme.bodyLarge?.color),
-          decoration: InputDecoration(
-            hintText: 'Search terms...',
-            hintStyle: TextStyle(color: theme.hintColor, fontSize: 14),
-            prefixIcon: Icon(Icons.search, color: goldColor.withOpacity(0.7), size: 20),
-            suffixIcon: _query.isNotEmpty 
-              ? IconButton(
-                  icon: const Icon(Icons.clear, size: 18), 
-                  onPressed: () {
-                    _searchController.clear();
-                    setState(() => _query = '');
-                  }) 
-              : null,
-            filled: true,
-            fillColor: theme.cardColor,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15), 
-              borderSide: BorderSide(color: theme.dividerColor.withOpacity(0.2))
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(15),
-              // ✅ FIXED: Removed 'const' because goldColor is used
-              borderSide: BorderSide(color: goldColor, width: 1.5),
-            ),
+      child: TextField(
+        controller: _searchController,
+        focusNode: _searchFocus,
+        onChanged: (v) => setState(() => _query = v),
+        style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+        decoration: InputDecoration(
+          hintText: 'Search terms...',
+          hintStyle: TextStyle(color: theme.hintColor, fontSize: 14),
+          prefixIcon: Icon(Icons.search, color: kGold.withOpacity(0.7), size: 20),
+          suffixIcon: _query.isNotEmpty 
+            ? IconButton(
+                icon: const Icon(Icons.clear, size: 18, color: kGold), 
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() => _query = '');
+                }) 
+            : null,
+          filled: true,
+          fillColor: theme.cardColor,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15), 
+            borderSide: BorderSide(color: theme.dividerColor.withOpacity(0.2))
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: const BorderSide(color: kGold, width: 1.5),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildGlossaryTile(BuildContext context, String term, String meaning, bool isExpanded, Color goldColor) {
+  Widget _buildGlossaryTile(BuildContext context, String term, String meaning, bool isExpanded) {
     final theme = Theme.of(context);
 
     return AnimatedContainer(
@@ -132,11 +127,11 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isExpanded ? goldColor : theme.dividerColor.withOpacity(0.1), 
+          color: isExpanded ? kGold : theme.dividerColor.withOpacity(0.1), 
           width: 1
         ),
         boxShadow: isExpanded 
-          ? [BoxShadow(color: goldColor.withOpacity(0.05), blurRadius: 10, spreadRadius: 2)] 
+          ? [BoxShadow(color: kGold.withOpacity(0.05), blurRadius: 10, spreadRadius: 2)] 
           : null,
       ),
       child: InkWell(
@@ -149,17 +144,17 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ListTile(
-              leading: _buildLeadingAvatar(term, goldColor),
+              leading: _buildLeadingAvatar(term),
               title: Text(term, 
                 style: GoogleFonts.cinzel(
-                  color: goldColor, 
+                  color: kGold, 
                   fontWeight: FontWeight.bold,
                   fontSize: 16
                 )
               ),
               trailing: Icon(
                 isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, 
-                color: goldColor.withOpacity(0.5)
+                color: kGold.withOpacity(0.5)
               ),
             ),
             if (isExpanded)
@@ -180,19 +175,19 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
     );
   }
 
-  Widget _buildLeadingAvatar(String term, Color goldColor) {
+  Widget _buildLeadingAvatar(String term) {
     return Container(
       width: 40,
       height: 40,
       decoration: BoxDecoration(
-        color: goldColor.withOpacity(0.1), 
+        color: kGold.withOpacity(0.1), 
         shape: BoxShape.circle,
-        border: Border.all(color: goldColor.withOpacity(0.2))
+        border: Border.all(color: kGold.withOpacity(0.2))
       ),
       child: Center(
         child: Text(
           term.isNotEmpty ? term[0].toUpperCase() : '?', 
-          style: const TextStyle(color: goldColor, fontWeight: FontWeight.bold, fontSize: 18)
+          style: const TextStyle(color: kGold, fontWeight: FontWeight.bold, fontSize: 18)
         ),
       ),
     );
@@ -213,7 +208,7 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
               _searchController.clear();
               setState(() => _query = '');
             },
-            child: const Text("Clear Search", style: TextStyle(color: Color(0xFFFFD700))),
+            child: const Text("Clear Search", style: TextStyle(color: kGold)),
           )
         ],
       ),
