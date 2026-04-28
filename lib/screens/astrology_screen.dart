@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../theme.dart'; // Ensure kGold is defined here
+import '../theme.dart'; // Ensure kGold, kTextDim, etc., are defined here
 
 class AstrologyScreen extends StatefulWidget {
   const AstrologyScreen({super.key});
@@ -23,7 +25,7 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
     super.dispose();
   }
 
-  // Western Zodiac Calculation (Vedic requires complex APIs, but this is a solid base)
+  // Western Zodiac Calculation with Vedic names
   String _calculateZodiac(DateTime d) {
     final month = d.month;
     final day = d.day;
@@ -58,6 +60,7 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
   }
 
   void _generateKundli() {
+    HapticFeedback.mediumImpact();
     if (_dob == null || _tob == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select both Birth Date and Time')),
@@ -83,7 +86,6 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
     });
   }
 
-  // Pickers with improved accessibility labels
   Future<void> _pickDob() async {
     final picked = await showDatePicker(
       context: context,
@@ -91,6 +93,7 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
       firstDate: DateTime(1940),
       lastDate: DateTime.now(),
       initialDate: _dob ?? DateTime(2000, 1, 1),
+      builder: (context, child) => _buildPickerTheme(child!),
     );
     if (picked != null) setState(() => _dob = picked);
   }
@@ -100,40 +103,67 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
       context: context,
       helpText: 'Select your time of birth',
       initialTime: _tob ?? const TimeOfDay(hour: 6, minute: 0),
+      builder: (context, child) => _buildPickerTheme(child!),
     );
     if (picked != null) setState(() => _tob = picked);
   }
 
+  Widget _buildPickerTheme(Widget child) {
+    return Theme(
+      data: Theme.of(context).copyWith(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: kGold,
+          primary: kGold,
+          onPrimary: Colors.black,
+          surface: Theme.of(context).cardColor,
+        ),
+      ),
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Astrology & Insights', style: GoogleFonts.cinzel(color: kGold, fontWeight: FontWeight.bold)),
+        title: Text('ASTROLOGY & INSIGHTS', 
+          style: GoogleFonts.cinzel(color: kGold, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: Semantics(
+      body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
           children: [
-            _buildInputFields(),
-            const SizedBox(height: 25),
-            _buildDateTimeButtons(),
+            Text(
+              "Know your celestial alignment and daily spiritual focus.",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: theme.hintColor, fontSize: 14),
+            ),
             const SizedBox(height: 30),
+            _buildInputFields(theme),
+            const SizedBox(height: 25),
+            _buildDateTimeButtons(theme),
+            const SizedBox(height: 40),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: kGold,
                 foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 4,
               ),
               onPressed: _generateKundli,
-              child: const Text('GENERATE INSIGHTS', style: TextStyle(letterSpacing: 1.2, fontWeight: FontWeight.bold)),
+              child: const Text('GENERATE INSIGHTS', 
+                style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.bold)),
             ),
             if (_result != null) ...[
-              const SizedBox(height: 30),
-              _buildResultDisplay(),
+              const SizedBox(height: 40),
+              _buildResultDisplay(theme),
+              const SizedBox(height: 40),
             ],
           ],
         ),
@@ -141,69 +171,100 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
     );
   }
 
-  Widget _buildInputFields() {
+  Widget _buildInputFields(ThemeData theme) {
     return Column(
       children: [
         TextField(
           controller: _nameController,
-          decoration: const InputDecoration(
+          style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+          decoration: InputDecoration(
             labelText: 'Full Name',
-            prefixIcon: Icon(Icons.person_outline),
-            border: OutlineInputBorder(),
+            labelStyle: TextStyle(color: kGold.withOpacity(0.8)),
+            prefixIcon: const Icon(Icons.person_outline, color: kGold),
+            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: theme.dividerColor)),
+            focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: kGold, width: 2)),
           ),
         ),
-        const SizedBox(height: 15),
+        const SizedBox(height: 20),
         TextField(
           controller: _birthPlaceController,
-          decoration: const InputDecoration(
+          style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+          decoration: InputDecoration(
             labelText: 'City of Birth',
-            prefixIcon: Icon(Icons.location_city),
-            border: OutlineInputBorder(),
+            labelStyle: TextStyle(color: kGold.withOpacity(0.8)),
+            prefixIcon: const Icon(Icons.location_city, color: kGold),
+            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: theme.dividerColor)),
+            focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: kGold, width: 2)),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildDateTimeButtons() {
+  Widget _buildDateTimeButtons(ThemeData theme) {
     return Row(
       children: [
         Expanded(
           child: OutlinedButton.icon(
             onPressed: _pickDob,
-            icon: const Icon(Icons.calendar_month),
-            label: Text(_dob == null ? 'Select Date' : '${_dob!.day}/${_dob!.month}/${_dob!.year}'),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: _dob == null ? theme.dividerColor : kGold),
+              padding: const EdgeInsets.symmetric(vertical: 15),
+            ),
+            icon: const Icon(Icons.calendar_month, color: kGold, size: 20),
+            label: Text(
+              _dob == null ? 'Select Date' : '${_dob!.day}/${_dob!.month}/${_dob!.year}',
+              style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+            ),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: OutlinedButton.icon(
             onPressed: _pickTime,
-            icon: const Icon(Icons.history_toggle_off),
-            label: Text(_tob == null ? 'Select Time' : _tob!.format(context)),
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: _tob == null ? theme.dividerColor : kGold),
+              padding: const EdgeInsets.symmetric(vertical: 15),
+            ),
+            icon: const Icon(Icons.history_toggle_off, color: kGold, size: 20),
+            label: Text(
+              _tob == null ? 'Select Time' : _tob!.format(context),
+              style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildResultDisplay() {
+  Widget _buildResultDisplay(ThemeData theme) {
     return Semantics(
-      liveRegion: true, // Screen reader will announce when this appears
+      liveRegion: true,
+      label: "Your Kundli Insights generated below",
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: kGold.withOpacity(0.5), width: 1.5),
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: kGold.withOpacity(0.3), width: 1),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, spreadRadius: 2)
+          ],
         ),
-        child: SelectableText(
-          _result!,
-          style: GoogleFonts.merriweather(
-            fontSize: 16,
-            height: 1.8,
-            color: Theme.of(context).textTheme.bodyLarge?.color,
-          ),
+        child: Column(
+          children: [
+            const Icon(Icons.auto_awesome, color: kGold, size: 30),
+            const SizedBox(height: 15),
+            SelectableText(
+              _result!,
+              textAlign: TextAlign.left,
+              style: GoogleFonts.merriweather(
+                fontSize: 15,
+                height: 1.8,
+                color: theme.textTheme.bodyLarge?.color,
+              ),
+            ),
+          ],
         ),
       ),
     );
