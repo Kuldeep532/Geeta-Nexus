@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../state/app_state.dart';
-// Saari screens ke imports
+import '../theme.dart'; // ERROR FIX: Theme import added
+
+// Screens imports
 import 'flashcards_screen.dart';
 import 'quiz_screen.dart';
 import 'glossary_screen.dart';
@@ -59,7 +62,7 @@ class _MoreScreenState extends State<MoreScreen> {
         children: [
           const SizedBox(height: 10),
           ListTile(
-            leading: const Icon(Icons.brightness_auto),
+            leading: const Icon(Icons.brightness_auto, color: kGold),
             title: const Text('System Default'),
             onTap: () {
               state.updateTheme(ThemeMode.system);
@@ -67,7 +70,7 @@ class _MoreScreenState extends State<MoreScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.light_mode),
+            leading: const Icon(Icons.light_mode, color: kGold),
             title: const Text('Light Mode'),
             onTap: () {
               state.updateTheme(ThemeMode.light);
@@ -75,7 +78,7 @@ class _MoreScreenState extends State<MoreScreen> {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.dark_mode),
+            leading: const Icon(Icons.dark_mode, color: kGold),
             title: const Text('Dark Mode'),
             onTap: () {
               state.updateTheme(ThemeMode.dark);
@@ -94,65 +97,63 @@ class _MoreScreenState extends State<MoreScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Explore & Settings'),
+        title: Text('EXPLORE', style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, color: kGold)),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.palette_outlined),
+            icon: const Icon(Icons.palette_outlined, color: kGold),
             onPressed: () => _pickTheme(context, appState),
-            tooltip: 'Change theme',
           )
         ],
       ),
       body: SafeArea(
-        child: Scrollbar(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildAccountCard(context, appState),
-                const SizedBox(height: 24),
-                
-                const _SectionHeader(title: 'Study & Learn'),
-                _buildAccessibleGrid(context, [
-                  _Item('📚', 'Flashcards', 'Master key verses', const FlashcardsScreen()),
-                  _Item('🎯', 'Quiz', 'Test your knowledge', const QuizScreen()),
-                  _Item('📖', 'Glossary', 'Sanskrit terms', const GlossaryScreen()),
-                  _Item('🗺️', 'Reading Plan', '30-day journey', const ReadingPlanScreen()),
-                  _Item('🔭', 'Astrology', 'Kundli & horoscope', const AstrologyScreen()),
-                ]),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildAccountCard(context, appState),
+              const SizedBox(height: 24),
+              
+              const _SectionHeader(title: 'Study & Learn'),
+              _buildAccessibleGrid(context, [
+                _Item('📚', 'Flashcards', const FlashcardsScreen()),
+                _Item('🎯', 'Quiz', const QuizScreen()),
+                _Item('📖', 'Glossary', const GlossaryScreen()),
+                _Item('🗺️', 'Reading Plan', const ReadingPlanScreen()),
+                _Item('🔭', 'Astrology', const AstrologyScreen()),
+              ]),
 
-                const SizedBox(height: 24),
-                const _SectionHeader(title: 'Spiritual Practice'),
-                _buildAccessibleGrid(context, [
-                  _Item('🧘', 'Meditation', 'Guided stillness', const MeditationScreen()),
-                  _Item('🌬️', 'Breathing', 'Pranayama sessions', const BreathingScreen()),
-                  _Item('📿', 'Japa Counter', 'Mantra chanting', const ChantsScreen()),
-                  _Item('✍️', 'Journal', 'Reflect on your day', const JournalScreen()),
-                  _Item('🎙️', 'Voice Practice', 'Recitation feedback', const GeetaVoicePracticeScreen()),
-                ]),
+              const SizedBox(height: 24),
+              const _SectionHeader(title: 'Spiritual Practice'),
+              _buildAccessibleGrid(context, [
+                _Item('🧘', 'Meditation', const MeditationScreen()),
+                _Item('🌬️', 'Breathing', const BreathingScreen()),
+                _Item('📿', 'Japa', const ChantsScreen()),
+                _Item('✍️', 'Journal', const JournalScreen()),
+                _Item('🎙️', 'Recitation', const GeetaVoicePracticeScreen()),
+              ]),
 
-                const SizedBox(height: 24),
-                const _SectionHeader(title: 'Support & Legal'),
-                _buildAccessibleGrid(context, [
-                  _Item('👤', 'Profile', 'Account settings', const ProfileScreen()),
-                  _Item('ℹ️', 'About', 'App information', const AboutScreen()),
-                  _Item('🔐', 'Privacy', 'Data protection', const PrivacyPolicyScreen()),
-                  _Item('📜', 'Terms', 'User agreement', const TermsScreen()),
-                  _Item('✉️', 'Contact', 'Get help', const ContactScreen()),
-                ]),
+              const SizedBox(height: 24),
+              const _SectionHeader(title: 'Support & Legal'),
+              _buildAccessibleGrid(context, [
+                _Item('👤', 'Profile', const ProfileScreen()),
+                _Item('ℹ️', 'About', const AboutScreen()),
+                _Item('🔐', 'Privacy', const PrivacyPolicyScreen()),
+                _Item('📜', 'Terms', const TermsScreen()),
+                _Item('✉️', 'Contact', const ContactScreen()),
+              ]),
 
-                const SizedBox(height: 40),
-                Center(
-                  child: Text(
-                    _appVersionLabel,
-                    style: theme.textTheme.bodySmall,
-                  ),
+              const SizedBox(height: 40),
+              Center(
+                child: Text(
+                  _appVersionLabel,
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
@@ -160,25 +161,30 @@ class _MoreScreenState extends State<MoreScreen> {
   }
 
   Widget _buildAccountCard(BuildContext context, AppState appState) {
-    final cs = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
     return Card(
       elevation: 0,
+      color: theme.cardColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: cs.outlineVariant),
+        border: Border.all(color: kGold.withOpacity(0.3)),
       ),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: cs.primaryContainer,
-          child: Icon(Icons.person, color: cs.onPrimaryContainer),
+        leading: const CircleAvatar(
+          backgroundColor: kGold,
+          child: Icon(Icons.person, color: Colors.black),
         ),
-        title: Text(appState.userName.isEmpty ? 'Guest User' : appState.userName),
-        subtitle: Text(appState.userEmail.isEmpty ? 'Settings & Preferences' : appState.userEmail),
+        title: Text(appState.userName.isEmpty ? 'Guest User' : appState.userName, 
+            style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(appState.userEmail.isEmpty ? 'Spiritual Journey Settings' : appState.userEmail),
+        trailing: const Icon(Icons.chevron_right, color: kGold),
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
       ),
     );
   }
 
   Widget _buildAccessibleGrid(BuildContext context, List<_Item> items) {
+    final theme = Theme.of(context);
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -186,15 +192,19 @@ class _MoreScreenState extends State<MoreScreen> {
         crossAxisCount: 2,
         mainAxisSpacing: 12,
         crossAxisSpacing: 12,
-        childAspectRatio: 1.5,
+        childAspectRatio: 1.4,
       ),
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
         return Card(
           margin: EdgeInsets.zero,
-          elevation: 1,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          color: theme.cardColor,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+          ),
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => item.screen)),
@@ -203,7 +213,10 @@ class _MoreScreenState extends State<MoreScreen> {
               children: [
                 Text(item.emoji, style: const TextStyle(fontSize: 28)),
                 const SizedBox(height: 8),
-                Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                Text(item.title, 
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.lato(fontWeight: FontWeight.bold, fontSize: 13)
+                ),
               ],
             ),
           ),
@@ -221,12 +234,12 @@ class _SectionHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12, left: 4),
       child: Text(
-        title, 
-        style: TextStyle(
-          fontSize: 16, 
+        title.toUpperCase(), 
+        style: GoogleFonts.cinzel(
+          fontSize: 14, 
           fontWeight: FontWeight.bold, 
-          color: Theme.of(context).colorScheme.primary,
-          letterSpacing: 0.5
+          color: kGold,
+          letterSpacing: 1.2
         )
       ),
     );
@@ -234,7 +247,7 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _Item {
-  final String emoji, title, subtitle;
+  final String emoji, title;
   final Widget screen;
-  const _Item(this.emoji, this.title, this.subtitle, this.screen);
+  const _Item(this.emoji, this.title, this.screen);
 }
