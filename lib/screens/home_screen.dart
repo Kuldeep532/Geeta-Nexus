@@ -6,11 +6,11 @@ import 'package:provider/provider.dart';
 import '../theme.dart';
 import '../state/app_state.dart';
 import '../data/gita_data.dart';
+import '../models/models.dart'; // Models import zaroori hai
 
 // Screens imports
 import 'search_screen.dart';
 import 'verse_detail_screen.dart';
-// Note: Ensure these files exist or comment them out if not created yet
 import 'random_verse_screen.dart';
 import 'wisdom_cards_screen.dart';
 import 'affirmations_screen.dart';
@@ -23,7 +23,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  dynamic _dailyVerse;
+  Verse? _dailyVerse; // dynamic ki jagah Verse type use kiya
   final FlutterTts _tts = FlutterTts();
 
   @override
@@ -46,10 +46,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return 'Good Night · Hare Krishna';
   }
 
-  dynamic _loadAutomatedVerse() {
-    if (allVerses.isEmpty) return null;
+  Verse? _loadAutomatedVerse() {
+    if (kAllVerses.isEmpty) return null; // allVerses ko kAllVerses kiya
     final dayOfYear = DateTime.now().difference(DateTime(DateTime.now().year, 1, 1)).inDays;
-    return allVerses[dayOfYear % allVerses.length];
+    return kAllVerses[dayOfYear % kAllVerses.length];
   }
 
   @override
@@ -80,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 16),
                   _buildStreakBar(state, isDark, theme),
                   const SizedBox(height: 24),
-                  if (_dailyVerse != null) _buildDailyVerseCard(context, _dailyVerse, isDark, theme),
+                  if (_dailyVerse != null) _buildDailyVerseCard(context, _dailyVerse!, isDark, theme),
                   const SizedBox(height: 32),
                   _buildSectionTitle('Quick Actions'),
                   const SizedBox(height: 16),
@@ -118,7 +118,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1A1500) : const Color(0xFFFFF9E5),
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(15), // FIX: Extra comma hataya
           border: Border.all(color: kGold.withOpacity(0.3)),
         ),
         child: Row(
@@ -196,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(children: [Text(icon), Text(value, style: const TextStyle(fontWeight: FontWeight.bold, color: kGold)), Text(label, style: const TextStyle(fontSize: 10))]);
   }
 
-  Widget _buildDailyVerseCard(BuildContext context, dynamic verse, bool isDark, ThemeData theme) {
+  Widget _buildDailyVerseCard(BuildContext context, Verse verse, bool isDark, ThemeData theme) {
     return GestureDetector(
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => VerseDetailScreen(verse: verse))),
       child: Container(
@@ -213,13 +213,13 @@ class _HomeScreenState extends State<HomeScreen> {
             const Text('DAILY VERSE', style: TextStyle(letterSpacing: 2, fontSize: 12, color: kGold)),
             const SizedBox(height: 12),
             Text(
-              verse.translation, // 'text' ki jagah 'translation' use kiya (Fix)
+              verse.translation, 
               maxLines: 3, 
               overflow: TextOverflow.ellipsis, 
-              style: GoogleFonts.crimsonText(fontSize: 18, fontWeight: FontWeight.w500)
-            ),
+              style: GoogleFonts.crimsonText(fontSize: 18, fontWeight: FontWeight.w500),
+            ), // FIX: Extra comma aur syntax hataya
             const SizedBox(height: 12),
-            Text('Chapter ${verse.chapter}, Verse ${verse.verseNumber}', style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
+            Text('Chapter ${verse.chapterNumber}, Verse ${verse.verseNumber}', style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
           ],
         ),
       ),
