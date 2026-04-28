@@ -3,7 +3,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 import '../state/app_state.dart';
-// Note: Ensure all these screen files exist in your screens folder
+// Saari screens ke imports
 import 'flashcards_screen.dart';
 import 'quiz_screen.dart';
 import 'glossary_screen.dart';
@@ -48,28 +48,41 @@ class _MoreScreenState extends State<MoreScreen> {
     }
   }
 
-  // --- Theme Picker Method (Added Fix) ---
   void _pickTheme(BuildContext context, AppState state) {
     showModalBottomSheet(
       context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          const SizedBox(height: 10),
           ListTile(
             leading: const Icon(Icons.brightness_auto),
             title: const Text('System Default'),
-            onTap: () { state.updateTheme(ThemeMode.system); Navigator.pop(context); },
+            onTap: () {
+              state.updateTheme(ThemeMode.system);
+              Navigator.pop(context);
+            },
           ),
           ListTile(
             leading: const Icon(Icons.light_mode),
             title: const Text('Light Mode'),
-            onTap: () { state.updateTheme(ThemeMode.light); Navigator.pop(context); },
+            onTap: () {
+              state.updateTheme(ThemeMode.light);
+              Navigator.pop(context);
+            },
           ),
           ListTile(
             leading: const Icon(Icons.dark_mode),
             title: const Text('Dark Mode'),
-            onTap: () { state.updateTheme(ThemeMode.dark); Navigator.pop(context); },
+            onTap: () {
+              state.updateTheme(ThemeMode.dark);
+              Navigator.pop(context);
+            },
           ),
+          const SizedBox(height: 10),
         ],
       ),
     );
@@ -88,14 +101,14 @@ class _MoreScreenState extends State<MoreScreen> {
           IconButton(
             icon: const Icon(Icons.palette_outlined),
             onPressed: () => _pickTheme(context, appState),
-            tooltip: 'Change application theme',
+            tooltip: 'Change theme',
           )
         ],
       ),
       body: SafeArea(
         child: Scrollbar(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -160,7 +173,7 @@ class _MoreScreenState extends State<MoreScreen> {
           child: Icon(Icons.person, color: cs.onPrimaryContainer),
         ),
         title: Text(appState.userName.isEmpty ? 'Guest User' : appState.userName),
-        subtitle: Text(appState.userEmail.isEmpty ? 'Sign in to sync data' : appState.userEmail),
+        subtitle: Text(appState.userEmail.isEmpty ? 'Settings & Preferences' : appState.userEmail),
       ),
     );
   }
@@ -178,17 +191,19 @@ class _MoreScreenState extends State<MoreScreen> {
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
-        return InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => item.screen)),
-          child: Card(
-            margin: EdgeInsets.zero,
+        return Card(
+          margin: EdgeInsets.zero,
+          elevation: 1,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => item.screen)),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(item.emoji, style: const TextStyle(fontSize: 24)),
+                Text(item.emoji, style: const TextStyle(fontSize: 28)),
                 const SizedBox(height: 8),
-                Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               ],
             ),
           ),
@@ -205,7 +220,15 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12, left: 4),
-      child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+      child: Text(
+        title, 
+        style: TextStyle(
+          fontSize: 16, 
+          fontWeight: FontWeight.bold, 
+          color: Theme.of(context).colorScheme.primary,
+          letterSpacing: 0.5
+        )
+      ),
     );
   }
 }
