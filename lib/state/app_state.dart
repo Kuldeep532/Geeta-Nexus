@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Firebase Import
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/models.dart';
-import '../data/gita_data.dart'; 
+import '../data/gita_data.dart';
 
 class AppState extends ChangeNotifier {
   static const String kAdminEmail = 'kuldeepky538@gmail.com';
@@ -44,64 +44,66 @@ class AppState extends ChangeNotifier {
   bool get onboardingComplete => _onboardingComplete;
   ThemeMode get themeMode => _themeMode;
   Set<String> get bookmarks => _bookmarks;
+  Set<String> get readVerses => _readVerses;
   int get japaCount => _japaCount;
   List<JournalEntry> get journalEntries => _journalEntries;
   List<String> get badges => _badges; 
+  
+  bool get highContrast => _highContrast;
+  bool get largeText => _largeText;
+  bool get reduceMotion => _reduceMotion;
+  
+  // Placeholder for meditation logic (Error fix)
+  int get totalMeditationMinutes => 0; 
+
   double get xpinLevel => (_xp % 100) / 100.0; 
   List<Verse> get allVerses => kAllVerses; 
   int get userCurrentDay => _streak + 1; 
   int get level => (_xp / 100).floor() + 1;
 
-  // --- Silent Firebase Sync Logic ---
-  Future<void> syncUserRoleWithFirebase() async {
-    if (_userEmail.isEmpty) return;
+  // --- Methods ---
 
-    try {
-      // Silent attempt to fetch role from Firestore
-      final doc = await _firestore.collection('users').doc(_userEmail).get().timeout(
-        const Duration(seconds: 5),
-        onTimeout: () => throw TimeoutException('Silent Timeout'),
-      );
-
-      if (doc.exists) {
-        _userRole = doc.data()?['role'] ?? 'seeker';
-      } else {
-        // Create user document if it doesn't exist
-        await _firestore.collection('users').doc(_userEmail).set({
-          'name': _userName,
-          'email': _userEmail,
-          'role': _userEmail.toLowerCase() == kAdminEmail.toLowerCase() ? 'super_admin' : 'seeker',
-          'lastActive': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-      }
-    } catch (e) {
-      // Chupchap band ho jayega, koi error UI par nahi dikhega
-      debugPrint("Silent Firebase Sync: Data not available/Offline");
-    }
+  void setUserName(String name) {
+    _userName = name;
+    _save();
     notifyListeners();
   }
 
-  // --- Methods ---
-
-  Future<void> sendGlobalNotification({required String title, required String body}) async {
-    if (!isAdmin) return;
-    try {
-      // Writing to a global notifications collection for a cloud function to trigger
-      await _firestore.collection('notifications').add({
-        'title': title,
-        'body': body,
-        'timestamp': FieldValue.serverTimestamp(),
-        'sentBy': _userEmail,
-      });
-    } catch (e) {
-      debugPrint("Silent Notification Failure");
-    }
+  void completeOnboarding() {
+    _onboardingComplete = true;
+    _save();
+    notifyListeners();
   }
+
+  void updateThemeMode(ThemeMode mode) {
+    _themeMode = mode;
+    _save();
+    notifyListeners();
+  }
+
+  void markVerseRead(String verseId) {
+    _readVerses.add(verseId);
+    addXp(5);
+    _save();
+    notifyListeners();
+  }
+
+  void toggleBookmark(String verseId) {
+    if (_bookmarks.contains(verseId)) {
+      _bookmarks.remove(verseId);
+    } else {
+      _bookmarks.add(verseId);
+    }
+    _save();
+    notifyListeners();
+  }
+
+  bool isBookmarked(String verseId) => _bookmarks.contains(verseId);
 
   void updateGoogleAccount({required String name, required String email}) {
     _userName = name;
     _userEmail = email;
-    syncUserRoleWithFirebase(); // Role sync trigger
+    syncUserRoleWithFirebase();
     _save();
     notifyListeners();
   }
@@ -130,19 +132,54 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void recordQuizAnswer(bool isCorrect) {
-    if (isCorrect) addXp(10);
-    _save();
-    notifyListeners();
-  }
-
   void addXp(int amount) {
     _xp += amount;
     _save();
     notifyListeners();
   }
 
+  // --- Firebase Logic ---
+
+  Future<void> syncUserRoleWithFirebase() async {
+    if (_userEmail.isEmpty) return;
+    try {
+      final doc = await _firestore.collection('users').doc(_userEmail).get().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => throw TimeoutException('Timeout'),
+      );
+
+      if (doc.exists) {
+        _userRole = doc.data()?['role'] ?? 'seeker';
+      } else {
+        await _firestore.collection('users').doc(_userEmail).set({
+          'name': _userName,
+          'email': _userEmail,
+          'role': _userEmail.toLowerCase() == kAdminEmail.toLowerCase() ? 'super_admin' : 'seeker',
+          'lastActive': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
+    } catch (e) {
+      debugPrint("Firebase Sync Offline");
+    }
+    notifyListeners();
+  }
+
+  Future<void> sendGlobalNotification({required String title, required String body}) async {
+    if (!isAdmin) return;
+    try {
+      await _firestore.collection('notifications').add({
+        'title': title,
+        'body': body,
+        'timestamp': FieldValue.serverTimestamp(),
+        'sentBy': _userEmail,
+      });
+    } catch (e) {
+      debugPrint("Notification Failure");
+    }
+  }
+
   // --- Persistence ---
+
   Future<void> load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -152,18 +189,16 @@ class AppState extends ChangeNotifier {
       _userRole = prefs.getString('userRole') ?? 'seeker';
       _onboardingComplete = prefs.getBool('onboardingComplete') ?? false;
       _completedChapters = prefs.getStringList('completedChapters') ?? [];
-      _badges = prefs.getStringList('badges') ?? [];
       
       final journalData = prefs.getString('journalEntries');
       if (journalData != null) {
-        final List decoded = jsonDecode(journalData);
-        _journalEntries = decoded.map((e) => JournalEntry.fromJson(e)).toList();
+        final List<dynamic> decoded = jsonDecode(journalData);
+        _journalEntries = decoded.map((e) => JournalEntry.fromJson(e as Map<String, dynamic>)).toList();
       }
       
-      // Load hone ke baad Firebase se sync
       if (_userEmail.isNotEmpty) syncUserRoleWithFirebase();
     } catch (e) {
-      debugPrint("Silent Load Failure");
+      debugPrint("Load Failure");
     }
     notifyListeners();
   }
@@ -181,7 +216,7 @@ class AppState extends ChangeNotifier {
       final journalJson = jsonEncode(_journalEntries.map((e) => e.toJson()).toList());
       await prefs.setString('journalEntries', journalJson);
     } catch (e) {
-       debugPrint("Silent Save Failure");
+       debugPrint("Save Failure");
     }
   }
 }
