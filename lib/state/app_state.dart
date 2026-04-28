@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Firebase Import
 import '../models/models.dart';
 import '../data/gita_data.dart'; 
 
@@ -17,6 +18,7 @@ class AppState extends ChangeNotifier {
   int _japaCount = 0;
   bool _onboardingComplete = false;
   List<String> _completedChapters = [];
+  List<String> _badges = [];
   
   bool _highContrast = false;
   bool _largeText = false;
@@ -25,32 +27,84 @@ class AppState extends ChangeNotifier {
 
   String _userName = '';
   String _userEmail = '';
+  String _userRole = 'seeker';
+
+  // Firebase Instance
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // --- Getters ---
-  bool get isAdmin => _userEmail.toLowerCase() == kAdminEmail.toLowerCase();
+  bool get isAdmin => _userEmail.toLowerCase() == kAdminEmail.toLowerCase() || _userRole == 'admin' || _userRole == 'super_admin';
+  bool get isSuperAdmin => _userEmail.toLowerCase() == kAdminEmail.toLowerCase() || _userRole == 'super_admin';
+  
   String get userName => _userName;
   String get userEmail => _userEmail;
+  String get userRole => _userRole;
   int get xp => _xp;
   int get streak => _streak;
   bool get onboardingComplete => _onboardingComplete;
   ThemeMode get themeMode => _themeMode;
   Set<String> get bookmarks => _bookmarks;
-  bool get highContrast => _highContrast;
-  bool get largeText => _largeText;
-  bool get reduceMotion => _reduceMotion;
-  Set<String> get readVerses => _readVerses;
   int get japaCount => _japaCount;
-  List<String> get completedChapters => _completedChapters;
   List<JournalEntry> get journalEntries => _journalEntries;
-
-  // IMPORTANT: Corrected Getters
+  List<String> get badges => _badges; 
+  double get xpinLevel => (_xp % 100) / 100.0; 
   List<Verse> get allVerses => kAllVerses; 
   int get userCurrentDay => _streak + 1; 
-
   int get level => (_xp / 100).floor() + 1;
-  double get xpinlevel => (_xp % 100) / 100.0;
+
+  // --- Silent Firebase Sync Logic ---
+  Future<void> syncUserRoleWithFirebase() async {
+    if (_userEmail.isEmpty) return;
+
+    try {
+      // Silent attempt to fetch role from Firestore
+      final doc = await _firestore.collection('users').doc(_userEmail).get().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => throw TimeoutException('Silent Timeout'),
+      );
+
+      if (doc.exists) {
+        _userRole = doc.data()?['role'] ?? 'seeker';
+      } else {
+        // Create user document if it doesn't exist
+        await _firestore.collection('users').doc(_userEmail).set({
+          'name': _userName,
+          'email': _userEmail,
+          'role': _userEmail.toLowerCase() == kAdminEmail.toLowerCase() ? 'super_admin' : 'seeker',
+          'lastActive': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
+    } catch (e) {
+      // Chupchap band ho jayega, koi error UI par nahi dikhega
+      debugPrint("Silent Firebase Sync: Data not available/Offline");
+    }
+    notifyListeners();
+  }
 
   // --- Methods ---
+
+  Future<void> sendGlobalNotification({required String title, required String body}) async {
+    if (!isAdmin) return;
+    try {
+      // Writing to a global notifications collection for a cloud function to trigger
+      await _firestore.collection('notifications').add({
+        'title': title,
+        'body': body,
+        'timestamp': FieldValue.serverTimestamp(),
+        'sentBy': _userEmail,
+      });
+    } catch (e) {
+      debugPrint("Silent Notification Failure");
+    }
+  }
+
+  void updateGoogleAccount({required String name, required String email}) {
+    _userName = name;
+    _userEmail = email;
+    syncUserRoleWithFirebase(); // Role sync trigger
+    _save();
+    notifyListeners();
+  }
 
   void markChapterComplete(String chapterNumber) {
     if (!_completedChapters.contains(chapterNumber)) {
@@ -61,60 +115,7 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void deleteJournalEntry(String id) {
-    _journalEntries.removeWhere((entry) => entry.id == id);
-    _save();
-    notifyListeners();
-  }
-
-  Future<void> sendGlobalNotification({required String title, required String body}) async {
-    debugPrint("Admin Notification: $title - $body");
-    // Actual Firebase logic can be integrated here
-  }
-
-  void recordQuizAnswer(bool isCorrect) {
-    if (isCorrect) addXp(10);
-    _save();
-    notifyListeners();
-  }
-
-  void updateTheme(ThemeMode mode) {
-    _themeMode = mode;
-    _save();
-    notifyListeners();
-  }
-
-  void toggleHighContrast() {
-    _highContrast = !_highContrast;
-    _save();
-    notifyListeners();
-  }
-
-  void markVerseRead(String verseId) {
-    if (!_readVerses.contains(verseId)) {
-      _readVerses.add(verseId);
-      addXp(5);
-      _save();
-      notifyListeners();
-    }
-  }
-
-  void toggleBookmark(String verseId) {
-    if (_bookmarks.contains(verseId)) {
-      _bookmarks.remove(verseId);
-    } else {
-      _bookmarks.add(verseId);
-    }
-    _save();
-    notifyListeners();
-  }
-
-  void incrementJapa() {
-    _japaCount++;
-    if (_japaCount % 108 == 0) addXp(10);
-    _save();
-    notifyListeners();
-  }
+  bool isChapterCompleted(String chapterNumber) => _completedChapters.contains(chapterNumber);
 
   void addJournalEntry(JournalEntry entry) {
     _journalEntries.insert(0, entry);
@@ -123,16 +124,20 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addXp(int amount) {
-    _xp += amount; // ERROR FIX: Extra comma removed
+  void deleteJournalEntry(String id) {
+    _journalEntries.removeWhere((entry) => entry.id == id);
     _save();
     notifyListeners();
   }
 
-  void completeOnboarding(String name, String email) {
-    _userName = name;
-    _userEmail = email;
-    _onboardingComplete = true;
+  void recordQuizAnswer(bool isCorrect) {
+    if (isCorrect) addXp(10);
+    _save();
+    notifyListeners();
+  }
+
+  void addXp(int amount) {
+    _xp += amount;
     _save();
     notifyListeners();
   }
@@ -144,39 +149,39 @@ class AppState extends ChangeNotifier {
       _xp = prefs.getInt('xp') ?? 0;
       _userName = prefs.getString('userName') ?? '';
       _userEmail = prefs.getString('userEmail') ?? '';
+      _userRole = prefs.getString('userRole') ?? 'seeker';
       _onboardingComplete = prefs.getBool('onboardingComplete') ?? false;
-      _highContrast = prefs.getBool('highContrast') ?? false;
-      _largeText = prefs.getBool('largeText') ?? false;
-      _reduceMotion = prefs.getBool('reduceMotion') ?? false;
       _completedChapters = prefs.getStringList('completedChapters') ?? [];
-      _bookmarks = Set<String>.from(prefs.getStringList('bookmarks') ?? []);
-      _readVerses = Set<String>.from(prefs.getStringList('readVerses') ?? []);
+      _badges = prefs.getStringList('badges') ?? [];
       
       final journalData = prefs.getString('journalEntries');
       if (journalData != null) {
         final List decoded = jsonDecode(journalData);
         _journalEntries = decoded.map((e) => JournalEntry.fromJson(e)).toList();
       }
+      
+      // Load hone ke baad Firebase se sync
+      if (_userEmail.isNotEmpty) syncUserRoleWithFirebase();
     } catch (e) {
-      debugPrint("Error loading state: $e");
+      debugPrint("Silent Load Failure");
     }
     notifyListeners();
   }
 
   Future<void> _save() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('xp', _xp);
-    await prefs.setString('userName', _userName);
-    await prefs.setString('userEmail', _userEmail);
-    await prefs.setBool('onboardingComplete', _onboardingComplete);
-    await prefs.setStringList('bookmarks', _bookmarks.toList());
-    await prefs.setStringList('readVerses', _readVerses.toList());
-    await prefs.setStringList('completedChapters', _completedChapters);
-    await prefs.setBool('highContrast', _highContrast);
-    await prefs.setBool('largeText', _largeText);
-    await prefs.setBool('reduceMotion', _reduceMotion);
-    
-    final journalJson = jsonEncode(_journalEntries.map((e) => e.toJson()).toList());
-    await prefs.setString('journalEntries', journalJson);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('xp', _xp);
+      await prefs.setString('userName', _userName);
+      await prefs.setString('userEmail', _userEmail);
+      await prefs.setString('userRole', _userRole);
+      await prefs.setBool('onboardingComplete', _onboardingComplete);
+      await prefs.setStringList('completedChapters', _completedChapters);
+      
+      final journalJson = jsonEncode(_journalEntries.map((e) => e.toJson()).toList());
+      await prefs.setString('journalEntries', journalJson);
+    } catch (e) {
+       debugPrint("Silent Save Failure");
+    }
   }
 }
