@@ -3,11 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:uuid/uuid.dart';
 
 import '../state/app_state.dart';
 import '../models/models.dart';
-import '../theme.dart'; // ERROR FIX: Theme import added
+import '../theme.dart'; 
 
 class JournalScreen extends StatefulWidget {
   const JournalScreen({super.key});
@@ -20,7 +19,6 @@ class _JournalScreenState extends State<JournalScreen> {
   final _formKey = GlobalKey<FormState>();
   final _contentController = TextEditingController();
   final _searchController = TextEditingController();
-  final _uuid = const Uuid();
   
   bool _showForm = false;
   bool _isSearching = false;
@@ -70,11 +68,10 @@ class _JournalScreenState extends State<JournalScreen> {
       
       final cleanContent = _contentController.text.trim();
 
+      // FIX: AppState ke naye simplified method ko call kiya
       state.addJournalEntry(
-        id: _uuid.v4(),
         content: cleanContent,
         mood: _selectedMood,
-        date: DateTime.now(),
       );
 
       _contentController.clear();
