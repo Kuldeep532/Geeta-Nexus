@@ -4,7 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 
 import '../state/app_state.dart';
-import '../theme.dart'; // Ab kGold aur baaki colors error nahi denge
+import '../theme.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -14,15 +14,17 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool _loggingOut = false;
-
-  // GoogleSignIn instance with proper scopes
+  bool _isLoading = false;
   final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
 
-  Future<void> _logout(BuildContext context) async {
-    setState(() => _loggingOut = true);
+  // Logout Function
+  Future<void> _handleLogout(BuildContext context) async {
+    setState(() => _isLoading = true);
     try {
       await _googleSignIn.signOut();
+      final state = Provider.of<AppState>(context, listen: false);
+      state.updateGoogleAccount(name: "", email: ""); 
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Saffalta purvak logout ho gaya.')),
@@ -31,7 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       debugPrint("Logout Error: $e");
     } finally {
-      if (mounted) setState(() => _loggingOut = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -39,64 +41,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    
-    // Yahan hum hamare theme.dart se kGold use kar rahe hain
-    final accentColor = kGold; 
+    final accentColor = kGold;
+
+    // AUTOMATIC ROLE LOGIC
+    // Yahan apni sahi email ID dalein
+    final bool isSuperAdmin = state.userEmail == "aapka-email@gmail.com"; 
+    final bool isAdmin = isSuperAdmin || state.userRole == "admin";
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('Profile', style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, color: accentColor)),
+        title: Text('Profile Hub', 
+          style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, color: accentColor)),
         centerTitle: true,
         elevation: 0,
+        backgroundColor: Colors.transparent,
       ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         children: [
-          // --- User Info Card ---
-          _buildInfoCard(state, accentColor, theme),
+          // 1. Profile Header with Automatic Badging
+          _buildInfoCard(state, accentColor, theme, isSuperAdmin, isAdmin),
           
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
 
-          // --- ADMIN SECTION ---
-          if (state.isAdmin) _buildAdminSection(state, accentColor, theme),
-
-          const SizedBox(height: 24),
-
-          // --- App Stats ---
+          // 2. Personal Progress
+          _buildSectionTitle("YOUR PROGRESS", accentColor),
           _buildStatRow(Icons.bolt, "Level", "${state.level}", accentColor),
           _buildStatRow(Icons.local_fire_department, "Streak", "${state.streak} Days", Colors.orange),
 
           const SizedBox(height: 32),
 
-          // --- Logout Button ---
-          Semantics(
-            label: "App se logout karein",
-            child: ElevatedButton.icon(
-              onPressed: (state.userName.isNotEmpty) && !_loggingOut ? () => _logout(context) : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.withOpacity(0.1),
-                foregroundColor: Colors.red,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                side: const BorderSide(color: Colors.red),
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              icon: _loggingOut 
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red))
-                  : const Icon(Icons.logout),
-              label: Text(_loggingOut ? 'Logging out...' : 'Logout Account'),
-            ),
-          ),
+          // 3. Admin Command Centre (Sirf Admin/Super Admin ko dikhega)
+          if (isAdmin) ...[
+            _buildSectionTitle("CONTROL CENTRE", accentColor),
+            _buildAdminControls(accentColor, theme, isSuperAdmin),
+            const SizedBox(height: 32),
+          ],
+
+          // 4. Auth Button
+          _buildAuthButton(state, accentColor),
         ],
       ),
     );
   }
 
-  Widget _buildInfoCard(AppState state, Color gold, ThemeData theme) {
+  Widget _buildSectionTitle(String title, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Text(title, 
+        style: GoogleFonts.cinzel(fontSize: 12, fontWeight: FontWeight.bold, color: color, letterSpacing: 1.2)),
+    );
+  }
+
+  Widget _buildAdminControls(Color gold, ThemeData theme, bool isSuper) {
     return Container(
-      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
@@ -104,65 +103,112 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: Column(
         children: [
-          CircleAvatar(
-            radius: 40,
-            backgroundColor: gold.withOpacity(0.1),
-            child: Text(
-              state.userName.isNotEmpty ? state.userName[0].toUpperCase() : "?", 
-              style: TextStyle(fontSize: 32, color: gold, fontWeight: FontWeight.bold),
+          if (isSuper)
+            _buildAdminTile(
+              icon: Icons.people_alt_outlined,
+              iconColor: Colors.blue,
+              title: "User Directory",
+              subtitle: "Manage roles and permissions",
+              onTap: () {},
             ),
+          
+          if (isSuper) const Divider(height: 1),
+
+          _buildAdminTile(
+            icon: Icons.edit_note_rounded,
+            iconColor: Colors.green,
+            title: "Content Manager",
+            subtitle: "Update verses and lessons",
+            onTap: () {},
           ),
-          const SizedBox(height: 16),
-          Text(
-            state.userName.isEmpty ? 'Guest Seeker' : state.userName,
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          
+          const Divider(height: 1),
+
+          _buildAdminTile(
+            icon: Icons.insights_rounded,
+            iconColor: Colors.purple,
+            title: "App Analytics",
+            subtitle: "Check system health",
+            onTap: () {},
           ),
-          const SizedBox(height: 4),
-          Text(
-            state.userEmail.isEmpty ? 'No email linked' : state.userEmail,
-            style: TextStyle(color: theme.hintColor),
-          ),
+
+          if (isSuper) ...[
+            const Divider(height: 1),
+            _buildAdminTile(
+              icon: Icons.settings_suggest_outlined,
+              iconColor: Colors.orange,
+              title: "Global Settings",
+              subtitle: "Maintenance Mode",
+              onTap: () {},
+            ),
+          ]
         ],
       ),
     );
   }
 
-  Widget _buildAdminSection(AppState state, Color gold, ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(Icons.admin_panel_settings, color: gold),
-            const SizedBox(width: 8),
-            Text("ADMIN CONTROL", style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, color: gold)),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Card(
-          elevation: 0,
-          color: gold.withOpacity(0.05),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12), 
-            side: BorderSide(color: gold.withOpacity(0.5)),
+  Widget _buildAdminTile({
+    required IconData icon, 
+    required Color iconColor, 
+    required String title, 
+    required String subtitle, 
+    required VoidCallback onTap
+  }) {
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(color: iconColor.withOpacity(0.1), shape: BoxShape.circle),
+        child: Icon(icon, color: iconColor, size: 20),
+      ),
+      title: Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+      subtitle: Text(subtitle, style: const TextStyle(fontSize: 11)),
+      trailing: const Icon(Icons.arrow_forward_ios, size: 12),
+      onTap: onTap,
+    );
+  }
+
+  Widget _buildInfoCard(AppState state, Color gold, ThemeData theme, bool isSuper, bool isAdmin) {
+    String roleLabel = "SEEKER";
+    Color roleColor = Colors.grey;
+    
+    if (isSuper) {
+      roleLabel = "SUPER ADMIN";
+      roleColor = Colors.redAccent;
+    } else if (isAdmin) {
+      roleLabel = "ADMIN";
+      roleColor = gold;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: gold.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 40,
+            backgroundColor: gold.withOpacity(0.1),
+            child: Text(state.userName.isNotEmpty ? state.userName[0].toUpperCase() : "G", 
+              style: TextStyle(color: gold, fontSize: 30, fontWeight: FontWeight.bold)),
           ),
-          child: Column(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.notification_add, color: Colors.blue),
-                title: const Text("Send Global Notification"),
-                onTap: () => _showNotificationDialog(state),
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.people, color: Colors.green),
-                title: const Text("Manage Users (Coming Soon)"),
-                onTap: () {},
-              ),
-            ],
+          const SizedBox(height: 16),
+          Text(state.userName.isEmpty ? "Guest Seeker" : state.userName,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: roleColor.withOpacity(0.1), 
+              borderRadius: BorderRadius.circular(20), 
+              border: Border.all(color: roleColor.withOpacity(0.5))
+            ),
+            child: Text(roleLabel, style: TextStyle(color: roleColor, fontSize: 10, fontWeight: FontWeight.bold)),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -171,43 +217,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Icon(icon, color: color),
+          Icon(icon, color: color, size: 22),
           const SizedBox(width: 12),
-          Text(label, style: const TextStyle(fontSize: 16)),
+          Text(label, style: const TextStyle(fontSize: 15)),
           const Spacer(),
-          Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
 
-  void _showNotificationDialog(AppState state) {
-    final titleCtrl = TextEditingController();
-    final bodyCtrl = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Broadcast Message"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: titleCtrl, decoration: const InputDecoration(hintText: "Title")),
-            const SizedBox(height: 8),
-            TextField(controller: bodyCtrl, decoration: const InputDecoration(hintText: "Message Body"), maxLines: 3),
-          ],
+  Widget _buildAuthButton(AppState state, Color gold) {
+    bool isGuest = state.userName.isEmpty;
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: OutlinedButton.icon(
+        onPressed: _isLoading ? null : (isGuest ? () {} : () => _handleLogout(context)),
+        style: OutlinedButton.styleFrom(
+          side: BorderSide(color: isGuest ? gold : Colors.redAccent),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          foregroundColor: isGuest ? gold : Colors.redAccent,
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
-          ElevatedButton(
-            onPressed: () {
-              state.sendGlobalNotification(title: titleCtrl.text, body: bodyCtrl.text);
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Notification sent!")));
-            },
-            child: const Text("Send"),
-          ),
-        ],
+        icon: _isLoading 
+            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+            : Icon(isGuest ? Icons.login : Icons.logout),
+        label: Text(isGuest ? "Login with Google" : "Logout Account"),
       ),
     );
   }
