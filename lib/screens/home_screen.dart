@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import '../theme.dart';
 import '../state/app_state.dart';
 import '../data/gita_data.dart';
-import '../models/models.dart'; // Models import zaroori hai
+import '../models/models.dart'; 
 
 // Screens imports
 import 'search_screen.dart';
@@ -23,14 +23,27 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  Verse? _dailyVerse; // dynamic ki jagah Verse type use kiya
+  Verse? _dailyVerse; 
   final FlutterTts _tts = FlutterTts();
 
   @override
   void initState() {
     super.initState();
-    _dailyVerse = _loadAutomatedVerse();
+    // AppState ke initialize hone ke baad verse load hoga
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDailyVerse();
+    });
     _initTts();
+  }
+
+  void _loadDailyVerse() {
+    final state = Provider.of<AppState>(context, listen: false);
+    if (state.allVerses.isNotEmpty) {
+      final dayOfYear = DateTime.now().difference(DateTime(DateTime.now().year, 1, 1)).inDays;
+      setState(() {
+        _dailyVerse = state.allVerses[dayOfYear % state.allVerses.length];
+      });
+    }
   }
 
   Future<void> _initTts() async {
@@ -44,12 +57,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (hour >= 12 && hour < 17) return 'Good Afternoon · Jai Shri Krishna';
     if (hour >= 17 && hour < 21) return 'Good Evening · Jai Shri Krishna';
     return 'Good Night · Hare Krishna';
-  }
-
-  Verse? _loadAutomatedVerse() {
-    if (kAllVerses.isEmpty) return null; // allVerses ko kAllVerses kiya
-    final dayOfYear = DateTime.now().difference(DateTime(DateTime.now().year, 1, 1)).inDays;
-    return kAllVerses[dayOfYear % kAllVerses.length];
   }
 
   @override
@@ -118,7 +125,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Container(
         decoration: BoxDecoration(
           color: isDark ? const Color(0xFF1A1500) : const Color(0xFFFFF9E5),
-          borderRadius: BorderRadius.circular(15), // FIX: Extra comma hataya
+          borderRadius: BorderRadius.circular(15),
           border: Border.all(color: kGold.withOpacity(0.3)),
         ),
         child: Row(
@@ -217,7 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
               maxLines: 3, 
               overflow: TextOverflow.ellipsis, 
               style: GoogleFonts.crimsonText(fontSize: 18, fontWeight: FontWeight.w500),
-            ), // FIX: Extra comma aur syntax hataya
+            ),
             const SizedBox(height: 12),
             Text('Chapter ${verse.chapterNumber}, Verse ${verse.verseNumber}', style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
           ],
