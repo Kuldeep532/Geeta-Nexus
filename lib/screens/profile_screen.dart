@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
+
 import '../state/app_state.dart';
+import '../theme.dart'; // Ab kGold aur baaki colors error nahi denge
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -14,20 +16,23 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _loggingOut = false;
 
+  // GoogleSignIn instance with proper scopes
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+
   Future<void> _logout(BuildContext context) async {
     setState(() => _loggingOut = true);
     try {
-      await GoogleSignIn(scopes: ['email']).signOut();
-    } catch (_) {}
-
-    if (!mounted) return;
-    // AppState mein clear logic hona chahiye
-    // context.read<AppState>().logout(); 
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Saffalta purvak logout ho gaya.')),
-    );
-    setState(() => _loggingOut = false);
+      await _googleSignIn.signOut();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Saffalta purvak logout ho gaya.')),
+        );
+      }
+    } catch (e) {
+      debugPrint("Logout Error: $e");
+    } finally {
+      if (mounted) setState(() => _loggingOut = false);
+    }
   }
 
   @override
@@ -35,31 +40,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final state = context.watch<AppState>();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final goldColor = isDark ? const Color(0xFFFFD700) : const Color(0xFFB8860B);
+    
+    // Yahan hum hamare theme.dart se kGold use kar rahe hain
+    final accentColor = kGold; 
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('Profile', style: GoogleFonts.cinzel(fontWeight: FontWeight.bold)),
+        title: Text('Profile', style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, color: accentColor)),
         centerTitle: true,
-        backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           // --- User Info Card ---
-          _buildInfoCard(state, goldColor, theme),
+          _buildInfoCard(state, accentColor, theme),
           
           const SizedBox(height: 24),
 
-          // --- ADMIN SECTION (Visible only to Kuldeep) ---
-          if (state.isAdmin) _buildAdminSection(state, goldColor, theme),
+          // --- ADMIN SECTION ---
+          if (state.isAdmin) _buildAdminSection(state, accentColor, theme),
 
           const SizedBox(height: 24),
 
           // --- App Stats ---
-          _buildStatRow(Icons.bolt, "Level", "${state.level}", goldColor),
+          _buildStatRow(Icons.bolt, "Level", "${state.level}", accentColor),
           _buildStatRow(Icons.local_fire_department, "Streak", "${state.streak} Days", Colors.orange),
 
           const SizedBox(height: 32),
@@ -75,6 +81,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 side: const BorderSide(color: Colors.red),
                 elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               icon: _loggingOut 
                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.red))
@@ -88,31 +95,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildInfoCard(AppState state, Color gold, ThemeData theme) {
-    return Semantics(
-      label: "User account information",
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: gold.withOpacity(0.3)),
-        ),
-        child: Column(
-          children: [
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: gold.withOpacity(0.1),
-              child: Text(state.userName.isNotEmpty ? state.userName[0].toUpperCase() : "?", 
-                  style: TextStyle(fontSize: 32, color: gold, fontWeight: FontWeight.bold)),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: gold.withOpacity(0.3)),
+      ),
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: 40,
+            backgroundColor: gold.withOpacity(0.1),
+            child: Text(
+              state.userName.isNotEmpty ? state.userName[0].toUpperCase() : "?", 
+              style: TextStyle(fontSize: 32, color: gold, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
-            Text(state.userName.isEmpty ? 'Guest Seeker' : state.userName,
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
-            Text(state.userEmail.isEmpty ? 'No email linked' : state.userEmail,
-                style: TextStyle(color: theme.hintColor)),
-          ],
-        ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            state.userName.isEmpty ? 'Guest Seeker' : state.userName,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            state.userEmail.isEmpty ? 'No email linked' : state.userEmail,
+            style: TextStyle(color: theme.hintColor),
+          ),
+        ],
       ),
     );
   }
@@ -130,8 +140,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         const SizedBox(height: 12),
         Card(
+          elevation: 0,
           color: gold.withOpacity(0.05),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: gold.withOpacity(0.5))),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12), 
+            side: BorderSide(color: gold.withOpacity(0.5)),
+          ),
           child: Column(
             children: [
               ListTile(
@@ -179,7 +193,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(controller: titleCtrl, decoration: const InputDecoration(hintText: "Title")),
-            TextField(controller: bodyCtrl, decoration: const InputDecoration(hintText: "Message Body")),
+            const SizedBox(height: 8),
+            TextField(controller: bodyCtrl, decoration: const InputDecoration(hintText: "Message Body"), maxLines: 3),
           ],
         ),
         actions: [
