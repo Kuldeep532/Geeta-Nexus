@@ -4,17 +4,17 @@ import 'package:provider/provider.dart';
 
 import '../models/models.dart';
 import '../state/app_state.dart';
-import '../theme.dart'; // ERROR FIX: Theme import added
+import '../theme.dart'; 
 import 'verse_detail_screen.dart';
 
-import ChapterDetailScreen extends StatelessWidget {
+// FIX: 'import' ko hatakar 'class' kiya gaya
+class ChapterDetailScreen extends StatelessWidget {
   final Chapter chapter;
   const ChapterDetailScreen({super.key, required this.chapter});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     if (chapter.name.isEmpty) {
       return const Scaffold(body: Center(child: Text("Chapter data not found")));
@@ -31,7 +31,7 @@ import ChapterDetailScreen extends StatelessWidget {
             elevation: 0,
             backgroundColor: theme.scaffoldBackgroundColor,
             leading: IconButton(
-              icon: Icon(Icons.arrow_back_ios, color: kGold, size: 20),
+              icon: const Icon(Icons.arrow_back_ios, color: kGold, size: 20),
               onPressed: () => Navigator.pop(context),
             ),
             flexibleSpace: FlexibleSpaceBar(
@@ -108,7 +108,7 @@ class _HeaderBackground extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const SizedBox(height: 20),
+              const SizedBox(height: 40),
               Text(
                 chapter.name,
                 style: GoogleFonts.cinzel(
@@ -166,12 +166,12 @@ class _VerseRowItem extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        border: BorderSide(color: kGold.withOpacity(0.2)),
+        side: BorderSide(color: kGold.withOpacity(0.2)), // FIX: 'border' ko 'side' kiya
       ),
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: kGold.withOpacity(0.1),
-          child: Text('${verse.verseNumber}', style: TextStyle(color: kGold, fontSize: 12)),
+          child: Text('${verse.verseNumber}', style: const TextStyle(color: kGold, fontSize: 12)),
         ),
         title: Text(
           verse.translation.split('\n').first,
@@ -207,7 +207,6 @@ class _CompletionButton extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         onPressed: () {
-          // AppState mein method update kiya tha humne
           context.read<AppState>().markChapterComplete(chapterNumber.toString());
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("Chapter $chapterNumber marked as complete!")),
@@ -250,14 +249,14 @@ class _ChapterStats extends StatelessWidget {
         children: [
           Icon(icon, color: kGold, size: 14),
           const SizedBox(width: 8),
-          Text(text, style: TextStyle(color: kGold, fontSize: 12)),
+          Text(text, style: const TextStyle(color: kGold, fontSize: 12)),
         ],
       ),
     );
   }
 }
 
-class _SummaryCard extends StatelessWidget {
+class _SummaryCard extends StatelessWidget { // FIX: Extra comma hataya
   final String summary;
   const _SummaryCard({required this.summary});
 
