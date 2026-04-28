@@ -91,7 +91,6 @@ class _ChantsScreenState extends State<ChantsScreen> {
               _incrementChant(state);
             }
           }
-          // Fix: loopStrategy removed as it's deprecated in newer stt versions
         );
       }
     } else {
@@ -122,7 +121,7 @@ class _ChantsScreenState extends State<ChantsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final goldColor = kGold; // theme.dart se kGold use kar rahe hain
+    final goldColor = kGold; 
     final appState = context.watch<AppState>();
     final japa = appState.japaCount;
 
@@ -227,7 +226,7 @@ class _ChantsScreenState extends State<ChantsScreen> {
       elevation: 4,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        border: BorderSide(color: gold.withOpacity(0.5)),
+        side: BorderSide(color: gold.withOpacity(0.5)), // FIX: Changed 'border' to 'side'
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
