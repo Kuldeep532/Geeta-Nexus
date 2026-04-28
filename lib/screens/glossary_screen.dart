@@ -23,6 +23,8 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
 
   void _generateGlossaryFromData() {
     _dynamicGlossary = List.from(_kDefaultSpiritualTerms);
+    // Initial sort
+    _dynamicGlossary.sort((a, b) => (a['term'] ?? '').compareTo(b['term'] ?? ''));
   }
 
   @override
@@ -34,10 +36,8 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Dynamic Theme colors
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final goldColor = const Color(0xFFFFD700);
+    const goldColor = Color(0xFFFFD700);
 
     final filtered = _dynamicGlossary.where((item) {
       final term = (item['term'] ?? '').toLowerCase();
@@ -46,17 +46,14 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
       return term.contains(search) || meaning.contains(search);
     }).toList();
 
-    filtered.sort((a, b) => (a['term'] ?? '').compareTo(b['term'] ?? ''));
-
     return Scaffold(
-      // Automatic background color based on theme
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text('GLOSSARY', 
           style: GoogleFonts.cinzel(color: goldColor, fontSize: 18, fontWeight: FontWeight.bold)
         ),
         centerTitle: true,
-        leading: BackButton(color: goldColor),
+        leading: BackButton(color: goldColor, onPressed: () => Navigator.pop(context)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -100,15 +97,23 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
             hintText: 'Search terms...',
             hintStyle: TextStyle(color: theme.hintColor, fontSize: 14),
             prefixIcon: Icon(Icons.search, color: goldColor.withOpacity(0.7), size: 20),
+            suffixIcon: _query.isNotEmpty 
+              ? IconButton(
+                  icon: const Icon(Icons.clear, size: 18), 
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _query = '');
+                  }) 
+              : null,
             filled: true,
             fillColor: theme.cardColor,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15), 
-              borderSide: BorderSide(color: theme.dividerColor, width: 0.5)
+              borderSide: BorderSide(color: theme.dividerColor.withOpacity(0.2))
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(15),
-              borderSide: BorderSide(color: goldColor, width: 1.5),
+              borderSide: const BorderSide(color: goldColor, width: 1.5),
             ),
           ),
         ),
@@ -122,7 +127,7 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
     return Semantics(
       button: true,
       expanded: isExpanded,
-      label: "$term. ${isExpanded ? 'Expanded' : 'Collapsed'}. Double tap to see meaning.",
+      label: "$term. ${isExpanded ? 'Showing meaning' : 'Click to see meaning'}",
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         margin: const EdgeInsets.only(bottom: 12),
@@ -133,7 +138,9 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
             color: isExpanded ? goldColor : theme.dividerColor.withOpacity(0.1), 
             width: 1
           ),
-          boxShadow: isExpanded ? [BoxShadow(color: goldColor.withOpacity(0.1), blurRadius: 8)] : null,
+          boxShadow: isExpanded 
+            ? [BoxShadow(color: goldColor.withOpacity(0.05), blurRadius: 10, spreadRadius: 2)] 
+            : null,
         ),
         child: InkWell(
           onTap: () {
@@ -161,14 +168,12 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
               if (isExpanded)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                  child: ExcludeSemantics( // Preventing redundant reading
-                    child: Text(
-                      meaning,
-                      style: GoogleFonts.lora(
-                        color: theme.textTheme.bodyMedium?.color, 
-                        fontSize: 15, 
-                        height: 1.5
-                      ),
+                  child: Text(
+                    meaning,
+                    style: GoogleFonts.lora(
+                      color: theme.textTheme.bodyMedium?.color, 
+                      fontSize: 15, 
+                      height: 1.5
                     ),
                   ),
                 ),
@@ -186,12 +191,12 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
       decoration: BoxDecoration(
         color: goldColor.withOpacity(0.1), 
         shape: BoxShape.circle,
-        border: Border.all(color: goldColor.withOpacity(0.3))
+        border: Border.all(color: goldColor.withOpacity(0.2))
       ),
       child: Center(
         child: Text(
-          term.isNotEmpty ? term[0] : '?', 
-          style: TextStyle(color: goldColor, fontWeight: FontWeight.bold, fontSize: 18)
+          term.isNotEmpty ? term[0].toUpperCase() : '?', 
+          style: const TextStyle(color: goldColor, fontWeight: FontWeight.bold, fontSize: 18)
         ),
       ),
     );
@@ -202,24 +207,33 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.search_off, size: 50, color: theme.hintColor),
+          Icon(Icons.search_off_outlined, size: 60, color: theme.hintColor.withOpacity(0.5)),
           const SizedBox(height: 16),
-          Text("No terms found for '$_query'", 
+          Text("No matches for '$_query'", 
             style: TextStyle(color: theme.hintColor, fontSize: 16)
           ),
+          TextButton(
+            onPressed: () {
+              _searchController.clear();
+              setState(() => _query = '');
+            },
+            child: const Text("Clear Search", style: TextStyle(color: Color(0xFFFFD700))),
+          )
         ],
       ),
     );
   }
 
   static const List<Map<String, String>> _kDefaultSpiritualTerms = [
-    {'term': 'Atman', 'meaning': 'The eternal, individual soul or self.'},
-    {'term': 'Brahman', 'meaning': 'The ultimate, infinite reality or Godhead.'},
-    {'term': 'Dharma', 'meaning': 'Righteous duty, law, and cosmic order.'},
-    {'term': 'Karma', 'meaning': 'Action and its subsequent consequences.'},
-    {'term': 'Yoga', 'meaning': 'Union of the individual soul with the Divine.'},
-    {'term': 'Moksha', 'meaning': 'Liberation from the cycle of birth and death.'},
-    {'term': 'Guna', 'meaning': 'The three qualities of nature: Sattva, Rajas, and Tamas.'},
-    {'term': 'Bhakti', 'meaning': 'Devotional love and surrender to the Divine.'},
+    {'term': 'Atman', 'meaning': 'The eternal, individual soul or self that is distinct from the body and mind.'},
+    {'term': 'Brahman', 'meaning': 'The ultimate, infinite, and unchanging reality that is the source of everything.'},
+    {'term': 'Dharma', 'meaning': 'Righteous duty, moral law, and the cosmic order that sustains the universe.'},
+    {'term': 'Karma', 'meaning': 'Action and the law of cause and effect, where every deed has a consequence.'},
+    {'term': 'Yoga', 'meaning': 'The spiritual discipline or union of the individual soul with the Divine consciousness.'},
+    {'term': 'Moksha', 'meaning': 'The final liberation from the cycle of birth, death, and rebirth (Samsara).'},
+    {'term': 'Guna', 'meaning': 'The three qualities of nature: Sattva (purity), Rajas (passion), and Tamas (ignorance).'},
+    {'term': 'Bhakti', 'meaning': 'The path of devotional love and absolute surrender to the Supreme Divine.'},
+    {'term': 'Samsara', 'meaning': 'The continuous cycle of birth, death, and rebirth that the soul undergoes.'},
+    {'term': 'Maya', 'meaning': 'The cosmic illusion that creates the perception of duality and veils the true reality.'},
   ];
 }
