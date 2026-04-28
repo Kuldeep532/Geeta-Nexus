@@ -46,8 +46,7 @@ dependencies:
   dio: ^5.7.0
   connectivity_plus: ^6.0.5
   google_generative_ai: ^0.4.0
-  # FIXED: Upgraded to resolve the constraint error
-  google_sign_in: ^6.3.2
+  google_sign_in: ^7.2.0   # ✅ FIXED
 
   # --- Hardware & Media ---
   permission_handler: ^11.3.1
