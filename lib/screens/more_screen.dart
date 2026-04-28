@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../state/app_state.dart';
-import '../theme.dart'; // ERROR FIX: Theme import added
+import '../theme.dart'; 
 
 // Screens imports
 import 'flashcards_screen.dart';
@@ -167,7 +167,8 @@ class _MoreScreenState extends State<MoreScreen> {
       color: theme.cardColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: kGold.withOpacity(0.3)),
+        // FIX: Border.all ki jagah side property use kari
+        side: BorderSide(color: kGold.withOpacity(0.3)),
       ),
       child: ListTile(
         leading: const CircleAvatar(
@@ -203,7 +204,8 @@ class _MoreScreenState extends State<MoreScreen> {
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: theme.dividerColor.withOpacity(0.1)),
+            // FIX: side property fix ki
+            side: BorderSide(color: theme.dividerColor.withOpacity(0.1)),
           ),
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
