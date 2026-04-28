@@ -15,7 +15,6 @@ class ChaptersScreen extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      // Uses the theme's background color for automatic light/dark support
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('18 Chapters'),
@@ -24,10 +23,12 @@ class ChaptersScreen extends StatelessWidget {
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
+        // kChapters gita_data.dart se aa raha hai
         itemCount: kChapters.length,
         itemBuilder: (context, index) {
           final chapter = kChapters[index];
-          final bool isCompleted = state.isChapterCompleted(chapter.number);
+          // isChapterCompleted ab int number leta hai (Fix)
+          final bool isCompleted = state.isChapterCompleted(chapter.number.toString());
 
           return Semantics(
             label: "Chapter ${chapter.number}: ${chapter.name}. ${chapter.verseCount} verses. ${isCompleted ? 'Completed' : 'Not completed'}",
@@ -36,7 +37,6 @@ class ChaptersScreen extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Material(
-                // Use colorScheme for dynamic colors
                 color: colorScheme.surface,
                 elevation: 1,
                 borderRadius: BorderRadius.circular(16),
@@ -61,7 +61,6 @@ class ChaptersScreen extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        // Decorative indicator hidden from screen readers to avoid clutter
                         ExcludeSemantics(
                           child: _buildChapterIndicator(
                             context,
