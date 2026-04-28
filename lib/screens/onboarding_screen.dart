@@ -41,7 +41,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final FocusNode _nameFocus = FocusNode();
   String? _nameError;
   bool _isLoading = false;
-  bool _showNameField = false; // Controls visibility after "Skip"
+  bool _showNameField = false; 
 
   static const List<_OnboardPageData> _pages = [
     _OnboardPageData(
@@ -99,8 +99,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       }
 
       if (!mounted) return;
-      _nameController.text = account.displayName ?? "";
+      
+      // Setting controller text to avoid empty name error
+      _nameController.text = account.displayName ?? "Seeker";
 
+      // Connecting to AppState (Triggering Silent Firebase Sync)
       Provider.of<AppState>(context, listen: false).updateGoogleAccount(
         name: account.displayName ?? "Seeker",
         email: account.email,
@@ -108,13 +111,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
       await _handlePermissions();
     } catch (e) {
-      _showErrorSnackBar("Google Sign-in failed. Please try manually.");
+      _showErrorSnackBar("Google Sign-in failed. Try manual setup.");
+      setState(() => _showNameField = true); // Fallback to manual name
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _handlePermissions() async {
+    // Requesting core permissions silently
     await [Permission.microphone, Permission.notification].request();
     if (!mounted) return;
     _finishOnboarding();
@@ -129,18 +134,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       return;
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('onboarding_completed', true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('onboarding_completed', true);
 
-    if (!mounted) return;
-    final state = Provider.of<AppState>(context, listen: false);
-    state.setUserName(name);
-    state.completeOnboarding();
+      if (!mounted) return;
+      final state = Provider.of<AppState>(context, listen: false);
+      
+      // Updating user profile in State
+      state.setUserName(name);
+      state.completeOnboarding();
 
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const MainShell()),
-      (route) => false,
-    );
+      // Navigation to Home
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const MainShell()),
+        (route) => false,
+      );
+    } catch (e) {
+      _showErrorSnackBar("Kuch galat hua. Kripya phir koshish karein.");
+    }
   }
 
   void _showErrorSnackBar(String msg) {
@@ -173,7 +185,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 onPageChanged: (i) => setState(() {
                   _page = i;
                   _nameError = null;
-                  _showNameField = false; // Reset if user swiped back
+                  _showNameField = false; 
                 }),
                 itemBuilder: (ctx, i) => _buildPage(i, kGold, theme),
               ),
@@ -236,7 +248,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         const SizedBox(height: 16),
         TextButton(
           onPressed: () => setState(() => _showNameField = true),
-          child: Text("Skip Login", style: TextStyle(color: gold)),
+          child: Text("Skip Login & Continue as Guest", style: TextStyle(color: gold)),
         ),
       ],
     );
@@ -290,7 +302,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             )),
           ),
           const SizedBox(height: 32),
-          // Hide "Next" button on last page as the login/name inputs take over
           if (_page < _pages.length - 1)
             SizedBox(
               width: double.infinity,
