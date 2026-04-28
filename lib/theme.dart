@@ -36,6 +36,8 @@ ThemeData buildLightTheme() {
     brightness: Brightness.light,
     scaffoldBackgroundColor: lBg,
     primaryColor: kGoldDim,
+    dividerColor: lDivider, // Added for indicators
+    hintColor: lTextDim,     // Added for subtitles
     colorScheme: ColorScheme.light(
       primary: kGoldDim,
       secondary: kSaffron,
@@ -48,6 +50,7 @@ ThemeData buildLightTheme() {
     textTheme: GoogleFonts.crimsonTextTextTheme(
       const TextTheme(
         displayLarge: TextStyle(color: kGoldDim, fontWeight: FontWeight.bold),
+        titleLarge: TextStyle(color: kGoldDim, fontWeight: FontWeight.bold), // Cinzel style support
         bodyLarge: TextStyle(color: lText),
         bodySmall: TextStyle(color: lTextDim),
       ),
@@ -55,6 +58,7 @@ ThemeData buildLightTheme() {
     appBarTheme: AppBarTheme(
       backgroundColor: lBg,
       centerTitle: true,
+      elevation: 0,
       titleTextStyle: GoogleFonts.cinzel(
         color: kGoldDim,
         fontSize: 20,
@@ -91,6 +95,8 @@ ThemeData buildDarkTheme() {
     brightness: Brightness.dark,
     scaffoldBackgroundColor: kBg,
     primaryColor: kGold,
+    dividerColor: kDivider, // Error fix: Added for quiz/wisdom screens
+    hintColor: kTextDim,    // Error fix: Added for captions
     colorScheme: const ColorScheme.dark(
       primary: kGold,
       secondary: kSaffron,
@@ -103,19 +109,17 @@ ThemeData buildDarkTheme() {
     textTheme: GoogleFonts.crimsonTextTextTheme(
       const TextTheme(
         displayLarge: TextStyle(color: kGold, fontWeight: FontWeight.bold),
+        titleLarge: TextStyle(color: kGold, fontWeight: FontWeight.bold),
         bodyLarge: TextStyle(color: kText),
         bodySmall: TextStyle(color: kTextDim),
       ),
     ),
-    appBarTheme: AppBarTheme(
+    appBarTheme: const AppBarTheme(
       backgroundColor: kBg,
       centerTitle: true,
-      titleTextStyle: GoogleFonts.cinzel(
-        color: kGold,
-        fontSize: 20,
-        fontWeight: FontWeight.bold,
-      ),
-      iconTheme: const IconThemeData(color: kGold),
+      elevation: 0,
+      titleTextStyle: TextStyle(color: kGold, fontSize: 20, fontWeight: FontWeight.bold),
+      iconTheme: IconThemeData(color: kGold),
     ),
     cardTheme: CardThemeData(
       color: kCard,
