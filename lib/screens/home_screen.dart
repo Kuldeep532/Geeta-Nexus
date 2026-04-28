@@ -7,9 +7,10 @@ import '../theme.dart';
 import '../state/app_state.dart';
 import '../data/gita_data.dart';
 
-// Saare 'rasta' (Imports) jo pehle missing the
+// Screens imports
 import 'search_screen.dart';
 import 'verse_detail_screen.dart';
+// Note: Ensure these files exist or comment them out if not created yet
 import 'random_verse_screen.dart';
 import 'wisdom_cards_screen.dart';
 import 'affirmations_screen.dart';
@@ -22,9 +23,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late dynamic _dailyVerse;
+  dynamic _dailyVerse;
   final FlutterTts _tts = FlutterTts();
-  bool _isSpeaking = false;
 
   @override
   void initState() {
@@ -36,8 +36,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _initTts() async {
     await _tts.setLanguage('en-US');
     await _tts.setSpeechRate(0.45);
-    _tts.setCompletionHandler(() => setState(() => _isSpeaking = false));
-    _tts.setCancelHandler(() => setState(() => _isSpeaking = false));
   }
 
   String _getGreeting() {
@@ -86,7 +84,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 32),
                   _buildSectionTitle('Quick Actions'),
                   const SizedBox(height: 16),
-                  _buildQuickActions(context, isDark), // Naya rasta yahan hai!
+                  _buildQuickActions(context, isDark),
                   const SizedBox(height: 100), 
                 ],
               ),
@@ -97,7 +95,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // --- Naya Navigation Rasta (Buttons) ---
   Widget _buildQuickActions(BuildContext context, bool isDark) {
     return GridView.count(
       shrinkWrap: true,
@@ -136,7 +133,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // --- Baaki UI Components (Pehle wale fix kiye hue) ---
   Widget _buildAppBar(BuildContext context, bool isDark) {
     return SliverAppBar(
       expandedHeight: 100,
@@ -172,18 +168,18 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         children: [
           _buildStatItem('🔥', '${state.streak}', 'Days'),
-          const VerticalDivider(width: 20),
+          const SizedBox(width: 20),
           _buildStatItem('📖', '${state.readVerses.length}', 'Verses'),
           const Spacer(),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('Level ${state.level}', style: const TextStyle(color: kGold, fontWeight: FontWeight.bold)),
+              const Text('Daily Progress', style: TextStyle(color: kGold, fontWeight: FontWeight.bold, fontSize: 12)),
               const SizedBox(height: 4),
               SizedBox(
                 width: 80,
                 child: LinearProgressIndicator(
-                  value: (state.xp / 100).clamp(0.0, 1.0), // Error fix: yahan comma hat gaya!
+                  value: (state.readVerses.length / 700).clamp(0.0, 1.0),
                   backgroundColor: Colors.grey[300],
                   color: kGold,
                   minHeight: 4,
@@ -216,7 +212,12 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             const Text('DAILY VERSE', style: TextStyle(letterSpacing: 2, fontSize: 12, color: kGold)),
             const SizedBox(height: 12),
-            Text(verse.text ?? "Loading...", maxLines: 3, overflow: TextOverflow.ellipsis, style: GoogleFonts.crimsonText(fontSize: 18, fontWeight: FontWeight.w500)),
+            Text(
+              verse.translation, // 'text' ki jagah 'translation' use kiya (Fix)
+              maxLines: 3, 
+              overflow: TextOverflow.ellipsis, 
+              style: GoogleFonts.crimsonText(fontSize: 18, fontWeight: FontWeight.w500)
+            ),
             const SizedBox(height: 12),
             Text('Chapter ${verse.chapter}, Verse ${verse.verseNumber}', style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic)),
           ],
