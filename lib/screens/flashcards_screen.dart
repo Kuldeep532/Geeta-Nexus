@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import '../data/gita_data.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
-import '../theme.dart'; // ERROR FIX: Theme import added
+import '../theme.dart'; 
 
 class FlashcardsScreen extends StatefulWidget {
   const FlashcardsScreen({super.key});
@@ -38,6 +38,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
   }
 
   void _loadVersesFromDatabase() {
+    // kChapters se verses ko flat list mein convert karna
     if (kChapters.isNotEmpty) {
       setState(() {
         _verses = kChapters.expand((chapter) => chapter.verses).toList();
@@ -65,6 +66,8 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
 
   void _navigate(AppState state, bool forward) {
     HapticFeedback.lightImpact();
+    
+    // Card flip hai to pehle use seedha karein
     if (_flipped) {
       _controller.reverse();
       setState(() => _flipped = false);
@@ -84,7 +87,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     final theme = Theme.of(context);
-    final goldColor = kGold; // theme.dart se kGold use kar rahe hain
+    final goldColor = kGold; 
     
     if (_verses.isEmpty) {
       return Scaffold(
@@ -92,6 +95,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
       );
     }
 
+    // Index out of bounds se bachne ke liye clamp
     final safeIndex = appState.currentFlashcardIndex.clamp(0, _verses.length - 1);
     final verse = _verses[safeIndex];
 
