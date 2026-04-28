@@ -15,7 +15,11 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = false;
-  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+  
+  // GoogleSignIn setup with safety
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+  );
 
   // Logout Function
   Future<void> _handleLogout(BuildContext context) async {
@@ -37,16 +41,63 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  // Notification Dialog Logic
+  void _showNotificationDialog(BuildContext context, AppState state) {
+    final titleCtrl = TextEditingController();
+    final bodyCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(context).cardColor,
+        title: Text("Global Broadcast", style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, color: kGold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: titleCtrl,
+              decoration: const InputDecoration(labelText: "Title", hintText: "e.g. Suprabhat"),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: bodyCtrl,
+              maxLines: 3,
+              decoration: const InputDecoration(labelText: "Message", hintText: "Enter content here..."),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: kGold),
+            onPressed: () {
+              if (titleCtrl.text.isNotEmpty && bodyCtrl.text.isNotEmpty) {
+                state.sendGlobalNotification(
+                  title: titleCtrl.text,
+                  body: bodyCtrl.text,
+                );
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Notification sent silently!")),
+                );
+              }
+            },
+            child: const Text("Send", style: TextStyle(color: Colors.black)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final theme = Theme.of(context);
     final accentColor = kGold;
 
-    // AUTOMATIC ROLE LOGIC
-    // Yahan apni sahi email ID dalein
-    final bool isSuperAdmin = state.userEmail == "aapka-email@gmail.com"; 
-    final bool isAdmin = isSuperAdmin || state.userRole == "admin";
+    // Matches with AppState Role Logic
+    final bool isSuperAdmin = state.isSuperAdmin; 
+    final bool isAdmin = state.isAdmin;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -60,22 +111,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         children: [
-          // 1. Profile Header with Automatic Badging
+          // 1. Profile Info
           _buildInfoCard(state, accentColor, theme, isSuperAdmin, isAdmin),
           
           const SizedBox(height: 32),
 
-          // 2. Personal Progress
+          // 2. Stats
           _buildSectionTitle("YOUR PROGRESS", accentColor),
           _buildStatRow(Icons.bolt, "Level", "${state.level}", accentColor),
           _buildStatRow(Icons.local_fire_department, "Streak", "${state.streak} Days", Colors.orange),
 
           const SizedBox(height: 32),
 
-          // 3. Admin Command Centre (Sirf Admin/Super Admin ko dikhega)
+          // 3. Admin Command Centre
           if (isAdmin) ...[
             _buildSectionTitle("CONTROL CENTRE", accentColor),
-            _buildAdminControls(accentColor, theme, isSuperAdmin),
+            _buildAdminControls(accentColor, theme, isSuperAdmin, state),
             const SizedBox(height: 32),
           ],
 
@@ -94,7 +145,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildAdminControls(Color gold, ThemeData theme, bool isSuper) {
+  Widget _buildAdminControls(Color gold, ThemeData theme, bool isSuper, AppState state) {
     return Container(
       decoration: BoxDecoration(
         color: theme.cardColor,
@@ -103,7 +154,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: Column(
         children: [
-          if (isSuper)
+          // Push Notifications - Available for all Admins
+          _buildAdminTile(
+            icon: Icons.campaign_rounded,
+            iconColor: Colors.amber,
+            title: "Broadcast Message",
+            subtitle: "Send push notification",
+            onTap: () => _showNotificationDialog(context, state),
+          ),
+          
+          const Divider(height: 1),
+
+          if (isSuper) ...[
             _buildAdminTile(
               icon: Icons.people_alt_outlined,
               iconColor: Colors.blue,
@@ -111,8 +173,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               subtitle: "Manage roles and permissions",
               onTap: () {},
             ),
-          
-          if (isSuper) const Divider(height: 1),
+            const Divider(height: 1),
+          ],
 
           _buildAdminTile(
             icon: Icons.edit_note_rounded,
@@ -122,16 +184,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onTap: () {},
           ),
           
-          const Divider(height: 1),
-
-          _buildAdminTile(
-            icon: Icons.insights_rounded,
-            iconColor: Colors.purple,
-            title: "App Analytics",
-            subtitle: "Check system health",
-            onTap: () {},
-          ),
-
           if (isSuper) ...[
             const Divider(height: 1),
             _buildAdminTile(
