@@ -186,14 +186,110 @@ class _ChantsScreenState extends State<ChantsScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _toggleVoiceMode(appState, mantra['name']!),
-        label: Text(_isVoiceModeActive ? "LISTENING..." : "VOICE MODE"),
-        icon: Icon(_isVoiceModeActive ? Icons.mic : Icons.mic_none),
-        backgroundColor: _isVoiceModeActive ? Colors.redAccent : goldColor,
+      floatingActionButton: FutureBuilder<List<Map<String, String>>>(
+        future: _mantraFuture,
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) return const SizedBox.shrink();
+          final mantras = snapshot.data!;
+          final mantra = mantras[_selectedMantraIndex];
+          return FloatingActionButton.extended(
+            onPressed: () => _toggleVoiceMode(appState, mantra['name']!),
+            label: Text(_isVoiceModeActive ? "LISTENING..." : "VOICE MODE"),
+            icon: Icon(_isVoiceModeActive ? Icons.mic : Icons.mic_none),
+            backgroundColor: _isVoiceModeActive ? Colors.redAccent : goldColor,
+          );
+        }
       ),
     );
   }
 
-  // --- UI Helper Methods (BuildSelector, buildMantraCard etc. yahan aayenge) ---
+  // --- UI Helper Methods ---
+
+  Widget _buildSelector(List<Map<String, String>> mantras, ThemeData theme, Color gold) {
+    return SizedBox(
+      height: 50,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: mantras.length,
+        itemBuilder: (context, index) {
+          bool isSelected = _selectedMantraIndex == index;
+          return Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: ChoiceChip(
+              label: Text(mantras[index]['name']!),
+              selected: isSelected,
+              onSelected: (val) {
+                if (val) setState(() => _selectedMantraIndex = index);
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildMantraCard(Map<String, String> mantra, ThemeData theme, Color gold) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        border: BorderSide(color: gold.withOpacity(0.5)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            Text(
+              mantra['mantra']!,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.notoSansDevanagari(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            const Divider(height: 30),
+            Text(
+              mantra['meaning']!,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontStyle: FontStyle.italic, color: theme.hintColor),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCounterDisplay(int japa, Color gold) {
+    int rounds = japa ~/ kMalaBeads;
+    int currentBead = japa % kMalaBeads;
+    return Column(
+      children: [
+        Text("ROUNDS: $rounds", style: TextStyle(fontSize: 18, color: gold, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 10),
+        Container(
+          width: 140,
+          height: 140,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: gold, width: 4),
+          ),
+          child: Center(
+            child: Text("$currentBead", style: const TextStyle(fontSize: 50, fontWeight: FontWeight.bold)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProgress(int currentBead, Color gold, ThemeData theme) {
+    return Column(
+      children: [
+        LinearProgressIndicator(
+          value: currentBead / kMalaBeads,
+          backgroundColor: theme.dividerColor,
+          color: gold,
+          minHeight: 10,
+        ),
+        const SizedBox(height: 8),
+        Text("$currentBead / $kMalaBeads Beads"),
+      ],
+    );
+  }
 }
