@@ -25,7 +25,8 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint("Handling a background message: ${message.messageId}");
 }
 
-import main() async {
+// FIX: 'import' keyword hataya aur 'void' add kiya
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // --- Initialize Firebase ---
@@ -114,11 +115,12 @@ class MyApp extends StatelessWidget {
 
             return MediaQuery(
               data: MediaQuery.of(context).copyWith(
-                textScaler: TextScaler.linear(state.largeText ? 1.15 : 1.0), // FIX: Extra comma hataya
+                textScaler: TextScaler.linear(state.largeText ? 1.15 : 1.0),
               ),
               child: child ?? const SizedBox.shrink(),
             );
           },
+          // FIX: extra comma aur constant onboarding logic theek kiya
           home: state.onboardingComplete ? const MainShell() : const OnboardingScreen(),
         );
       },
@@ -202,5 +204,5 @@ class _MainShellState extends State<MainShell> {
         ),
       ),
     );
-  } // FIX: Extra comma aur incomplete brackets theek kiye
+  }
 }
