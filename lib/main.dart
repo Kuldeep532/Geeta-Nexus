@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -18,7 +17,6 @@ import 'screens/update_checker.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // App initialization
   final appState = AppState();
   
   // Wait for data and preferences to load
@@ -78,6 +76,7 @@ class MyApp extends StatelessWidget {
           builder: (context, child) {
             final brightness = Theme.of(context).brightness;
             final isDark = brightness == Brightness.dark;
+            
             SystemChrome.setSystemUIOverlayStyle(
               SystemUiOverlayStyle(
                 statusBarColor: Colors.transparent,
@@ -86,15 +85,14 @@ class MyApp extends StatelessWidget {
                 systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
               ),
             );
+
             return MediaQuery(
               data: MediaQuery.of(context).copyWith(
                 textScaler: TextScaler.linear(state.largeText ? 1.15 : 1.0),
-                highContrast: state.highContrast,
               ),
               child: child ?? const SizedBox.shrink(),
             );
           },
-          // Home determines navigation based on onboarding state
           home: state.onboardingComplete ? const MainShell() : const OnboardingScreen(),
         );
       },
@@ -130,6 +128,7 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return PopScope(
       canPop: _currentIndex == 0,
@@ -147,8 +146,9 @@ class _MainShellState extends State<MainShell> {
             currentIndex: _currentIndex,
             onTap: (i) => setState(() => _currentIndex = i),
             backgroundColor: theme.scaffoldBackgroundColor,
-            selectedItemColor: const Color(0xFFFFD700),
-            unselectedItemColor: theme.hintColor,
+            // ERROR FIX: Adaptive colors for BottomNav
+            selectedItemColor: isDark ? kGold : kGoldDim,
+            unselectedItemColor: theme.hintColor.withOpacity(0.5),
             type: BottomNavigationBarType.fixed,
             elevation: 0,
             selectedLabelStyle: GoogleFonts.cinzel(fontSize: 11, fontWeight: FontWeight.bold),
