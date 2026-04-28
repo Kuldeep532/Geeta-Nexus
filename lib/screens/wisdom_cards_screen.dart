@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../theme.dart';
+import '../theme.dart'; // ERROR FIX: Import verified
 import '../data/gita_data.dart';
 import '../models/models.dart';
 
@@ -47,9 +47,11 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
     final int itemCount = _wisdomList.length;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor, // Adaptive BG
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('WISDOM CARDS', style: GoogleFonts.cinzel(color: kGold, fontSize: 16, fontWeight: FontWeight.bold)),
+        title: Text('WISDOM CARDS', 
+          style: GoogleFonts.cinzel(color: kGold, fontSize: 16, fontWeight: FontWeight.bold)
+        ),
         centerTitle: true,
         leading: const BackButton(color: kGold),
         backgroundColor: Colors.transparent,
@@ -60,7 +62,7 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
           const SizedBox(height: 8),
           Text(
             'Swipe to explore divine teachings',
-            style: TextStyle(color: isDark ? kTextDim : Colors.grey[700], fontSize: 12),
+            style: TextStyle(color: theme.hintColor, fontSize: 12),
           ),
           const SizedBox(height: 16),
           Expanded(
@@ -83,7 +85,7 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
               : const Center(child: CircularProgressIndicator(color: kGold)),
           ),
           const SizedBox(height: 20),
-          _buildIndicator(itemCount),
+          _buildIndicator(itemCount, theme),
           const SizedBox(height: 24),
         ],
       ),
@@ -100,12 +102,16 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: isDark ? colors : [Colors.white, Color(0xFFF5F5DC)], // Light Mode Fallback
+            colors: isDark ? colors : [Colors.white, const Color(0xFFFDF5E6)], // Light Mode Fallback
           ),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: kGoldDim.withOpacity(0.3)),
+          border: Border.all(color: kGold.withOpacity(0.2)),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 5))
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.4 : 0.1), 
+              blurRadius: 10, 
+              offset: const Offset(0, 5)
+            )
           ],
         ),
         child: Column(
@@ -116,7 +122,7 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
               decoration: BoxDecoration(
                 color: kGold.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: kGoldDim.withOpacity(0.5)),
+                border: Border.all(color: kGold.withOpacity(0.3)),
               ),
               child: Text(
                 'Gita ${verse.id}',
@@ -134,14 +140,14 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 15),
-            Icon(Icons.format_quote, color: kGoldDim.withOpacity(0.6), size: 30),
+            Icon(Icons.format_quote, color: kGold.withOpacity(0.4), size: 30),
             const SizedBox(height: 10),
             Expanded(
               child: SingleChildScrollView(
                 child: Text(
                   verse.translation,
                   style: GoogleFonts.crimsonText(
-                    color: isDark ? kText : Colors.black87,
+                    color: isDark ? Colors.white70 : Colors.black87,
                     fontSize: 18,
                     height: 1.5,
                     fontStyle: FontStyle.italic,
@@ -153,14 +159,14 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
             const SizedBox(height: 20),
             Divider(color: isDark ? Colors.white10 : Colors.brown.withOpacity(0.1)),
             const SizedBox(height: 12),
-            const Icon(Icons.auto_awesome, color: kGoldDim, size: 18),
+            const Icon(Icons.auto_awesome, color: kGold, size: 18),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildIndicator(int count) {
+  Widget _buildIndicator(int count, ThemeData theme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(count, (i) {
@@ -170,7 +176,7 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
           width: _currentPage == i ? 16 : 6,
           height: 6,
           decoration: BoxDecoration(
-            color: _currentPage == i ? kGold : kDivider,
+            color: _currentPage == i ? kGold : theme.dividerColor.withOpacity(0.3),
             borderRadius: BorderRadius.circular(3),
           ),
         );
