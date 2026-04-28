@@ -1,19 +1,30 @@
-// ... (purane imports wahi rahenge)
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
+import 'package:provider/provider.dart';
+
+class MeditationScreen extends StatefulWidget {
+  const MeditationScreen({super.key});
+
+  @override
+  State<MeditationScreen> createState() => _MeditationScreenState();
+}
 
 class _MeditationScreenState extends State<MeditationScreen>
     with TickerProviderStateMixin {
   
-  // --- NAYA FEATURE: Shanti Music List ---
+  // --- Shanti Music List ---
   final Map<String, String> _shantiMusic = {
     'None': '',
-    'Soul Flute': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3', // Example URL
+    'Soul Flute': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
     'Om Chant': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
     'Nature Rain': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3',
   };
 
   String _selectedMusic = 'None';
-  // ---------------------------------------
-
   final ValueNotifier<int> _secondsLeftNotifier = ValueNotifier<int>(300);
   int _selectedMinutes = 5;
   bool _running = false;
@@ -23,26 +34,47 @@ class _MeditationScreenState extends State<MeditationScreen>
   DateTime? _endTime;
   
   final AudioPlayer _audioPlayer = AudioPlayer();
-  final AudioPlayer _musicPlayer = AudioPlayer(); // Music ke liye alag player
+  final AudioPlayer _musicPlayer = AudioPlayer(); 
   late AnimationController _pulseController;
   late Animation<double> _pulseAnim;
 
-  // ... (initState aur dispose wahi rahenge, bas _musicPlayer.dispose() add kar dein)
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat(reverse: true);
+
+    _pulseAnim = Tween<double>(begin: 1.0, end: 1.1).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pulseController.dispose();
+    _audioPlayer.dispose();
+    _musicPlayer.dispose();
+    _secondsLeftNotifier.dispose();
+    WakelockPlus.disable();
+    super.dispose();
+  }
 
   void _startStop() async {
     HapticFeedback.mediumImpact();
     if (_running) {
       _timer?.cancel();
-      await _musicPlayer.pause(); // Pause music
+      await _musicPlayer.pause();
       WakelockPlus.disable();
       setState(() => _running = false);
     } else {
       WakelockPlus.enable(); 
       
-      // Agar music select kiya hai toh play karein
       if (_selectedMusic != 'None') {
         await _musicPlayer.play(UrlSource(_shantiMusic[_selectedMusic]!), volume: 0.5);
-        _musicPlayer.setReleaseMode(ReleaseMode.loop); // Music loop mein chalega
+        _musicPlayer.setReleaseMode(ReleaseMode.loop);
       }
 
       setState(() {
@@ -65,14 +97,12 @@ class _MeditationScreenState extends State<MeditationScreen>
   }
 
   void _onFinish() async {
-    await _musicPlayer.stop(); // Music band
-    _playFinishSound(); // Bell bajegi
+    await _musicPlayer.stop();
     WakelockPlus.disable();
     HapticFeedback.heavyImpact();
     
-    if (mounted) {
-      context.read<AppState>().addMeditationMinutes(_selectedMinutes);
-    }
+    // Play a bell sound if you have one
+    // await _audioPlayer.play(AssetSource('bell.mp3'));
     
     setState(() {
       _running = false;
@@ -81,29 +111,56 @@ class _MeditationScreenState extends State<MeditationScreen>
     });
   }
 
-  // --- UI mein Music Selector add karne ke liye naya widget ---
+  Widget _buildDurationPicker(ThemeData theme, Color goldColor) {
+    return Column(
+      children: [
+        Semantics(
+          label: "Select meditation duration in minutes",
+          child: Text('SET DURATION',
+              style: GoogleFonts.cinzel(color: goldColor, fontSize: 14, fontWeight: FontWeight.bold)),
+        ),
+        Slider(
+          value: _selectedMinutes.toDouble(),
+          min: 1,
+          max: 60,
+          divisions: 12,
+          activeColor: goldColor,
+          inactiveColor: goldColor.withOpacity(0.2),
+          onChanged: (val) {
+            setState(() {
+              _selectedMinutes = val.toInt();
+              _secondsLeftNotifier.value = _selectedMinutes * 60;
+            });
+          },
+        ),
+      ],
+    );
+  }
+
   Widget _buildMusicSelector(ThemeData theme, Color goldColor) {
     return Column(
       children: [
-        Text('SELECT SHANTI MUSIC',
-            style: GoogleFonts.cinzel(color: goldColor, fontSize: 12, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 15),
+        Text('SHANTI MUSIC',
+            style: GoogleFonts.cinzel(color: goldColor, fontSize: 14, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 10),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: _shantiMusic.keys.map((musicName) {
               final isSelected = _selectedMusic == musicName;
               return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 6),
                 child: ChoiceChip(
                   label: Text(musicName),
                   selected: isSelected,
                   onSelected: (val) {
                     if (val) setState(() => _selectedMusic = musicName);
                   },
-                  selectedColor: goldColor.withOpacity(0.2),
-                  labelStyle: TextStyle(color: isSelected ? goldColor : theme.hintColor),
+                  selectedColor: goldColor.withOpacity(0.3),
+                  // Light/Dark mode adjustment for chip text
+                  labelStyle: TextStyle(
+                    color: isSelected ? goldColor : theme.textTheme.bodyMedium?.color,
+                  ),
                 ),
               );
             }).toList(),
@@ -113,32 +170,118 @@ class _MeditationScreenState extends State<MeditationScreen>
     );
   }
 
+  Widget _buildTimerUI(ThemeData theme, Color goldColor) {
+    return ValueListenableBuilder<int>(
+      valueListenable: _secondsLeftNotifier,
+      builder: (context, seconds, child) {
+        final mins = (seconds / 60).floor();
+        final secs = seconds % 60;
+        final timeString = "$mins:${secs.toString().padLeft(2, '0')}";
+
+        return Column(
+          children: [
+            ScaleTransition(
+              scale: _running ? _pulseAnim : const AlwaysStoppedAnimation(1.0),
+              child: Semantics(
+                label: "Remaining time: $mins minutes and $secs seconds",
+                child: Container(
+                  width: 240,
+                  height: 240,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: goldColor.withOpacity(0.5), width: 3),
+                    boxShadow: [
+                      if (_running) BoxShadow(color: goldColor.withOpacity(0.1), blurRadius: 30, spreadRadius: 10)
+                    ],
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    timeString,
+                    style: GoogleFonts.cinzel(fontSize: 54, color: goldColor, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 60),
+            ElevatedButton(
+              onPressed: _startStop,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: goldColor,
+                // Automatically switches text color based on background luminance
+                foregroundColor: theme.brightness == Brightness.dark ? Colors.black : Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 18),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
+                elevation: 8,
+              ),
+              child: Text(
+                _running ? 'PAUSE' : 'START DHYANA',
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 2),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Dynamic Theme Detection
     final theme = Theme.of(context);
-    final goldColor = const Color(0xFFFFD700);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    // Gold stays consistent, but background and accents adapt
+    const goldColor = Color(0xFFFFD700);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      // ... (AppBar wahi rahega)
+      appBar: AppBar(
+        title: Text('MEDITATION', style: GoogleFonts.cinzel(letterSpacing: 2, fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
           child: Column(
             children: [
-              // ... (Sanskrit Text wahi rahega)
-              const SizedBox(height: 30),
+              Text(
+                "ॐ शान्तिः शान्तिः शान्तिः",
+                style: GoogleFonts.notoSansDevanagari(
+                  fontSize: 24, 
+                  color: goldColor.withOpacity(0.9),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 40),
               
               if (!_running && !_finished) ...[
                 _buildDurationPicker(theme, goldColor),
-                const SizedBox(height: 20),
-                _buildMusicSelector(theme, goldColor), // Naya Selector!
+                const SizedBox(height: 30),
+                _buildMusicSelector(theme, goldColor),
               ],
               
               const SizedBox(height: 40),
-              if (_finished) _buildFinished(goldColor) else _buildTimerUI(theme, goldColor),
               
-              // ... (baaki UI wahi rahega)
+              if (_finished) 
+                Column(
+                  children: [
+                    const Icon(Icons.wb_sunny_rounded, size: 80, color: goldColor),
+                    const SizedBox(height: 20),
+                    Text("PEACEFUL SESSION ENDED", 
+                        style: GoogleFonts.cinzel(color: goldColor, fontSize: 20, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 20),
+                    TextButton.icon(
+                      onPressed: () => setState(() => _finished = false),
+                      icon: const Icon(Icons.refresh, color: goldColor),
+                      label: const Text("PRACTICE AGAIN", style: TextStyle(color: goldColor)),
+                    )
+                  ],
+                )
+              else 
+                _buildTimerUI(theme, goldColor),
             ],
           ),
         ),
