@@ -13,10 +13,10 @@ List<Verse> getAllVerses() {
 
 Future<void> loadGitaData() async {
   try {
-    // Assets se CSV load karna
-    final String rawData = await rootBundle.loadString("assets/images/Bhagwad_Gita.csv");
+    // 1. CSV Load: Path matched with your requirement
+    final String rawData = await rootBundle.loadString("assets/data/Bhagwad_Gita.csv");
     
-    // CSV to List conversion
+    // 2. Conversion: Standard CSV mapping
     List<List<dynamic>> listData = const CsvToListConverter().convert(rawData);
 
     if (listData.isEmpty) {
@@ -24,63 +24,60 @@ Future<void> loadGitaData() async {
       return;
     }
 
-    // Header row ko hatana
+    // Header row (ID, Chapter, Verse...) ko hatana
     listData.removeAt(0);
 
     Map<int, List<Verse>> chapterVersesMap = {};
     allVerses.clear(); 
 
     for (var row in listData) {
-      // Row length check taaki range error na aaye
+      // Safety Check: CSV has 8 columns (Index 0 to 7)
       if (row.length < 7) continue;
 
-      // Safe integer parsing
       final int chapterNum = int.tryParse(row[1].toString()) ?? 0;
       final int verseNum = int.tryParse(row[2].toString()) ?? 0;
       
-      if (chapterNum == 0) continue; // Invalid data skip karein
+      if (chapterNum == 0) continue; 
 
       final verse = Verse(
-        id: row[0].toString(),
-        chapter: chapterNum,
-        verse: verseNum,
-        sanskrit: row[3]?.toString() ?? "",
-        transliteration: row[4]?.toString() ?? "",
-        translation: row[6]?.toString() ?? "", 
-        meaning: row[5]?.toString() ?? "",     
-        keywords: _generateKeywords(row[6].toString()), // Dynamic keywords
+        id: row[0].toString(),              // Column 0: ID
+        chapter: chapterNum,               // Column 1: Chapter
+        verse: verseNum,                   // Column 2: Verse
+        sanskrit: row[3]?.toString() ?? "", // Column 3: Shloka
+        transliteration: row[4]?.toString() ?? "", // Column 4: Transliteration
+        meaning: row[5]?.toString() ?? "",  // Column 5: HinMeaning -> Meaning
+        translation: row[6]?.toString() ?? "", // Column 6: EngMeaning -> Translation
+        keywords: _generateKeywords(row[6].toString()),
       );
 
       chapterVersesMap.putIfAbsent(chapterNum, () => []).add(verse);
       allVerses.add(verse); 
     }
 
-    // Chapters list create karna aur map karna
+    // 3. Mapping Chapters
     kChapters = chapterVersesMap.entries.map((entry) {
       final int chNum = entry.key;
       return Chapter(
         number: chNum,
         name: _getChapterName(chNum),
         nameSanskrit: _getSanskritName(chNum),
-        summary: _getChapterSummary(chNum), // Added meaningful summaries
+        summary: _getChapterSummary(chNum), 
         verseCount: entry.value.length,
-        theme: _getChapterTheme(chNum), // Added themes
+        theme: _getChapterTheme(chNum),
         verses: entry.value,
       );
     }).toList();
 
-    // Chapters ko sequence mein lagana
     kChapters.sort((a, b) => a.number.compareTo(b.number));
     
-    debugPrint("✅ Gita Data Loaded: ${allVerses.length} verses in ${kChapters.length} chapters.");
+    debugPrint("✅ Gita Data Matched & Loaded: ${allVerses.length} verses.");
 
   } catch (e, stacktrace) {
-    debugPrint("❌ Fatal Error loading Gita data: $e");
+    debugPrint("❌ Fatal Error matching CSV data: $e");
     debugPrint(stacktrace.toString());
   }
 }
 
-/// Simple keyword generator for better search
 List<String> _generateKeywords(String text) {
   if (text.isEmpty) return [];
   final commonWords = {'the', 'and', 'is', 'of', 'in', 'it', 'you', 'that'};
@@ -92,20 +89,17 @@ List<String> _generateKeywords(String text) {
       .toList();
 }
 
-/// Search logic updated to search in Sanskrit too
 List<Verse> searchVerses(String query) {
   if (query.isEmpty) return [];
   final q = query.toLowerCase();
-  
   return allVerses.where((v) {
     return v.translation.toLowerCase().contains(q) || 
            v.meaning.toLowerCase().contains(q) || 
-           v.transliteration.toLowerCase().contains(q) ||
-           v.id == query;
+           v.id.toLowerCase() == q;
   }).toList();
 }
 
-// --- Metadata Helpers ---
+// --- Metadata Helpers (Fixed Syntax) ---
 
 String _getChapterTheme(int num) {
   if (num <= 6) return "Karma & Selfless Action";
@@ -118,9 +112,8 @@ String _getChapterSummary(int num) {
     1: "Arjuna faces a moral crisis on the battlefield of Kurukshetra.",
     2: "Krishna teaches the immortality of the soul and the duty of a warrior.",
     3: "The path of selfless action without attachment to results.",
-    // Baaki summaries yahan add kar sakte hain...
   };
-  return summaries[num] ?? "Deep spiritual insights from Chapter $num.";
+  return summaries[num] ?? "Divine guidance from the Lord in Chapter $num.";
 }
 
 String _getChapterName(int num) {
