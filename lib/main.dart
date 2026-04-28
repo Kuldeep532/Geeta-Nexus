@@ -44,9 +44,8 @@ class MyApp extends StatelessWidget {
     return Consumer<AppState>(
       builder: (context, state, _) {
         final baseLight = buildLightTheme();
-        final baseDark = buildDarkTheme(); // Corrected name from buildTheme
+        final baseDark = buildDarkTheme(); 
         
-        // Dynamic Accessibility Adjustment
         final lightTheme = state.highContrast
             ? baseLight.copyWith(
                 colorScheme: baseLight.colorScheme.copyWith(
