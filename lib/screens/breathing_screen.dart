@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/rendering.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../theme.dart'; // ERROR FIX: Theme import added
 
 enum Phase { inhale, hold, exhale, rest }
 
@@ -45,17 +45,17 @@ class _BreathingScreenState extends State<BreathingScreen>
     '4-4-4-4': BreathPattern(
       name: 'Box Breathing',
       inhale: 4, hold: 4, exhale: 4, rest: 4,
-      description: 'Nervous system ko balance karne ke liye',
+      description: 'Nervous system balance',
     ),
     '4-7-8': BreathPattern(
       name: 'Deep Sleep',
       inhale: 4, hold: 7, exhale: 8, rest: 0,
-      description: 'Acchi neend aur relaxation ke liye',
+      description: 'Relaxation & Sleep',
     ),
     '1-4-2': BreathPattern(
       name: 'Purification',
       inhale: 4, hold: 16, exhale: 8, rest: 0,
-      description: 'Sharir ki shuddhi (Yoga style)',
+      description: 'Body Shuddhi (Yoga)',
     ),
   };
 
@@ -68,7 +68,7 @@ class _BreathingScreenState extends State<BreathingScreen>
       vsync: this,
       duration: const Duration(seconds: 1),
     );
-    _anim = Tween<double>(begin: 0.8, end: 1.2).animate(
+    _anim = Tween<double>(begin: 0.8, end: 1.3).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOutQuart),
     );
   }
@@ -98,7 +98,6 @@ class _BreathingScreenState extends State<BreathingScreen>
       _secondsRemaining = 0;
     });
     HapticFeedback.heavyImpact();
-    SemanticsService.announce("Sadhana samapt", TextDirection.ltr);
   }
 
   void _runPhase() {
@@ -111,10 +110,6 @@ class _BreathingScreenState extends State<BreathingScreen>
     }
 
     setState(() => _secondsRemaining = duration);
-    
-    // Accessibility announcement
-    SemanticsService.announce("${_phase.name} shuru: $duration seconds", TextDirection.ltr);
-
     _controller.duration = Duration(seconds: duration);
 
     if (_phase == Phase.inhale) {
@@ -130,11 +125,8 @@ class _BreathingScreenState extends State<BreathingScreen>
         return;
       }
 
-      // Advance Vibration Logic
       if (_phase == Phase.inhale) {
-        HapticFeedback.lightImpact(); // Saans lete waqt halki vibration
-      } else if (_phase == Phase.exhale) {
-        HapticFeedback.mediumImpact(); // Saans chhodte waqt thodi heavy vibration
+        HapticFeedback.lightImpact();
       }
 
       if (_secondsRemaining > 1) {
@@ -148,10 +140,7 @@ class _BreathingScreenState extends State<BreathingScreen>
 
   void _nextPhase() {
     if (!mounted || !_running) return;
-
-    // Transition Vibration (Double Tap feel)
-    HapticFeedback.selectionClick();
-    Future.delayed(const Duration(milliseconds: 100), () => HapticFeedback.selectionClick());
+    HapticFeedback.mediumImpact();
 
     setState(() {
       switch (_phase) {
@@ -180,43 +169,27 @@ class _BreathingScreenState extends State<BreathingScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final total = _getDuration(_phase);
-    final progress = total > 0 ? (_secondsRemaining / total).clamp(0.0, 1.0) : 0.0;
+    final progress = total > 0 ? (_secondsRemaining / total) : 0.0;
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              theme.colorScheme.surface,
-              theme.colorScheme.surfaceContainerHighest,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-              Text(
-                'PRANA FLOW',
-                style: GoogleFonts.cinzel(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
-                  color: theme.colorScheme.primary,
-                  letterSpacing: 4,
-                ),
-              ),
-              const SizedBox(height: 30),
-              _patternSelector(theme),
-              const Spacer(),
-              _visual(progress, theme),
-              const Spacer(),
-              _controls(theme),
-              const SizedBox(height: 40),
-            ],
-          ),
-        ),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text('PRANA FLOW', style: GoogleFonts.cinzel(color: kGold, fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        leading: const BackButton(color: kGold),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+      ),
+      body: Column(
+        children: [
+          const SizedBox(height: 20),
+          _patternSelector(theme),
+          const Spacer(),
+          _visual(progress, theme),
+          const Spacer(),
+          _controls(),
+          const SizedBox(height: 60),
+        ],
       ),
     );
   }
@@ -230,59 +203,43 @@ class _BreathingScreenState extends State<BreathingScreen>
             Stack(
               alignment: Alignment.center,
               children: [
-                // Inner breathing circle
                 ScaleTransition(
                   scale: _anim,
                   child: Container(
-                    width: 220,
-                    height: 220,
+                    width: 200, height: 200,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
-                        colors: [
-                          theme.colorScheme.primary.withOpacity(0.4),
-                          theme.colorScheme.primary.withOpacity(0.0),
-                        ],
+                        colors: [kGold.withOpacity(0.3), Colors.transparent],
                       ),
                     ),
                   ),
                 ),
-                // Timer Circle
                 SizedBox(
-                  width: 250,
-                  height: 250,
+                  width: 240, height: 240,
                   child: CircularProgressIndicator(
-                    value: _running ? progress : 1,
-                    strokeWidth: 8,
-                    strokeCap: StrokeCap.round,
-                    backgroundColor: theme.colorScheme.outlineVariant,
-                    color: theme.colorScheme.primary,
+                    value: _running ? progress : 1.0,
+                    strokeWidth: 4,
+                    color: kGold,
+                    backgroundColor: kGold.withOpacity(0.1),
                   ),
                 ),
                 Text(
                   _running ? "$_secondsRemaining" : "OM",
-                  style: GoogleFonts.cinzel(
-                    fontSize: 56,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
-                  ),
+                  style: GoogleFonts.cinzel(fontSize: 48, fontWeight: FontWeight.bold, color: kGold),
                 ),
               ],
             ),
-            const SizedBox(height: 50),
+            const SizedBox(height: 40),
             Text(
-              _running ? _phase.name.toUpperCase() : "SHANTI",
-              style: GoogleFonts.cinzel(
-                fontSize: 32,
-                color: theme.colorScheme.secondary,
-                letterSpacing: 8,
-                fontWeight: FontWeight.w600,
-              ),
+              _running ? _phase.name.toUpperCase() : "READY",
+              style: GoogleFonts.cinzel(fontSize: 24, color: kGold, letterSpacing: 4),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 20),
             Chip(
-              label: Text("Cycles Done: $_cycles"),
-              backgroundColor: theme.colorScheme.primaryContainer.withOpacity(0.5),
+              backgroundColor: kGold.withOpacity(0.1),
+              side: const BorderSide(color: kGoldDim),
+              label: Text("Cycles: $_cycles", style: const TextStyle(color: kGold)),
             ),
           ],
         );
@@ -292,55 +249,34 @@ class _BreathingScreenState extends State<BreathingScreen>
 
   Widget _patternSelector(ThemeData theme) {
     return SizedBox(
-      height: 120,
+      height: 100,
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
         children: patterns.entries.map((e) {
           final selected = _selectedKey == e.key;
           return GestureDetector(
-            onTap: _running ? null : () {
-              setState(() => _selectedKey = e.key);
-              HapticFeedback.heavyImpact();
-            },
+            onTap: _running ? null : () => setState(() => _selectedKey = e.key),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 400),
-              width: 150,
-              margin: const EdgeInsets.only(right: 15),
-              padding: const EdgeInsets.all(16),
+              duration: const Duration(milliseconds: 300),
+              width: 140,
+              margin: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: selected ? theme.colorScheme.primary : theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  )
-                ],
-                border: Border.all(
-                  color: selected ? Colors.transparent : theme.colorScheme.outline,
-                ),
+                color: selected ? kGold.withOpacity(0.2) : theme.cardColor,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: selected ? kGold : theme.dividerColor.withOpacity(0.1)),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    e.value.name,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: selected ? theme.colorScheme.onPrimary : theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    e.value.description,
-                    textAlign: TextAlign.center,
+                  Text(e.value.name, style: TextStyle(fontWeight: FontWeight.bold, color: selected ? kGold : theme.hintColor)),
+                  const SizedBox(height: 4),
+                  Text(e.value.description, 
+                    textAlign: TextAlign.center, 
+                    style: const TextStyle(fontSize: 10),
                     maxLines: 2,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: selected ? theme.colorScheme.onPrimary.withOpacity(0.8) : theme.colorScheme.onSurfaceVariant,
-                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
@@ -351,31 +287,22 @@ class _BreathingScreenState extends State<BreathingScreen>
     );
   }
 
-  Widget _controls(ThemeData theme) {
-    return InkWell(
-      onTap: _running ? stop : start,
-      borderRadius: BorderRadius.circular(40),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(40),
-          color: _running ? theme.colorScheme.errorContainer : theme.colorScheme.primaryContainer,
-          boxShadow: [
-            BoxShadow(
-              color: (_running ? theme.colorScheme.error : theme.colorScheme.primary).withOpacity(0.3),
-              blurRadius: 20,
-              spreadRadius: 2,
-            )
-          ],
-        ),
-        child: Text(
-          _running ? "STOP" : "START SADHANA",
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            letterSpacing: 2,
-            color: _running ? theme.colorScheme.onErrorContainer : theme.colorScheme.onPrimaryContainer,
+  Widget _controls() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 40),
+      child: SizedBox(
+        width: double.infinity,
+        height: 60,
+        child: ElevatedButton(
+          onPressed: _running ? stop : start,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: _running ? Colors.red.withOpacity(0.1) : kGold,
+            foregroundColor: _running ? Colors.red : Colors.black,
+            side: _running ? const BorderSide(color: Colors.red) : BorderSide.none,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
           ),
+          child: Text(_running ? "STOP SADHANA" : "START PRACTICE", 
+            style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
         ),
       ),
     );
