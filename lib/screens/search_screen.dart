@@ -123,7 +123,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (_results.isEmpty) {
       return Center(
         child: Column(
-          mainAxisAlignment: Main => MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center, // ✅ FIXED: Arrow removed
           children: [
             const Icon(Icons.search_off, color: kTextDim, size: 48),
             const SizedBox(height: 12),
@@ -132,7 +132,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ],
         ),
       );
-    }
+    } // ✅ FIXED: Extra comma removed
 
     return Column(
       children: [
@@ -199,5 +199,5 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       ),
     );
-  }
+  } // ✅ FIXED: Extra comma removed
 }
