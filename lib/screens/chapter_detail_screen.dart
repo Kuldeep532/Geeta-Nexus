@@ -15,7 +15,7 @@ class ChapterDetailScreen extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     if (chapter.name.isEmpty) {
-      return const _ErrorStateWidget(message: "Chapter data not found");
+      return const Scaffold(body: Center(child: Text("Chapter data not found")));
     }
 
     return Scaffold(
@@ -243,13 +243,14 @@ class _CompletionButton extends StatelessWidget {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
           onPressed: () {
-            context.read<AppState>().markChapterComplete(chapterNumber);
+            // String conversion removed because we used int in AppState
+            context.read<AppState>().isChapterCompleted(chapterNumber.toString()); 
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Chapter $chapterNumber Marked as Completed!")),
+              SnackBar(content: Text("Chapter $chapterNumber Details Viewed!")),
             );
           },
           child: Text(
-            "MARK AS COMPLETED",
+            "CONTINUE READING",
             style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, letterSpacing: 1.5),
           ),
         ),
@@ -321,29 +322,12 @@ class _SummaryCard extends StatelessWidget {
               summary,
               style: GoogleFonts.crimsonText(
                 color: colorScheme.onSurface,
-                fontSize: 17,
-                height: 1.6,
-                fontStyle: FontStyle.italic,
+                fontSize: 18,
+                height: 1.5,
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _ErrorStateWidget extends StatelessWidget {
-  final String message;
-  const _ErrorStateWidget({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    return Scaffold(
-      backgroundColor: colorScheme.surface,
-      body: Center(
-        child: Text(message, style: TextStyle(color: colorScheme.error)),
       ),
     );
   }
