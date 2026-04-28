@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../state/app_state.dart';
 import '../main.dart';
-import '../theme.dart'; // ERROR FIX: Theme import added
+import '../theme.dart';
 
 class _OnboardPageData {
   final String emoji;
@@ -41,6 +41,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final FocusNode _nameFocus = FocusNode();
   String? _nameError;
   bool _isLoading = false;
+  bool _showNameField = false; // Controls visibility after "Skip"
 
   static const List<_OnboardPageData> _pages = [
     _OnboardPageData(
@@ -76,7 +77,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       emojiLabel: 'Greeting Hands',
       title: 'Welcome Seeker',
       subtitle: 'Personalize your journey',
-      body: 'Enter your name so we can greet you properly on this path of wisdom.',
+      body: 'Login to sync your progress or skip to continue as a guest.',
     ),
   ];
 
@@ -94,7 +95,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       final GoogleSignInAccount? account = await _googleSignIn.signIn();
       if (account == null) {
         setState(() => _isLoading = false);
-        return; 
+        return;
       }
 
       if (!mounted) return;
@@ -132,7 +133,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     await prefs.setBool('onboarding_completed', true);
 
     if (!mounted) return;
-    final state = Provider.of<AppState>(context, listen: false); // ERROR FIX: Removed extra comma
+    final state = Provider.of<AppState>(context, listen: false);
     state.setUserName(name);
     state.completeOnboarding();
 
@@ -153,15 +154,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
       );
-    } else {
-      _finishOnboarding();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final goldColor = kGold; // theme.dart se kGold use kar rahe hain
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -175,11 +173,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 onPageChanged: (i) => setState(() {
                   _page = i;
                   _nameError = null;
+                  _showNameField = false; // Reset if user swiped back
                 }),
-                itemBuilder: (ctx, i) => _buildPage(i, goldColor, theme),
+                itemBuilder: (ctx, i) => _buildPage(i, kGold, theme),
               ),
             ),
-            _buildBottomControls(goldColor, theme),
+            _buildBottomControls(kGold, theme),
           ],
         ),
       ),
@@ -196,7 +195,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         children: [
           const SizedBox(height: 20),
           Container(
-            width: 100, height: 100,
+            width: 100,
+            height: 100,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: gold.withOpacity(0.1),
@@ -212,10 +212,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(page.body, textAlign: TextAlign.center, style: TextStyle(color: theme.hintColor, height: 1.5)),
           if (isLastPage) ...[
             const SizedBox(height: 40),
-            _buildNameInput(gold),
+            if (!_showNameField) _buildLoginButtons(gold) else _buildNameInput(gold),
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildLoginButtons(Color gold) {
+    return Column(
+      children: [
+        OutlinedButton.icon(
+          onPressed: _isLoading ? null : _continueWithGoogle,
+          icon: _isLoading 
+            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
+            : const Icon(Icons.account_circle, color: kGold),
+          label: const Text("Continue with Google"),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 50),
+            side: BorderSide(color: gold),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextButton(
+          onPressed: () => setState(() => _showNameField = true),
+          child: Text("Skip Login", style: TextStyle(color: gold)),
+        ),
+      ],
     );
   }
 
@@ -234,14 +257,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             prefixIcon: Icon(Icons.person, color: gold),
           ),
         ),
-        const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: _isLoading ? null : _continueWithGoogle,
-          icon: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.account_circle, color: kGold),
-          label: const Text("Continue with Google"),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 50),
-            side: const BorderSide(color: kGold),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          height: 50,
+          child: ElevatedButton(
+            onPressed: _finishOnboarding,
+            style: ElevatedButton.styleFrom(backgroundColor: gold, foregroundColor: Colors.black),
+            child: const Text("FINISH SETUP"),
           ),
         ),
       ],
@@ -258,19 +281,26 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             children: List.generate(_pages.length, (i) => AnimatedContainer(
               duration: const Duration(milliseconds: 300),
               margin: const EdgeInsets.symmetric(horizontal: 4),
-              width: _page == i ? 24 : 8, height: 8,
-              decoration: BoxDecoration(color: _page == i ? gold : gold.withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
+              width: _page == i ? 24 : 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: _page == i ? gold : gold.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(4),
+              ),
             )),
           ),
           const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity, height: 56,
-            child: ElevatedButton(
-              onPressed: _next,
-              style: ElevatedButton.styleFrom(backgroundColor: gold, foregroundColor: Colors.black),
-              child: Text(_page == _pages.length - 1 ? "SHURU KAREIN" : "AGLA"),
+          // Hide "Next" button on last page as the login/name inputs take over
+          if (_page < _pages.length - 1)
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: _next,
+                style: ElevatedButton.styleFrom(backgroundColor: gold, foregroundColor: Colors.black),
+                child: const Text("AGLA"),
+              ),
             ),
-          ),
         ],
       ),
     );
