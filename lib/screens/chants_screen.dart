@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/rendering.dart'; 
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
@@ -91,8 +90,8 @@ class _ChantsScreenState extends State<ChantsScreen> {
             if (words.contains(mantraName.split(' ')[0].toLowerCase())) {
               _incrementChant(state);
             }
-          },
-          loopStrategy: stt.SpeechToText.loopStrategyNone,
+          }
+          // Fix: loopStrategy removed as it's deprecated in newer stt versions
         );
       }
     } else {
@@ -117,16 +116,13 @@ class _ChantsScreenState extends State<ChantsScreen> {
     final count = state.japaCount % kMalaBeads;
     if (count == 0 && state.japaCount > 0) {
       HapticFeedback.heavyImpact();
-      SemanticsService.announce("Mala Round Completed", Directionality.of(context));
-    } else {
-      SemanticsService.announce("Bead $count", Directionality.of(context));
-    }
+    } 
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final goldColor = const Color(0xFFFFD700);
+    final goldColor = kGold; // theme.dart se kGold use kar rahe hain
     final appState = context.watch<AppState>();
     final japa = appState.japaCount;
 
@@ -202,8 +198,6 @@ class _ChantsScreenState extends State<ChantsScreen> {
       ),
     );
   }
-
-  // --- UI Helper Methods ---
 
   Widget _buildSelector(List<Map<String, String>> mantras, ThemeData theme, Color gold) {
     return SizedBox(
