@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
@@ -15,7 +16,7 @@ class AppState extends ChangeNotifier {
   List<JournalEntry> _journalEntries = [];
   int _quizScore = 0;
   int _japaCount = 0;
-  int _totalMeditationMinutes = 0;
+  int _totalMeditationMinutes = 0; // Added for MeditationScreen
   bool _onboardingComplete = false;
   List<String> _completedChapters = [];
   
@@ -39,31 +40,60 @@ class AppState extends ChangeNotifier {
   int get xp => _xp;
   int get streak => _streak;
   int get level => (_xp / 100).floor() + 1;
-  double get xpinLevel => (_xp % 100) / 100.0; // Required for Progress Screen
+  double get xpinLevel => (_xp % 100) / 100.0; 
   
   bool get onboardingComplete => _onboardingComplete;
   bool get highContrast => _highContrast;
   bool get largeText => _largeText;
   bool get reduceMotion => _reduceMotion;
   ThemeMode get themeMode => _themeMode;
+  bool get hapticsEnabled => _hapticsEnabled;
   bool get isGoogleAccountLinked => _isGoogleAccountLinked;
   
   Set<String> get bookmarks => _bookmarks;
   int get quizScore => _quizScore;
   int get japaCount => _japaCount;
+  int get totalMeditationMinutes => _totalMeditationMinutes; // Required for Meditation stats
   List<String> get badges => _xp > 500 ? ['Seeker', 'Devotee'] : ['Beginner'];
 
-  // --- Functional Methods (Required by Screens) ---
+  // --- Functional Methods ---
+
+  // Added specifically for your MeditationScreen _onFinish call
+  void addMeditationMinutes(int minutes) {
+    if (minutes <= 0) return;
+    _totalMeditationMinutes += minutes;
+    addXp(minutes * 2); // Awarding 2 XP per minute of meditation
+    _save();
+    notifyListeners();
+  }
+
+  void setThemeMode(ThemeMode mode) {
+    _themeMode = mode;
+    _save();
+    notifyListeners();
+  }
 
   bool isChapterCompleted(int chapterNumber) => _completedChapters.contains(chapterNumber.toString());
 
   bool isBookmarked(String verseId) => _bookmarks.contains(verseId);
 
-  void markVerseRead(String verseId) {
-    _readVerses.add(verseId);
-    addXp(5);
+  void toggleBookmark(String verseId) {
+    if (_bookmarks.contains(verseId)) {
+      _bookmarks.remove(verseId);
+    } else {
+      _bookmarks.add(verseId);
+    }
     _save();
     notifyListeners();
+  }
+
+  void markVerseRead(String verseId) {
+    if (!_readVerses.contains(verseId)) {
+      _readVerses.add(verseId);
+      addXp(5);
+      _save();
+      notifyListeners();
+    }
   }
 
   void markChapterComplete(int chapterNumber) {
@@ -87,6 +117,7 @@ class AppState extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     _xp = prefs.getInt('xp') ?? 0;
     _streak = prefs.getInt('streak') ?? 0;
+    _totalMeditationMinutes = prefs.getInt('totalMeditationMinutes') ?? 0;
     _onboardingComplete = prefs.getBool('onboardingComplete') ?? false;
     _userName = prefs.getString('userName') ?? '';
     _userEmail = prefs.getString('userEmail') ?? '';
@@ -97,7 +128,10 @@ class AppState extends ChangeNotifier {
     _bookmarks = Set<String>.from(prefs.getStringList('bookmarks') ?? []);
     
     final tm = prefs.getString('themeMode') ?? 'system';
-    _themeMode = tm == 'light' ? ThemeMode.light : tm == 'dark' ? ThemeMode.dark : ThemeMode.system;
+    _themeMode = ThemeMode.values.firstWhere(
+      (e) => e.name == tm, 
+      orElse: () => ThemeMode.system
+    );
 
     _updateStreak();
     notifyListeners();
@@ -107,6 +141,7 @@ class AppState extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('xp', _xp);
     await prefs.setInt('streak', _streak);
+    await prefs.setInt('totalMeditationMinutes', _totalMeditationMinutes);
     await prefs.setBool('onboardingComplete', _onboardingComplete);
     await prefs.setString('userName', _userName);
     await prefs.setString('userEmail', _userEmail);
@@ -128,10 +163,16 @@ class AppState extends ChangeNotifier {
   void _updateStreak() {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    if (_lastVisit == null) { _streak = 1; } 
-    else {
+    
+    if (_lastVisit != null) {
       final diff = today.difference(_lastVisit!).inDays;
-      if (diff == 1) _streak++; else if (diff > 1) _streak = 1;
+      if (diff == 1) {
+        _streak++;
+      } else if (diff > 1) {
+        _streak = 1;
+      }
+    } else {
+      _streak = 1;
     }
     _lastVisit = today;
   }
