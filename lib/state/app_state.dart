@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
+import '../data/gita_data.dart'; // Isse allVerses mil jayenge
 
 class AppState extends ChangeNotifier {
   static const String kAdminEmail = 'kuldeepky538@gmail.com';
@@ -31,7 +32,7 @@ class AppState extends ChangeNotifier {
   String _userEmail = '';
   bool _isGoogleAccountLinked = false;
 
-  // --- Getters (YEH ZAROORI HAIN ERRORS FIX KARNE KE LIYE) ---
+  // --- Getters ---
   bool get isAdmin => _userEmail.toLowerCase() == kAdminEmail.toLowerCase();
   String get userName => _userName;
   String get userEmail => _userEmail;
@@ -40,8 +41,6 @@ class AppState extends ChangeNotifier {
   bool get onboardingComplete => _onboardingComplete;
   ThemeMode get themeMode => _themeMode;
   Set<String> get bookmarks => _bookmarks;
-  
-  // Missing Getters added below:
   bool get highContrast => _highContrast;
   bool get largeText => _largeText;
   bool get reduceMotion => _reduceMotion;
@@ -52,13 +51,16 @@ class AppState extends ChangeNotifier {
   int get currentFlashcardIndex => _currentFlashcardIndex;
   List<JournalEntry> get journalEntries => _journalEntries;
 
-  // Level Calculation Logic (Progress Screen ke liye)
+  // IMPORTANT: Gita Data Getters (Errors fix karne ke liye)
+  List<Verse> get verses => allVerses; // GitaData se data lega
+  List<Chapter> get chapters => kChapters;
+
+  // Level Calculation
   int get level => (_xp / 100).floor() + 1;
   double get xpinlevel => (_xp % 100) / 100.0;
 
   // --- Methods ---
 
-  // Theme update methods
   void updateTheme(ThemeMode mode) {
     _themeMode = mode;
     _save();
@@ -71,7 +73,15 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Progress & Verse Methods
+  // Quiz Method (Screenshot mein iska error tha)
+  void recordQuizAnswer(bool isCorrect) {
+    if (isCorrect) {
+      addXp(10);
+      _quizScore += 1;
+    }
+    notifyListeners();
+  }
+
   bool isChapterCompleted(String chapterNumber) => _completedChapters.contains(chapterNumber);
 
   void markVerseRead(String verseId) {
@@ -93,7 +103,6 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Japa & Meditation
   void incrementJapa() {
     _japaCount++;
     if (_japaCount % 108 == 0) addXp(10);
@@ -107,20 +116,17 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Flashcards
   void updateFlashcardIndex(int index) {
     _currentFlashcardIndex = index;
     notifyListeners();
   }
 
-  // Journal
   void addJournalEntry(JournalEntry entry) {
     _journalEntries.insert(0, entry);
     _save();
     notifyListeners();
   }
 
-  // --- Baaki Methods (Jo aapne pehle likhe the) ---
   void setUserName(String name) {
     _userName = name;
     _save();
