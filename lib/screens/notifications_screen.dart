@@ -16,6 +16,7 @@ class NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState extends State<NotificationsScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _bodyController = TextEditingController();
+  bool _isSending = false;
 
   @override
   void dispose() {
@@ -24,17 +25,31 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     super.dispose();
   }
 
-  void _sendNotification(AppState state) {
+  // Firebase Broadcast bhejane ka logic
+  void _sendNotification(AppState state) async {
     final title = _titleController.text.trim();
     final body = _bodyController.text.trim();
-    if (title.isEmpty || body.isEmpty) return;
+    
+    if (title.isEmpty || body.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter both title and message')),
+      );
+      return;
+    }
 
-    state.sendAdminNotification(title: title, body: body);
-    _titleController.clear();
-    _bodyController.clear();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Notification sent to stream.')),
-    );
+    setState(() => _isSending = true);
+
+    // Ye call seedha Firebase topic 'all_users' ko message bhejega
+    await state.sendGlobalNotification(title: title, body: body);
+
+    if (mounted) {
+      setState(() => _isSending = false);
+      _titleController.clear();
+      _bodyController.clear();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Notification broadcasted to all devotees!')),
+      );
+    }
   }
 
   @override
@@ -44,17 +59,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Scaffold(
       backgroundColor: kBg,
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: Text('NOTIFICATIONS', style: GoogleFonts.cinzel(color: kGold, fontSize: 18)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          if (state.isAdmin) _adminComposer(state),
-          if (state.isAdmin) const SizedBox(height: 16),
-          _streamHeader(state.unreadNotificationCount),
-          const SizedBox(height: 10),
+          // Sirf Admin (kuldeepky538@gmail.com) ko composer dikhega
+          if (state.isAdmin) ...[
+            _adminComposer(state),
+            const SizedBox(height: 24),
+          ],
+          
+          _streamHeader(state.notifications.where((n) => !n.isRead).length),
+          const SizedBox(height: 12),
+          
           if (state.notifications.isEmpty)
             const _EmptyNotificationState()
           else
@@ -71,54 +92,68 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _adminComposer(AppState state) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: kCard,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: kDivider.withOpacity(0.5)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: kGold.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Admin Notification Publisher',
-            style: GoogleFonts.cinzel(
-              color: kGold,
-              fontWeight: FontWeight.bold,
-              fontSize: 13,
-            ),
+          Row(
+            children: [
+              const Icon(Icons.admin_panel_settings, color: kGold, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                'ADMIN BROADCAST',
+                style: GoogleFonts.cinzel(
+                  color: kGold,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'Only kuldeepky538@gmail.com can send notifications.',
-            style: TextStyle(color: kTextDim, fontSize: 12),
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           TextField(
             controller: _titleController,
             style: const TextStyle(color: kText),
-            decoration: const InputDecoration(
-              labelText: 'Title',
-              labelStyle: TextStyle(color: kTextDim),
+            decoration: InputDecoration(
+              labelText: 'Announcement Title',
+              labelStyle: const TextStyle(color: kTextDim),
+              focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: kGold)),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           TextField(
             controller: _bodyController,
             minLines: 2,
             maxLines: 4,
             style: const TextStyle(color: kText),
-            decoration: const InputDecoration(
-              labelText: 'Message',
-              labelStyle: TextStyle(color: kTextDim),
+            decoration: InputDecoration(
+              labelText: 'Message for Devotees',
+              labelStyle: const TextStyle(color: kTextDim),
+              focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: kGold)),
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
+            height: 45,
             child: ElevatedButton(
-              onPressed: () => _sendNotification(state),
-              child: const Text('Send Notification'),
+              onPressed: _isSending ? null : () => _sendNotification(state),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kGold,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              child: _isSending 
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                : const Text('SEND TO ALL USERS', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -130,7 +165,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Row(
       children: [
         Text(
-          'Notification Stream',
+          'MESSAGE STREAM',
           style: GoogleFonts.cinzel(
             color: kGold,
             fontSize: 13,
@@ -138,7 +173,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
         ),
         const Spacer(),
-        Text('Unread: $unread', style: const TextStyle(color: kTextDim)),
+        if (unread > 0)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(10)),
+            child: Text('$unread NEW', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+          ),
       ],
     );
   }
@@ -152,39 +192,41 @@ class _NotificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: InkWell(
-        onTap: onTap,
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      color: kCard,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: kCard,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: notification.isRead
-                  ? kDivider.withOpacity(0.4)
-                  : kGoldDim.withOpacity(0.5),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(notification.title,
-                  style: const TextStyle(
-                      color: kText, fontSize: 14, fontWeight: FontWeight.w600)),
-              const SizedBox(height: 4),
-              Text(notification.body,
-                  style: const TextStyle(color: kTextDim, fontSize: 12)),
-              const SizedBox(height: 6),
-              Text(
-                notification.createdAt.toLocal().toString().substring(0, 16),
-                style: const TextStyle(color: kTextDim, fontSize: 10),
-              ),
-            ],
+        side: BorderSide(
+          color: notification.isRead ? Colors.transparent : kGold.withOpacity(0.5),
+          width: 1,
+        ),
+      ),
+      child: ListTile(
+        onTap: onTap,
+        contentPadding: const EdgeInsets.all(12),
+        title: Text(
+          notification.title,
+          style: TextStyle(
+            color: kText,
+            fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold,
           ),
         ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text(notification.body, style: const TextStyle(color: kTextDim, fontSize: 13)),
+            const SizedBox(height: 8),
+            Text(
+              "${notification.createdAt.day}/${notification.createdAt.month} • ${notification.createdAt.hour}:${notification.createdAt.minute}",
+              style: const TextStyle(color: kTextDim, fontSize: 10),
+            ),
+          ],
+        ),
+        trailing: notification.isRead 
+            ? null 
+            : const CircleAvatar(radius: 4, backgroundColor: kGold),
       ),
     );
   }
@@ -195,16 +237,20 @@ class _EmptyNotificationState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: kCard,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: kDivider.withOpacity(0.5)),
-      ),
-      child: const Text(
-        'No notifications yet. Admin broadcasts will appear here automatically.',
-        style: TextStyle(color: kTextDim),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 40),
+        child: Column(
+          children: [
+            Icon(Icons.notifications_none, size: 48, color: kGold.withOpacity(0.3)),
+            const SizedBox(height: 16),
+            const Text(
+              'No announcements yet.\nStay tuned for divine updates.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: kTextDim),
+            ),
+          ],
+        ),
       ),
     );
   }
