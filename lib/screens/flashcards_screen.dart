@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+
 import '../data/gita_data.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
+import '../theme.dart'; // ERROR FIX: Theme import added
 
 class FlashcardsScreen extends StatefulWidget {
   const FlashcardsScreen({super.key});
@@ -36,7 +38,6 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
   }
 
   void _loadVersesFromDatabase() {
-    // Assuming kChapters is available in your gita_data.dart
     if (kChapters.isNotEmpty) {
       setState(() {
         _verses = kChapters.expand((chapter) => chapter.verses).toList();
@@ -52,7 +53,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
 
   void _handleFlip() {
     if (_controller.isAnimating) return;
-    HapticFeedback.mediumImpact(); // Feedback for flip
+    HapticFeedback.mediumImpact();
 
     if (_flipped) {
       _controller.reverse();
@@ -83,7 +84,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     final theme = Theme.of(context);
-    final goldColor = const Color(0xFFFFD700);
+    final goldColor = kGold; // theme.dart se kGold use kar rahe hain
     
     if (_verses.isEmpty) {
       return Scaffold(
@@ -125,27 +126,24 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
               child: GestureDetector(
                 onTap: _handleFlip,
-                child: Semantics(
-                  label: "Flashcard of Verse ${safeIndex + 1}. ${_flipped ? 'Back side showing translation' : 'Front side showing Sanskrit'}. Double tap to flip.",
-                  child: AnimatedBuilder(
-                    animation: _flipAnim,
-                    builder: (context, child) {
-                      final angle = _flipAnim.value * math.pi;
-                      return Transform(
-                        alignment: Alignment.center,
-                        transform: Matrix4.identity()
-                          ..setEntry(3, 2, 0.001)
-                          ..rotateY(angle),
-                        child: _flipAnim.value < 0.5
-                            ? _buildCardSide(verse, true, theme, goldColor)
-                            : Transform(
-                                alignment: Alignment.center,
-                                transform: Matrix4.identity()..rotateY(math.pi),
-                                child: _buildCardSide(verse, false, theme, goldColor),
-                              ),
-                      );
-                    },
-                  ),
+                child: AnimatedBuilder(
+                  animation: _flipAnim,
+                  builder: (context, child) {
+                    final angle = _flipAnim.value * math.pi;
+                    return Transform(
+                      alignment: Alignment.center,
+                      transform: Matrix4.identity()
+                        ..setEntry(3, 2, 0.001)
+                        ..rotateY(angle),
+                      child: _flipAnim.value < 0.5
+                          ? _buildCardSide(verse, true, theme, goldColor)
+                          : Transform(
+                              alignment: Alignment.center,
+                              transform: Matrix4.identity()..rotateY(math.pi),
+                              child: _buildCardSide(verse, false, theme, goldColor),
+                            ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -186,15 +184,8 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
                 isFront ? verse.sanskrit : verse.translation,
                 textAlign: TextAlign.center,
                 style: isFront 
-                    ? GoogleFonts.notoSansDevanagari(
-                        color: theme.textTheme.bodyLarge?.color, 
-                        fontSize: 22, 
-                        height: 1.6)
-                    : GoogleFonts.lora(
-                        color: theme.textTheme.bodyMedium?.color, 
-                        fontSize: 18, 
-                        height: 1.5, 
-                        fontStyle: FontStyle.italic),
+                    ? GoogleFonts.notoSansDevanagari(fontSize: 22, height: 1.6)
+                    : GoogleFonts.lora(fontSize: 18, height: 1.5, fontStyle: FontStyle.italic),
               ),
               if (!isFront) ...[
                 const Padding(padding: EdgeInsets.symmetric(vertical: 15), child: Divider()),
@@ -226,24 +217,19 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
 
   Widget _navBtn(IconData icon, VoidCallback? onTap, bool active, Color goldColor, ThemeData theme, String label, {bool isPrimary = false}) {
     return Expanded(
-      child: Semantics(
-        label: label,
-        button: true,
-        enabled: active,
-        child: InkWell(
-          onTap: active ? onTap : null,
-          borderRadius: BorderRadius.circular(15),
-          child: Opacity(
-            opacity: active ? 1.0 : 0.2,
-            child: Container(
-              height: 60,
-              decoration: BoxDecoration(
-                color: isPrimary ? goldColor : Colors.transparent,
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: goldColor, width: 2),
-              ),
-              child: Icon(icon, color: isPrimary ? Colors.black : goldColor),
+      child: InkWell(
+        onTap: active ? onTap : null,
+        borderRadius: BorderRadius.circular(15),
+        child: Opacity(
+          opacity: active ? 1.0 : 0.2,
+          child: Container(
+            height: 60,
+            decoration: BoxDecoration(
+              color: isPrimary ? goldColor : Colors.transparent,
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: goldColor, width: 2),
             ),
+            child: Icon(icon, color: isPrimary ? Colors.black : goldColor),
           ),
         ),
       ),
