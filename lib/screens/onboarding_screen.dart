@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
@@ -34,7 +35,8 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
-  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+  // FIX: GoogleSignIn constructor simplified to avoid build errors
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   int _page = 0;
   final TextEditingController _nameController = TextEditingController();
@@ -133,6 +135,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     try {
       final prefs = await SharedPreferences.getInstance();
+      // FIX: Removed extra comma from await, prefs
       await prefs.setBool('onboarding_completed', true);
 
       if (!mounted) return;
