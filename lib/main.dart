@@ -3,6 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+// --- Firebase Imports ---
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+
 import 'data/gita_data.dart'; 
 import 'state/app_state.dart';
 import 'theme.dart';
@@ -14,9 +18,36 @@ import 'screens/more_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/update_checker.dart';
 
+// --- Background Notification Handler ---
+// Jab app band ho tab notification handle karne ke liye
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  debugPrint("Handling a background message: ${message.messageId}");
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
+  // --- Initialize Firebase ---
+  try {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    
+    // Sabhi users ko 'all_users' topic mein subscribe karwana
+    await FirebaseMessaging.instance.subscribeToTopic('all_users');
+    
+    // Notification Permissions maangna (Zaruri for Android 13+)
+    await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+  } catch (e) {
+    debugPrint("Firebase initialization failed: $e");
+    // Agar Firebase setup nahi hai toh bhi app chalti rahegi
+  }
+
   final appState = AppState();
   
   // Wait for data and preferences to load
@@ -43,7 +74,6 @@ class MyApp extends StatelessWidget {
         final baseLight = buildLightTheme();
         final baseDark = buildDarkTheme(); 
         
-        // Dynamic accessibility themes
         final lightTheme = state.highContrast
             ? baseLight.copyWith(
                 colorScheme: baseLight.colorScheme.copyWith(
@@ -112,6 +142,20 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
+    
+    // --- Foreground Notification Listener ---
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      if (message.notification != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("${message.notification!.title}: ${message.notification!.body}"),
+            backgroundColor: kGoldDim,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    });
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       autoCheckForUpdates(context);
     });
@@ -146,7 +190,6 @@ class _MainShellState extends State<MainShell> {
             currentIndex: _currentIndex,
             onTap: (i) => setState(() => _currentIndex = i),
             backgroundColor: theme.scaffoldBackgroundColor,
-            // ERROR FIX: Adaptive colors for BottomNav
             selectedItemColor: isDark ? kGold : kGoldDim,
             unselectedItemColor: theme.hintColor.withOpacity(0.5),
             type: BottomNavigationBarType.fixed,
