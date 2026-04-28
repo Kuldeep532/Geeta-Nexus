@@ -100,10 +100,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
       if (!mounted) return;
       
-      // Setting controller text to avoid empty name error
       _nameController.text = account.displayName ?? "Seeker";
 
-      // Connecting to AppState (Triggering Silent Firebase Sync)
       Provider.of<AppState>(context, listen: false).updateGoogleAccount(
         name: account.displayName ?? "Seeker",
         email: account.email,
@@ -112,14 +110,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       await _handlePermissions();
     } catch (e) {
       _showErrorSnackBar("Google Sign-in failed. Try manual setup.");
-      setState(() => _showNameField = true); // Fallback to manual name
+      setState(() => _showNameField = true); 
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _handlePermissions() async {
-    // Requesting core permissions silently
     await [Permission.microphone, Permission.notification].request();
     if (!mounted) return;
     _finishOnboarding();
@@ -141,11 +138,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       if (!mounted) return;
       final state = Provider.of<AppState>(context, listen: false);
       
-      // Updating user profile in State
       state.setUserName(name);
       state.completeOnboarding();
 
-      // Navigation to Home
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const MainShell()),
         (route) => false,
@@ -309,7 +304,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: ElevatedButton(
                 onPressed: _next,
                 style: ElevatedButton.styleFrom(backgroundColor: gold, foregroundColor: Colors.black),
-                child: const Text("AGLA"),
+                child: const Text("NEXT"),
               ),
             ),
         ],
