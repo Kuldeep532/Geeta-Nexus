@@ -18,7 +18,8 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.kuldeep.gitaai"
+    // UPDATED: Namespace as per branding
+    namespace = "com.satviktechnologies.geetanexus"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -36,14 +37,18 @@ android {
             if (keystorePropertiesFile.exists()) {
                 keyAlias = keystoreProperties["keyAlias"]?.toString()
                 keyPassword = keystoreProperties["keyPassword"]?.toString()
-                storeFile = file(keystoreProperties["storeFile"]?.toString() ?: "")
+                
+                // UPDATED: Keystore file path updated here
+                storeFile = file("android-signing/my-release-key.jks")
+                
                 storePassword = keystoreProperties["storePassword"]?.toString()
             }
         }
     }
 
     defaultConfig {
-        applicationId = "com.kuldeep.gitaai"
+        // UPDATED: Application ID as per branding
+        applicationId = "com.satviktechnologies.geetanexus"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -58,7 +63,6 @@ android {
                 signingConfigs.getByName("debug")
             }
             
-            // Optimizations from your screen
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -74,7 +78,6 @@ flutter {
 }
 
 dependencies {
-    // Latest Google & Firebase Services (April 2026 update)
     implementation(platform("com.google.firebase:firebase-bom:34.12.0"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.android.gms:play-services-auth:21.5.0")
