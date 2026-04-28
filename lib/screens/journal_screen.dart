@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Haptic feedback ke liye
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
+
 import '../state/app_state.dart';
 import '../models/models.dart';
+import '../theme.dart'; // ERROR FIX: Theme import added
 
 class JournalScreen extends StatefulWidget {
   const JournalScreen({super.key});
@@ -64,7 +66,7 @@ class _JournalScreenState extends State<JournalScreen> {
 
   void _submit(AppState state) {
     if (_formKey.currentState!.validate()) {
-      HapticFeedback.mediumImpact(); // Masti Feature: Vibration
+      HapticFeedback.mediumImpact();
       
       final cleanContent = _contentController.text.trim();
 
@@ -72,7 +74,7 @@ class _JournalScreenState extends State<JournalScreen> {
         id: _uuid.v4(),
         content: cleanContent,
         mood: _selectedMood,
-        date: DateTime.now(), // Ensure date is passed
+        date: DateTime.now(),
       );
 
       _contentController.clear();
@@ -88,10 +90,8 @@ class _JournalScreenState extends State<JournalScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final goldColor = const Color(0xFFFFD700);
     final state = context.watch<AppState>();
     
-    // Search Filter Logic
     final entries = state.journalEntries.where((e) => 
       e.content.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
 
@@ -102,21 +102,21 @@ class _JournalScreenState extends State<JournalScreen> {
           ? TextField(
               controller: _searchController,
               autofocus: true,
-              style: TextStyle(color: goldColor),
+              style: const TextStyle(color: kGold),
               decoration: const InputDecoration(hintText: "Search thoughts...", border: InputBorder.none),
               onChanged: (v) => setState(() => _searchQuery = v),
             )
-          : Text('Spiritual Journal', style: GoogleFonts.cinzel(color: goldColor, fontWeight: FontWeight.bold)),
+          : Text('Spiritual Journal', style: GoogleFonts.cinzel(color: kGold, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search, color: goldColor),
+            icon: Icon(_isSearching ? Icons.close : Icons.search, color: kGold),
             onPressed: () => setState(() {
               _isSearching = !_isSearching;
               if (!_isSearching) _searchQuery = '';
             }),
           ),
           IconButton(
-            icon: Icon(_showForm ? Icons.expand_less : Icons.add_comment, color: goldColor),
+            icon: Icon(_showForm ? Icons.expand_less : Icons.add_comment, color: kGold),
             onPressed: () {
               HapticFeedback.lightImpact();
               setState(() => _showForm = !_showForm);
@@ -126,14 +126,14 @@ class _JournalScreenState extends State<JournalScreen> {
       ),
       body: Column(
         children: [
-          if (_showForm) _buildForm(state, theme, goldColor),
+          if (_showForm) _buildForm(state, theme),
           Expanded(
             child: entries.isEmpty 
-              ? _buildEmptyState(goldColor) 
+              ? _buildEmptyState() 
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: entries.length,
-                  itemBuilder: (ctx, i) => _buildEntryCard(entries[i], state, theme, goldColor),
+                  itemBuilder: (ctx, i) => _buildEntryCard(entries[i], state, theme),
                 ),
           ),
         ],
@@ -141,7 +141,7 @@ class _JournalScreenState extends State<JournalScreen> {
     );
   }
 
-  Widget _buildForm(AppState state, ThemeData theme, Color goldColor) {
+  Widget _buildForm(AppState state, ThemeData theme) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -155,7 +155,7 @@ class _JournalScreenState extends State<JournalScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(child: Text(_currentPrompt, style: GoogleFonts.lato(fontStyle: FontStyle.italic, color: goldColor.withOpacity(0.8)))),
+                Expanded(child: Text(_currentPrompt, style: GoogleFonts.lato(fontStyle: FontStyle.italic, color: kGold.withOpacity(0.8)))),
                 IconButton(icon: const Icon(Icons.refresh, size: 20), onPressed: _refreshPrompt),
               ],
             ),
@@ -173,12 +173,12 @@ class _JournalScreenState extends State<JournalScreen> {
               ),
             ),
             const SizedBox(height: 15),
-            _buildMoodSelector(theme, goldColor),
+            _buildMoodSelector(theme),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () => _submit(state),
               style: ElevatedButton.styleFrom(
-                backgroundColor: goldColor,
+                backgroundColor: kGold,
                 foregroundColor: Colors.black,
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -191,7 +191,7 @@ class _JournalScreenState extends State<JournalScreen> {
     );
   }
 
-  Widget _buildMoodSelector(ThemeData theme, Color goldColor) {
+  Widget _buildMoodSelector(ThemeData theme) {
     return Wrap(
       spacing: 12,
       children: _moods.map((m) {
@@ -201,29 +201,24 @@ class _JournalScreenState extends State<JournalScreen> {
             HapticFeedback.selectionClick();
             setState(() => _selectedMood = m['emoji']!);
           },
-          child: Semantics(
-            label: "Mood: ${m['label']}",
-            selected: isSelected,
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isSelected ? goldColor.withOpacity(0.2) : theme.dividerColor.withOpacity(0.1),
-                border: Border.all(color: isSelected ? goldColor : Colors.transparent),
-              ),
-              child: Text(m['emoji']!, style: const TextStyle(fontSize: 24)),
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isSelected ? kGold.withOpacity(0.2) : theme.dividerColor.withOpacity(0.1),
+              border: Border.all(color: isSelected ? kGold : Colors.transparent),
             ),
+            child: Text(m['emoji']!, style: const TextStyle(fontSize: 24)),
           ),
         );
       }).toList(),
     );
   }
 
-  Widget _buildEntryCard(JournalEntry entry, AppState state, ThemeData theme, Color goldColor) {
+  Widget _buildEntryCard(JournalEntry entry, AppState state, ThemeData theme) {
     return Dismissible(
       key: ValueKey(entry.id),
       direction: DismissDirection.endToStart,
-      onUpdate: (details) { if (details.reached) HapticFeedback.heavyImpact(); },
       confirmDismiss: (direction) async {
         return await showDialog(
           context: context,
@@ -239,6 +234,7 @@ class _JournalScreenState extends State<JournalScreen> {
       },
       onDismissed: (_) => state.deleteJournalEntry(entry.id),
       background: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4),
         decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(12)),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
@@ -246,7 +242,7 @@ class _JournalScreenState extends State<JournalScreen> {
       ),
       child: Card(
         color: theme.cardColor,
-        elevation: 2,
+        elevation: 1,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -263,7 +259,7 @@ class _JournalScreenState extends State<JournalScreen> {
               ),
               const Divider(height: 25),
               Text(entry.content, 
-                style: GoogleFonts.lora(fontSize: 16, height: 1.5, color: theme.textTheme.bodyMedium?.color)),
+                style: GoogleFonts.lora(fontSize: 16, height: 1.5)),
             ],
           ),
         ),
@@ -271,15 +267,21 @@ class _JournalScreenState extends State<JournalScreen> {
     );
   }
 
-  Widget _buildEmptyState(Color goldColor) {
+  Widget _buildEmptyState() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.auto_stories, size: 80, color: goldColor.withOpacity(0.3)),
-          const SizedBox(height: 20),
-          Text("No memories found...", style: GoogleFonts.cinzel(color: goldColor, fontSize: 18)),
-          Text("Kuch achha likhein aaj?", style: TextStyle(color: Colors.grey.shade500)),
+          Icon(Icons.auto_stories, size: 80, color: kGold.withOpacity(0.3)),
+          const SizedBox(height: 16),
+          Text(
+            "Your spiritual journey is waiting...",
+            style: GoogleFonts.cinzel(color: kGold, fontSize: 16),
+          ),
+          Text(
+            "Aj ka anubhav likhein.",
+            style: TextStyle(color: Colors.grey[500]),
+          ),
         ],
       ),
     );
