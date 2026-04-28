@@ -6,6 +6,9 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:provider/provider.dart';
 
+import '../theme.dart'; // ERROR FIX: Theme file import ki gayi
+import '../state/app_state.dart';
+
 class MeditationScreen extends StatefulWidget {
   const MeditationScreen({super.key});
 
@@ -16,7 +19,6 @@ class MeditationScreen extends StatefulWidget {
 class _MeditationScreenState extends State<MeditationScreen>
     with TickerProviderStateMixin {
   
-  // --- Shanti Music List ---
   final Map<String, String> _shantiMusic = {
     'None': '',
     'Soul Flute': 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
@@ -33,7 +35,6 @@ class _MeditationScreenState extends State<MeditationScreen>
   Timer? _timer;
   DateTime? _endTime;
   
-  final AudioPlayer _audioPlayer = AudioPlayer();
   final AudioPlayer _musicPlayer = AudioPlayer(); 
   late AnimationController _pulseController;
   late Animation<double> _pulseAnim;
@@ -55,7 +56,6 @@ class _MeditationScreenState extends State<MeditationScreen>
   void dispose() {
     _timer?.cancel();
     _pulseController.dispose();
-    _audioPlayer.dispose();
     _musicPlayer.dispose();
     _secondsLeftNotifier.dispose();
     WakelockPlus.disable();
@@ -101,9 +101,6 @@ class _MeditationScreenState extends State<MeditationScreen>
     WakelockPlus.disable();
     HapticFeedback.heavyImpact();
     
-    // Play a bell sound if you have one
-    // await _audioPlayer.play(AssetSource('bell.mp3'));
-    
     setState(() {
       _running = false;
       _finished = true;
@@ -111,21 +108,18 @@ class _MeditationScreenState extends State<MeditationScreen>
     });
   }
 
-  Widget _buildDurationPicker(ThemeData theme, Color goldColor) {
+  Widget _buildDurationPicker(ThemeData theme) {
     return Column(
       children: [
-        Semantics(
-          label: "Select meditation duration in minutes",
-          child: Text('SET DURATION',
-              style: GoogleFonts.cinzel(color: goldColor, fontSize: 14, fontWeight: FontWeight.bold)),
-        ),
+        Text('SET DURATION',
+            style: GoogleFonts.cinzel(color: kGold, fontSize: 14, fontWeight: FontWeight.bold)),
         Slider(
           value: _selectedMinutes.toDouble(),
           min: 1,
           max: 60,
           divisions: 12,
-          activeColor: goldColor,
-          inactiveColor: goldColor.withOpacity(0.2),
+          activeColor: kGold,
+          inactiveColor: kGold.withOpacity(0.2),
           onChanged: (val) {
             setState(() {
               _selectedMinutes = val.toInt();
@@ -137,11 +131,11 @@ class _MeditationScreenState extends State<MeditationScreen>
     );
   }
 
-  Widget _buildMusicSelector(ThemeData theme, Color goldColor) {
+  Widget _buildMusicSelector(ThemeData theme) {
     return Column(
       children: [
         Text('SHANTI MUSIC',
-            style: GoogleFonts.cinzel(color: goldColor, fontSize: 14, fontWeight: FontWeight.bold)),
+            style: GoogleFonts.cinzel(color: kGold, fontSize: 14, fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -156,10 +150,9 @@ class _MeditationScreenState extends State<MeditationScreen>
                   onSelected: (val) {
                     if (val) setState(() => _selectedMusic = musicName);
                   },
-                  selectedColor: goldColor.withOpacity(0.3),
-                  // Light/Dark mode adjustment for chip text
+                  selectedColor: kGold.withOpacity(0.3),
                   labelStyle: TextStyle(
-                    color: isSelected ? goldColor : theme.textTheme.bodyMedium?.color,
+                    color: isSelected ? kGold : theme.textTheme.bodyMedium?.color,
                   ),
                 ),
               );
@@ -170,7 +163,7 @@ class _MeditationScreenState extends State<MeditationScreen>
     );
   }
 
-  Widget _buildTimerUI(ThemeData theme, Color goldColor) {
+  Widget _buildTimerUI(ThemeData theme) {
     return ValueListenableBuilder<int>(
       valueListenable: _secondsLeftNotifier,
       builder: (context, seconds, child) {
@@ -182,23 +175,20 @@ class _MeditationScreenState extends State<MeditationScreen>
           children: [
             ScaleTransition(
               scale: _running ? _pulseAnim : const AlwaysStoppedAnimation(1.0),
-              child: Semantics(
-                label: "Remaining time: $mins minutes and $secs seconds",
-                child: Container(
-                  width: 240,
-                  height: 240,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: goldColor.withOpacity(0.5), width: 3),
-                    boxShadow: [
-                      if (_running) BoxShadow(color: goldColor.withOpacity(0.1), blurRadius: 30, spreadRadius: 10)
-                    ],
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    timeString,
-                    style: GoogleFonts.cinzel(fontSize: 54, color: goldColor, fontWeight: FontWeight.bold),
-                  ),
+              child: Container(
+                width: 240,
+                height: 240,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: kGold.withOpacity(0.5), width: 3),
+                  boxShadow: [
+                    if (_running) BoxShadow(color: kGold.withOpacity(0.1), blurRadius: 30, spreadRadius: 10)
+                  ],
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  timeString,
+                  style: GoogleFonts.cinzel(fontSize: 54, color: kGold, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -206,9 +196,8 @@ class _MeditationScreenState extends State<MeditationScreen>
             ElevatedButton(
               onPressed: _startStop,
               style: ElevatedButton.styleFrom(
-                backgroundColor: goldColor,
-                // Automatically switches text color based on background luminance
-                foregroundColor: theme.brightness == Brightness.dark ? Colors.black : Colors.white,
+                backgroundColor: kGold,
+                foregroundColor: Colors.black,
                 padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 18),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(40)),
                 elevation: 8,
@@ -226,17 +215,13 @@ class _MeditationScreenState extends State<MeditationScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Dynamic Theme Detection
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
-    // Gold stays consistent, but background and accents adapt
-    const goldColor = Color(0xFFFFD700);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('MEDITATION', style: GoogleFonts.cinzel(letterSpacing: 2, fontWeight: FontWeight.bold)),
+        title: Text('MEDITATION', style: GoogleFonts.cinzel(letterSpacing: 2, fontWeight: FontWeight.bold, color: kGold)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -251,16 +236,16 @@ class _MeditationScreenState extends State<MeditationScreen>
                 "ॐ शान्तिः शान्तिः शान्तिः",
                 style: GoogleFonts.notoSansDevanagari(
                   fontSize: 24, 
-                  color: goldColor.withOpacity(0.9),
+                  color: kGold.withOpacity(0.9),
                   fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: 40),
               
               if (!_running && !_finished) ...[
-                _buildDurationPicker(theme, goldColor),
+                _buildDurationPicker(theme),
                 const SizedBox(height: 30),
-                _buildMusicSelector(theme, goldColor),
+                _buildMusicSelector(theme),
               ],
               
               const SizedBox(height: 40),
@@ -268,20 +253,20 @@ class _MeditationScreenState extends State<MeditationScreen>
               if (_finished) 
                 Column(
                   children: [
-                    const Icon(Icons.wb_sunny_rounded, size: 80, color: goldColor),
+                    const Icon(Icons.wb_sunny_rounded, size: 80, color: kGold),
                     const SizedBox(height: 20),
                     Text("PEACEFUL SESSION ENDED", 
-                        style: GoogleFonts.cinzel(color: goldColor, fontSize: 20, fontWeight: FontWeight.bold)),
+                        style: GoogleFonts.cinzel(color: kGold, fontSize: 20, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 20),
                     TextButton.icon(
                       onPressed: () => setState(() => _finished = false),
-                      icon: const Icon(Icons.refresh, color: goldColor),
-                      label: const Text("PRACTICE AGAIN", style: TextStyle(color: goldColor)),
+                      icon: const Icon(Icons.refresh, color: kGold),
+                      label: const Text("PRACTICE AGAIN", style: TextStyle(color: kGold)),
                     )
                   ],
                 )
               else 
-                _buildTimerUI(theme, goldColor),
+                _buildTimerUI(theme),
             ],
           ),
         ),
