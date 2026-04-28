@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
@@ -12,7 +11,7 @@ import '../main.dart';
 // Page Data Model
 class _OnboardPageData {
   final String emoji;
-  final String emojiLabel; // Added for Screen Readers
+  final String emojiLabel;
   final String title;
   final String subtitle;
   final String body;
@@ -35,8 +34,12 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
-  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: ['email']);
-  
+
+  // ✅ FIXED: Correct GoogleSignIn initialization
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: ['email', 'profile'],
+  );
+
   int _page = 0;
   final TextEditingController _nameController = TextEditingController();
   final FocusNode _nameFocus = FocusNode();
@@ -47,7 +50,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _OnboardPageData(
       emoji: '🕉️',
       emojiLabel: 'Aum Symbol',
-      title: 'Bhagavad Gita AI',
+      title: 'Geeta Nexus',
       subtitle: 'The Song of God',
       body: 'Discover the timeless wisdom of 700 divine verses that have guided seekers for ages.',
     ),
@@ -89,21 +92,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  // --- Logic Functions ---
+  // ================= LOGIC =================
 
   Future<void> _continueWithGoogle() async {
     setState(() => _isLoading = true);
+
     try {
-      final account = await _googleSignIn.signIn();
-      if (account != null && mounted) {
-        final name = account.displayName ?? "";
-        _nameController.text = name;
-        context.read<AppState>().updateGoogleAccount(
-          name: name,
-          email: account.email,
-        );
-        _handlePermissions();
+      // ✅ FIXED: Use .signIn() instead of .authenticate()
+      final GoogleSignInAccount? account = await _googleSignIn.signIn();
+
+      if (account == null) {
+        setState(() => _isLoading = false);
+        return; 
       }
+
+      if (!mounted) return;
+
+      final name = account.displayName ?? "";
+      _nameController.text = name;
+
+      // Update State
+      Provider.of<AppState>(context, listen: false).updateGoogleAccount(
+        name: name,
+        email: account.email,
+      );
+
+      await _handlePermissions();
     } catch (e) {
       _showErrorSnackBar("Google Sign-in failed. Please try manually.");
     } finally {
@@ -112,12 +126,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _handlePermissions() async {
-    await [Permission.microphone, Permission.notification].request();
+    await [
+      Permission.microphone,
+      Permission.notification,
+    ].request();
+
+    if (!mounted) return;
     _finishOnboarding();
   }
 
   Future<void> _finishOnboarding() async {
     final name = _nameController.text.trim();
+
+    // Check name only on the last page
     if (name.isEmpty && _page == _pages.length - 1) {
       setState(() => _nameError = "Kripya apna naam bhariye");
       _nameFocus.requestFocus();
@@ -128,7 +149,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     await prefs.setBool('onboarding_completed', true);
 
     if (!mounted) return;
-    final state = context.read<AppState>();
+
+    final state = Provider.of<AppState>(context, listen: false);
     state.setUserName(name);
     state.completeOnboarding();
 
@@ -139,23 +161,29 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   void _showErrorSnackBar(String msg) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   void _next() {
     if (_page < _pages.length - 1) {
-      _controller.nextPage(duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
+      _controller.nextPage(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
     } else {
-      _handlePermissions();
+      _finishOnboarding();
     }
   }
 
-  // --- UI Components ---
+  // ================= UI =================
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final goldColor = theme.brightness == Brightness.dark ? const Color(0xFFFFD700) : const Color(0xFFB8860B);
+    final goldColor = theme.brightness == Brightness.dark
+        ? const Color(0xFFFFD700)
+        : const Color(0xFFB8860B);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -166,7 +194,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: PageView.builder(
                 controller: _controller,
                 itemCount: _pages.length,
-                onPageChanged: (i) => setState(() => _page = i),
+                onPageChanged: (i) => setState(() {
+                  _page = i;
+                  _nameError = null; // Clear error when moving pages
+                }),
                 itemBuilder: (ctx, i) => _buildPage(i, goldColor, theme),
               ),
             ),
@@ -189,45 +220,92 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Semantics(
             label: page.emojiLabel,
             child: Container(
-              width: 100, height: 100,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: gold.withOpacity(0.1), border: Border.all(color: gold, width: 2)),
-              child: Center(child: Text(page.emoji, style: const TextStyle(fontSize: 48))),
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: gold.withOpacity(0.1),
+                border: Border.all(color: gold, width: 2),
+              ),
+              child: Center(
+                child: Text(
+                  page.emoji,
+                  style: const TextStyle(fontSize: 48),
+                ),
+              ),
             ),
           ),
           const SizedBox(height: 40),
-          Text(page.title, textAlign: TextAlign.center, style: GoogleFonts.cinzel(color: gold, fontSize: 24, fontWeight: FontWeight.bold)),
+          Text(
+            page.title,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.cinzel(
+              color: gold,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 12),
-          Text(page.subtitle, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, letterSpacing: 1.2)),
+          Text(
+            page.subtitle,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              letterSpacing: 1.2,
+            ),
+          ),
           const SizedBox(height: 20),
-          Text(page.body, textAlign: TextAlign.center, style: TextStyle(color: theme.hintColor, height: 1.5)),
+          Text(
+            page.body,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: theme.hintColor,
+              height: 1.5,
+            ),
+          ),
           if (isLastPage) ...[
             const SizedBox(height: 40),
-            _buildNameInput(gold, theme),
+            _buildNameInput(gold),
           ],
         ],
       ),
     );
   }
 
-  Widget _buildNameInput(Color gold, ThemeData theme) {
+  Widget _buildNameInput(Color gold) {
     return Column(
       children: [
         TextField(
           controller: _nameController,
           focusNode: _nameFocus,
+          textCapitalization: TextCapitalization.words,
           decoration: InputDecoration(
             hintText: "Apna naam likhiye",
             errorText: _nameError,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             prefixIcon: Icon(Icons.person, color: gold),
           ),
+          onChanged: (val) {
+            if (_nameError != null) setState(() => _nameError = null);
+          },
         ),
         const SizedBox(height: 16),
         OutlinedButton.icon(
           onPressed: _isLoading ? null : _continueWithGoogle,
-          icon: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.g_mobiledata, size: 32),
+          icon: _isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.account_circle, size: 24),
           label: const Text("Continue with Google"),
-          style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 50),
+          ),
         ),
       ],
     );
@@ -240,12 +318,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(_pages.length, (i) => AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              width: _page == i ? 24 : 8, height: 8,
-              decoration: BoxDecoration(color: _page == i ? gold : gold.withOpacity(0.2), borderRadius: BorderRadius.circular(4)),
-            )),
+            children: List.generate(
+              _pages.length,
+              (i) => AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                width: _page == i ? 24 : 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: _page == i ? gold : gold.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
           ),
           const SizedBox(height: 32),
           SizedBox(
@@ -253,12 +338,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             height: 56,
             child: ElevatedButton(
               onPressed: _next,
-              style: ElevatedButton.styleFrom(backgroundColor: gold, foregroundColor: Colors.black, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              child: Text(_page == _pages.length - 1 ? "SHURU KAREIN 🕉️" : "AAGE BADHEIN", style: const TextStyle(fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: gold,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                _page == _pages.length - 1 ? "SHURU KAREIN 🕉️" : "AAGE BADHEIN",
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ),
           if (_page < _pages.length - 1)
-            TextButton(onPressed: _handlePermissions, child: Text("Skip Tour", style: TextStyle(color: theme.hintColor))),
+            TextButton(
+              onPressed: _handlePermissions,
+              child: Text(
+                "Skip Tour",
+                style: TextStyle(color: theme.hintColor),
+              ),
+            ),
         ],
       ),
     );
