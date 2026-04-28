@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/models.dart';
-import '../data/gita_data.dart'; // Isse allVerses mil jayenge
+import '../data/gita_data.dart'; 
 
 class AppState extends ChangeNotifier {
   static const String kAdminEmail = 'kuldeepky538@gmail.com';
@@ -26,11 +26,9 @@ class AppState extends ChangeNotifier {
   bool _largeText = false;
   bool _reduceMotion = false;
   ThemeMode _themeMode = ThemeMode.system;
-  bool _hapticsEnabled = true;
 
   String _userName = '';
   String _userEmail = '';
-  bool _isGoogleAccountLinked = false;
 
   // --- Getters ---
   bool get isAdmin => _userEmail.toLowerCase() == kAdminEmail.toLowerCase();
@@ -45,21 +43,51 @@ class AppState extends ChangeNotifier {
   bool get largeText => _largeText;
   bool get reduceMotion => _reduceMotion;
   Set<String> get readVerses => _readVerses;
-  int get totalMeditationMinutes => _totalMeditationMinutes;
   int get japaCount => _japaCount;
   List<String> get completedChapters => _completedChapters;
-  int get currentFlashcardIndex => _currentFlashcardIndex;
   List<JournalEntry> get journalEntries => _journalEntries;
 
-  // IMPORTANT: Gita Data Getters (Errors fix karne ke liye)
-  List<Verse> get verses => allVerses; // GitaData se data lega
-  List<Chapter> get chapters => kChapters;
+  // IMPORTANT: Missing Getters for Screens
+  List<Verse> get allVerses => kAllVerses; // Error Fix: 'allVerses' getter added
+  int get userCurrentDay => _streak + 1; // Reading Plan ke liye
 
-  // Level Calculation
   int get level => (_xp / 100).floor() + 1;
   double get xpinlevel => (_xp % 100) / 100.0;
 
-  // --- Methods ---
+  // --- Methods (Missing Methods added here) ---
+
+  // Fix for: 'markChapterComplete' not defined
+  void markChapterComplete(String chapterNumber) {
+    if (!_completedChapters.contains(chapterNumber)) {
+      _completedChapters.add(chapterNumber);
+      addXp(50);
+      _save();
+      notifyListeners();
+    }
+  }
+
+  // Fix for: 'deleteJournalEntry' not defined
+  void deleteJournalEntry(String id) {
+    _journalEntries.removeWhere((entry) => entry.id == id);
+    _save();
+    notifyListeners();
+  }
+
+  // Fix for: 'sendGlobalNotification' not defined
+  Future<void> sendGlobalNotification({required String title, required String body}) async {
+    // Yahan actual notification service ka logic aayega
+    debugPrint("Global Notification Sent: $title - $body");
+    notifyListeners();
+  }
+
+  void recordQuizAnswer(bool isCorrect) {
+    if (isCorrect) {
+      addXp(10);
+      _quizScore += 1;
+    }
+    _save();
+    notifyListeners();
+  }
 
   void updateTheme(ThemeMode mode) {
     _themeMode = mode;
@@ -73,12 +101,15 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Quiz Method (Screenshot mein iska error tha)
-  void recordQuizAnswer(bool isCorrect) {
-    if (isCorrect) {
-      addXp(10);
-      _quizScore += 1;
-    }
+  void toggleLargeText() {
+    _largeText = !_largeText;
+    _save();
+    notifyListeners();
+  }
+
+  void toggleReduceMotion() {
+    _reduceMotion = !_reduceMotion;
+    _save();
     notifyListeners();
   }
 
@@ -110,45 +141,14 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void resetJapa() {
-    _japaCount = 0;
-    _save();
-    notifyListeners();
-  }
-
-  void updateFlashcardIndex(int index) {
-    _currentFlashcardIndex = index;
-    notifyListeners();
-  }
-
   void addJournalEntry(JournalEntry entry) {
     _journalEntries.insert(0, entry);
-    _save();
-    notifyListeners();
-  }
-
-  void setUserName(String name) {
-    _userName = name;
-    _save();
-    notifyListeners();
-  }
-
-  void completeOnboarding() {
-    _onboardingComplete = true;
-    _save();
-    notifyListeners();
-  }
-
-  void updateGoogleAccount({required String name, required String email}) {
-    _userName = name;
-    _userEmail = email.trim();
-    _isGoogleAccountLinked = true;
+    addXp(20);
     _save();
     notifyListeners();
   }
 
   void addXp(int amount) {
-    if (amount <= 0) return;
     _xp += amount;
     _save();
     notifyListeners();
@@ -158,21 +158,21 @@ class AppState extends ChangeNotifier {
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     _xp = prefs.getInt('xp') ?? 0;
-    _totalMeditationMinutes = prefs.getInt('totalMeditationMinutes') ?? 0;
-    _onboardingComplete = prefs.getBool('onboardingComplete') ?? false;
     _userName = prefs.getString('userName') ?? '';
     _userEmail = prefs.getString('userEmail') ?? '';
     _highContrast = prefs.getBool('highContrast') ?? false;
-    _japaCount = prefs.getInt('japaCount') ?? 0;
+    _largeText = prefs.getBool('largeText') ?? false;
+    _reduceMotion = prefs.getBool('reduceMotion') ?? false;
     _completedChapters = prefs.getStringList('completedChapters') ?? [];
     _bookmarks = Set<String>.from(prefs.getStringList('bookmarks') ?? []);
     _readVerses = Set<String>.from(prefs.getStringList('readVerses') ?? []);
     
-    final tm = prefs.getString('themeMode') ?? 'system';
-    _themeMode = ThemeMode.values.firstWhere(
-      (e) => e.name == tm, 
-      orElse: () => ThemeMode.system
-    );
+    // Load Journal
+    final journalData = prefs.getString('journalEntries');
+    if (journalData != null) {
+      final List decoded = jsonDecode(journalData);
+      _journalEntries = decoded.map((e) => JournalEntry.fromJson(e)).toList();
+    }
 
     notifyListeners();
   }
@@ -180,13 +180,15 @@ class AppState extends ChangeNotifier {
   Future<void> _save() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('xp', _xp);
-    await prefs.setInt('japaCount', _japaCount);
-    await prefs.setInt('totalMeditationMinutes', _totalMeditationMinutes);
-    await prefs.setBool('onboardingComplete', _onboardingComplete);
     await prefs.setStringList('bookmarks', _bookmarks.toList());
     await prefs.setStringList('readVerses', _readVerses.toList());
     await prefs.setStringList('completedChapters', _completedChapters);
-    await prefs.setString('themeMode', _themeMode.name);
     await prefs.setBool('highContrast', _highContrast);
+    await prefs.setBool('largeText', _largeText);
+    await prefs.setBool('reduceMotion', _reduceMotion);
+    
+    // Save Journal
+    final journalJson = jsonEncode(_journalEntries.map((e) => e.toJson()).toList());
+    await prefs.setString('journalEntries', journalJson);
   }
 }
