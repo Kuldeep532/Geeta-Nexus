@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+
 import '../data/gita_data.dart';
 import '../state/app_state.dart';
+import '../theme.dart'; // ERROR FIX: Theme file import ki gayi
 import 'chapter_detail_screen.dart';
 
 class ChaptersScreen extends StatelessWidget {
@@ -12,33 +14,31 @@ class ChaptersScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('18 Chapters'),
+        title: Text('18 Chapters', style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, color: kGold)),
         elevation: 0,
         centerTitle: true,
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
-        // kChapters gita_data.dart se aa raha hai
         itemCount: kChapters.length,
         itemBuilder: (context, index) {
           final chapter = kChapters[index];
-          // isChapterCompleted ab int number leta hai (Fix)
+          // AppState ke naye logic ke hisab se completion check
           final bool isCompleted = state.isChapterCompleted(chapter.number.toString());
 
           return Semantics(
-            label: "Chapter ${chapter.number}: ${chapter.name}. ${chapter.verseCount} verses. ${isCompleted ? 'Completed' : 'Not completed'}",
+            label: "Chapter ${chapter.number}: ${chapter.name}. ${chapter.verses.length} verses. ${isCompleted ? 'Completed' : 'Not completed'}",
             button: true,
-            hint: "Double tap to view chapter details",
             child: Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Material(
-                color: colorScheme.surface,
-                elevation: 1,
+                color: theme.cardColor,
+                elevation: 0,
                 borderRadius: BorderRadius.circular(16),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(16),
@@ -55,19 +55,13 @@ class ChaptersScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isCompleted ? Colors.orangeAccent : theme.dividerColor,
+                        color: isCompleted ? kGold : theme.dividerColor.withOpacity(0.2),
                         width: isCompleted ? 1.5 : 1,
                       ),
                     ),
                     child: Row(
                       children: [
-                        ExcludeSemantics(
-                          child: _buildChapterIndicator(
-                            context,
-                            chapter.number,
-                            isCompleted,
-                          ),
-                        ),
+                        _buildChapterIndicator(context, chapter.number, isCompleted),
                         const SizedBox(width: 14),
                         Expanded(
                           child: Column(
@@ -79,12 +73,13 @@ class ChaptersScreen extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.bold,
+                                  color: isCompleted ? kGold : null,
                                 ),
                               ),
                               Text(
                                 chapter.nameSanskrit,
                                 style: TextStyle(
-                                  color: colorScheme.primary,
+                                  color: kGold.withOpacity(0.8),
                                   fontSize: 13,
                                   fontStyle: FontStyle.italic,
                                 ),
@@ -96,7 +91,7 @@ class ChaptersScreen extends StatelessWidget {
                         ),
                         Icon(
                           Icons.chevron_right,
-                          color: theme.hintColor,
+                          color: kGold.withOpacity(0.5),
                           size: 20,
                         ),
                       ],
@@ -112,31 +107,23 @@ class ChaptersScreen extends StatelessWidget {
   }
 
   Widget _buildChapterIndicator(BuildContext context, int number, bool isCompleted) {
-    final colorScheme = Theme.of(context).colorScheme;
-    
     return Container(
       width: 48,
       height: 48,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isCompleted
-            ? Colors.orangeAccent.withOpacity(0.1)
-            : Theme.of(context).dividerColor.withOpacity(0.1),
+        color: isCompleted ? kGold.withOpacity(0.1) : Colors.transparent,
         border: Border.all(
-          color: isCompleted ? Colors.orangeAccent : Theme.of(context).dividerColor,
+          color: isCompleted ? kGold : Theme.of(context).dividerColor,
         ),
       ),
       child: Center(
         child: isCompleted
-            ? const Icon(
-                Icons.check,
-                color: Colors.orangeAccent,
-                size: 20,
-              )
+            ? const Icon(Icons.check, color: kGold, size: 20)
             : Text(
                 '$number',
                 style: GoogleFonts.cinzel(
-                  color: colorScheme.onSurface,
+                  color: kGold,
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
                 ),
@@ -152,28 +139,22 @@ class ChaptersScreen extends StatelessWidget {
       children: [
         Flexible(
           child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 8,
-              vertical: 2,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(
-              color: theme.dividerColor.withOpacity(0.1),
+              color: kGold.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
               chapter.theme,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: theme.colorScheme.secondary,
-                fontSize: 10,
-              ),
+              style: const TextStyle(color: kGold, fontSize: 10, fontWeight: FontWeight.bold),
             ),
           ),
         ),
         const SizedBox(width: 8),
         Text(
-          '${chapter.verseCount} verses',
+          '${chapter.verses.length} verses',
           style: theme.textTheme.bodySmall,
         ),
       ],
