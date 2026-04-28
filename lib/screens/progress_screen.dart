@@ -39,7 +39,7 @@ class ProgressScreen extends StatelessWidget {
           _buildSectionHeader('Chapter Progress'),
           const SizedBox(height: 12),
           _buildChapterList(state, theme),
-          const SizedBox(height: 100), // Space for FAB or Bottom Nav
+          const SizedBox(height: 100), 
         ],
       ),
     );
@@ -279,11 +279,7 @@ class ProgressScreen extends StatelessWidget {
             ),
             title: Text('Chapter ${ch.number}', 
               style: TextStyle(color: isDone ? kGold : theme.textTheme.bodyLarge?.color, fontWeight: isDone ? FontWeight.bold : FontWeight.normal)),
-            subtitle: Text(ch.name, style: const TextStyle(color: kTextDim, fontSize: 13)),
-            trailing: isDone 
-              ? const Text('+100 XP', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold))
-              : null,
-            onTap: () => HapticFeedback.lightImpact(),
+            subtitle: Text(ch.name, style: const TextStyle(fontSize: 12)),
           ),
         );
       },
