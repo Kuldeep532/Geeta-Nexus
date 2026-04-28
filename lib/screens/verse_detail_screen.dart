@@ -88,7 +88,6 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
   }
 
   void _validateSpeech() {
-    // Normalizing text for comparison
     String original = widget.verse.transliteration.toLowerCase().replaceAll(RegExp(r'[^\w\s]'), '');
     String spoken = _userSpokenText.toLowerCase().replaceAll(RegExp(r'[^\w\s]'), '');
 
@@ -97,7 +96,7 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
     if (original.contains(spoken) || spoken.contains(original)) {
       _showSnack("Sahi Uchcharan! ✨", Colors.green);
     } else {
-      HapticFeedback.heavyImpact(); // Physical error feedback
+      HapticFeedback.heavyImpact(); 
       _showSnack("Galti hui! Phir se koshish karein.", Colors.red);
     }
   }
@@ -108,8 +107,6 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
     );
   }
 
-  // --- UI Components ---
-
   @override
   Widget build(BuildContext context) {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
@@ -119,11 +116,11 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         elevation: 0,
-        title: Text('Verse ${widget.verse.id}', 
+        title: Text('Verse ${widget.verse.chapter}.${widget.verse.verse}', 
           style: GoogleFonts.cinzel(color: goldColor, fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
-            tooltip: "Listen to Verse",
+            tooltip: "Listen",
             icon: Icon(Icons.volume_up, color: goldColor),
             onPressed: () => _speakVerse(_showTransliteration ? widget.verse.transliteration : widget.verse.sanskrit),
           ),
@@ -155,7 +152,6 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: gold.withOpacity(0.3)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
       ),
       child: Column(
         children: [
@@ -168,15 +164,12 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
             ],
           ),
           const SizedBox(height: 20),
-          Semantics(
-            label: "Verse Text",
-            child: Text(
-              _showTransliteration ? widget.verse.transliteration : widget.verse.sanskrit,
-              textAlign: TextAlign.center,
-              style: _showTransliteration 
-                ? GoogleFonts.crimsonText(fontSize: 20, fontStyle: FontStyle.italic)
-                : GoogleFonts.notoSansDevanagari(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
+          Text(
+            _showTransliteration ? widget.verse.transliteration : widget.verse.sanskrit,
+            textAlign: TextAlign.center,
+            style: _showTransliteration 
+              ? GoogleFonts.crimsonText(fontSize: 20, fontStyle: FontStyle.italic)
+              : GoogleFonts.notoSansDevanagari(fontSize: 22, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -199,19 +192,10 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
-          Expanded(
-            child: Text(
-              _isListening ? "Listening..." : "Practice Pronunciation:",
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          Semantics(
-            label: "Mic for practice",
-            child: IconButton(
-              icon: Icon(_isListening ? Icons.stop_circle : Icons.mic, 
-                color: _isListening ? Colors.red : gold, size: 30),
-              onPressed: _startPractice,
-            ),
+          Expanded(child: Text(_isListening ? "Listening..." : "Practice Pronunciation:")),
+          IconButton(
+            icon: Icon(_isListening ? Icons.stop_circle : Icons.mic, color: _isListening ? Colors.red : gold),
+            onPressed: _startPractice,
           ),
         ],
       ),
@@ -225,7 +209,6 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
           TabBar(
             controller: _tabs,
             labelColor: gold,
-            indicatorColor: gold,
             tabs: const [Tab(text: "Translation"), Tab(text: "Meaning"), Tab(text: "Tags")],
           ),
           Expanded(
@@ -251,7 +234,6 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           TextButton.icon(onPressed: () {}, icon: const Icon(Icons.arrow_back_ios), label: const Text("Prev")),
-          const VerticalDivider(),
           TextButton.icon(onPressed: () {}, label: const Text("Next"), icon: const Icon(Icons.arrow_forward_ios)),
         ],
       ),
@@ -260,6 +242,6 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
 
   void _copyVerse(Verse v) {
     Clipboard.setData(ClipboardData(text: "${v.sanskrit}\n${v.translation}"));
-    _showSnack("Copied to clipboard", Colors.grey[800]!);
+    _showSnack("Copied to clipboard", Colors.black87);
   }
 }
