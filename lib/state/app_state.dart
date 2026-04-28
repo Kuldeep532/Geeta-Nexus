@@ -19,6 +19,7 @@ class AppState extends ChangeNotifier {
   int _totalMeditationMinutes = 0;
   bool _onboardingComplete = false;
   List<String> _completedChapters = [];
+  int _currentFlashcardIndex = 0;
   
   bool _highContrast = false;
   bool _largeText = false;
@@ -30,7 +31,7 @@ class AppState extends ChangeNotifier {
   String _userEmail = '';
   bool _isGoogleAccountLinked = false;
 
-  // --- Getters ---
+  // --- Getters (YEH ZAROORI HAIN ERRORS FIX KARNE KE LIYE) ---
   bool get isAdmin => _userEmail.toLowerCase() == kAdminEmail.toLowerCase();
   String get userName => _userName;
   String get userEmail => _userEmail;
@@ -39,38 +40,103 @@ class AppState extends ChangeNotifier {
   bool get onboardingComplete => _onboardingComplete;
   ThemeMode get themeMode => _themeMode;
   Set<String> get bookmarks => _bookmarks;
+  
+  // Missing Getters added below:
+  bool get highContrast => _highContrast;
+  bool get largeText => _largeText;
+  bool get reduceMotion => _reduceMotion;
+  Set<String> get readVerses => _readVerses;
+  int get totalMeditationMinutes => _totalMeditationMinutes;
+  int get japaCount => _japaCount;
+  List<String> get completedChapters => _completedChapters;
+  int get currentFlashcardIndex => _currentFlashcardIndex;
+  List<JournalEntry> get journalEntries => _journalEntries;
 
-  // --- Onboarding Helpers (MATCHING WITH ONBOARDING SCREEN) ---
+  // Level Calculation Logic (Progress Screen ke liye)
+  int get level => (_xp / 100).floor() + 1;
+  double get xpinlevel => (_xp % 100) / 100.0;
 
-  // Onboarding screen calls this to set name manually
+  // --- Methods ---
+
+  // Theme update methods
+  void updateTheme(ThemeMode mode) {
+    _themeMode = mode;
+    _save();
+    notifyListeners();
+  }
+
+  void toggleHighContrast() {
+    _highContrast = !_highContrast;
+    _save();
+    notifyListeners();
+  }
+
+  // Progress & Verse Methods
+  bool isChapterCompleted(String chapterNumber) => _completedChapters.contains(chapterNumber);
+
+  void markVerseRead(String verseId) {
+    _readVerses.add(verseId);
+    addXp(5);
+    _save();
+    notifyListeners();
+  }
+
+  bool isBookmarked(String verseId) => _bookmarks.contains(verseId);
+
+  void toggleBookmark(String verseId) {
+    if (_bookmarks.contains(verseId)) {
+      _bookmarks.remove(verseId);
+    } else {
+      _bookmarks.add(verseId);
+    }
+    _save();
+    notifyListeners();
+  }
+
+  // Japa & Meditation
+  void incrementJapa() {
+    _japaCount++;
+    if (_japaCount % 108 == 0) addXp(10);
+    _save();
+    notifyListeners();
+  }
+
+  void resetJapa() {
+    _japaCount = 0;
+    _save();
+    notifyListeners();
+  }
+
+  // Flashcards
+  void updateFlashcardIndex(int index) {
+    _currentFlashcardIndex = index;
+    notifyListeners();
+  }
+
+  // Journal
+  void addJournalEntry(JournalEntry entry) {
+    _journalEntries.insert(0, entry);
+    _save();
+    notifyListeners();
+  }
+
+  // --- Baaki Methods (Jo aapne pehle likhe the) ---
   void setUserName(String name) {
     _userName = name;
     _save();
     notifyListeners();
   }
 
-  // Onboarding screen calls this at the end
   void completeOnboarding() {
     _onboardingComplete = true;
     _save();
     notifyListeners();
   }
 
-  // Onboarding screen calls this for Google Login
   void updateGoogleAccount({required String name, required String email}) {
     _userName = name;
     _userEmail = email.trim();
     _isGoogleAccountLinked = true;
-    _save();
-    notifyListeners();
-  }
-
-  // --- Other Methods ---
-
-  void addMeditationMinutes(int minutes) {
-    if (minutes <= 0) return;
-    _totalMeditationMinutes += minutes;
-    addXp(minutes * 2);
     _save();
     notifyListeners();
   }
@@ -83,21 +149,18 @@ class AppState extends ChangeNotifier {
   }
 
   // --- Persistence ---
-
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     _xp = prefs.getInt('xp') ?? 0;
-    _streak = prefs.getInt('streak') ?? 0;
     _totalMeditationMinutes = prefs.getInt('totalMeditationMinutes') ?? 0;
     _onboardingComplete = prefs.getBool('onboardingComplete') ?? false;
     _userName = prefs.getString('userName') ?? '';
     _userEmail = prefs.getString('userEmail') ?? '';
-    _isGoogleAccountLinked = prefs.getBool('isGoogleAccountLinked') ?? false;
     _highContrast = prefs.getBool('highContrast') ?? false;
+    _japaCount = prefs.getInt('japaCount') ?? 0;
     _completedChapters = prefs.getStringList('completedChapters') ?? [];
-    
-    // ✅ FIXED: Corrected assignment
     _bookmarks = Set<String>.from(prefs.getStringList('bookmarks') ?? []);
+    _readVerses = Set<String>.from(prefs.getStringList('readVerses') ?? []);
     
     final tm = prefs.getString('themeMode') ?? 'system';
     _themeMode = ThemeMode.values.firstWhere(
@@ -111,12 +174,13 @@ class AppState extends ChangeNotifier {
   Future<void> _save() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('xp', _xp);
+    await prefs.setInt('japaCount', _japaCount);
     await prefs.setInt('totalMeditationMinutes', _totalMeditationMinutes);
     await prefs.setBool('onboardingComplete', _onboardingComplete);
-    await prefs.setString('userName', _userName);
-    await prefs.setString('userEmail', _userEmail);
-    await prefs.setBool('isGoogleAccountLinked', _isGoogleAccountLinked);
     await prefs.setStringList('bookmarks', _bookmarks.toList());
+    await prefs.setStringList('readVerses', _readVerses.toList());
+    await prefs.setStringList('completedChapters', _completedChapters);
     await prefs.setString('themeMode', _themeMode.name);
+    await prefs.setBool('highContrast', _highContrast);
   }
 }
