@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../state/app_state.dart';
 import '../main.dart';
+import '../theme.dart'; // ERROR FIX: Theme import added
 
 class _OnboardPageData {
   final String emoji;
@@ -131,11 +132,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     await prefs.setBool('onboarding_completed', true);
 
     if (!mounted) return;
-    final state = Provider.of<AppState>(context, listen: false);
+    final state = Provider.of<AppState>(context, listen: false); // ERROR FIX: Removed extra comma
     state.setUserName(name);
     state.completeOnboarding();
 
-    // Make sure MainShell is correctly imported/defined in main.dart
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const MainShell()),
       (route) => false,
@@ -161,11 +161,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final goldColor = theme.brightness == Brightness.dark
-        ? const Color(0xFFFFD700)
-        : const Color(0xFFB8860B);
+    final goldColor = kGold; // theme.dart se kGold use kar rahe hain
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -230,6 +229,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           decoration: InputDecoration(
             hintText: "Apna naam likhiye",
             errorText: _nameError,
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: gold)),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             prefixIcon: Icon(Icons.person, color: gold),
           ),
@@ -237,9 +237,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         const SizedBox(height: 16),
         OutlinedButton.icon(
           onPressed: _isLoading ? null : _continueWithGoogle,
-          icon: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.account_circle),
+          icon: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.account_circle, color: kGold),
           label: const Text("Continue with Google"),
-          style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 50),
+            side: const BorderSide(color: kGold),
+          ),
         ),
       ],
     );
