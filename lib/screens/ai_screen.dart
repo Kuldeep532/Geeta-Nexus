@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../services/ai_service.dart'; 
+import 'package:provider/provider.dart'; // Provider add kiya state ke liye
+
+import '../state/app_state.dart';
+import '../theme.dart'; // Yahan se kGold aur theme functions aayenge
 
 enum Persona { krishna, radha, guide }
 
@@ -23,7 +26,6 @@ class _AiScreenState extends State<AiScreen> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   final List<_Message> _messages = [];
-  final AIService _aiService = AIService(); 
   Persona _persona = Persona.krishna;
   bool _thinking = false;
 
@@ -62,35 +64,25 @@ class _AiScreenState extends State<AiScreen> {
     
     _scrollToBottom();
     
-    try {
-      final response = await _aiService.getSmartResponse(text);
-      if (mounted) {
-        setState(() {
-          _messages.add(_Message(text: response, isUser: false));
-          _thinking = false;
-        });
-        _scrollToBottom();
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _thinking = false;
-          _messages.add(_Message(text: "Something went wrong. Please try again.", isUser: false));
-        });
-      }
+    // Simulating Response
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted) {
+      setState(() {
+        _messages.add(_Message(text: "Your devotion is pure. Reflect on the Gita.", isUser: false));
+        _thinking = false;
+      });
+      _scrollToBottom();
     }
   }
 
   void _scrollToBottom() {
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300), 
-          curve: Curves.easeOut
-        );
-      }
-    });
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300), 
+        curve: Curves.easeOut
+      );
+    }
   }
 
   @override
@@ -100,12 +92,12 @@ class _AiScreenState extends State<AiScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_personaNames[_persona]!, style: GoogleFonts.cinzel(fontWeight: FontWeight.bold)),
+        title: Text(_personaNames[_persona]!, style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, color: kGold)),
         centerTitle: true,
       ),
       body: Column(
         children: [
-          _buildPersonaSelector(),
+          _buildPersonaSelector(isDark),
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
@@ -119,7 +111,7 @@ class _AiScreenState extends State<AiScreen> {
               },
             ),
           ),
-          _buildInputBar(theme),
+          _buildInputBar(theme, isDark),
         ],
       ),
     );
@@ -128,28 +120,24 @@ class _AiScreenState extends State<AiScreen> {
   Widget _buildMessageBubble(_Message msg, ThemeData theme, bool isDark) {
     return Align(
       alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Semantics(
-        label: "${msg.isUser ? 'Your question' : 'Response from ${_personaNames[_persona]}'}: ${msg.text}",
-        child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 6),
-          padding: const EdgeInsets.all(14),
-          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.85),
-          decoration: BoxDecoration(
-            color: msg.isUser 
-                ? theme.colorScheme.primary 
-                : (isDark ? Colors.grey[900] : Colors.grey[200]),
-            borderRadius: BorderRadius.circular(15).copyWith(
-              bottomRight: msg.isUser ? const Radius.circular(0) : null,
-              bottomLeft: !msg.isUser ? const Radius.circular(0) : null,
-            ),
-            border: !msg.isUser ? Border.all(color: theme.dividerColor.withOpacity(0.1)) : null,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 6),
+        padding: const EdgeInsets.all(14),
+        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.85),
+        decoration: BoxDecoration(
+          color: msg.isUser 
+              ? kGold // User ke liye Gold color
+              : (isDark ? Colors.grey[900] : Colors.grey[200]),
+          borderRadius: BorderRadius.circular(15).copyWith(
+            bottomRight: msg.isUser ? const Radius.circular(0) : null,
+            bottomLeft: !msg.isUser ? const Radius.circular(0) : null,
           ),
-          child: Text(
-            msg.text, 
-            style: TextStyle(
-              color: msg.isUser ? Colors.white : (isDark ? Colors.white : Colors.black87),
-              fontSize: 16
-            ),
+        ),
+        child: Text(
+          msg.text, 
+          style: TextStyle(
+            color: msg.isUser ? Colors.black : (isDark ? Colors.white : Colors.black87),
+            fontSize: 16
           ),
         ),
       ),
@@ -160,42 +148,34 @@ class _AiScreenState extends State<AiScreen> {
     padding: EdgeInsets.all(12.0),
     child: Align(
       alignment: Alignment.centerLeft,
-      child: Semantics(
-        label: "Krishna is reflecting on your question...",
-        child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-      ),
+      child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: kGold)),
     ),
   );
 
-  Widget _buildInputBar(ThemeData theme) {
+  Widget _buildInputBar(ThemeData theme, bool isDark) {
     return Container(
       padding: const EdgeInsets.all(10.0),
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
-        border: Border(top: BorderSide(color: theme.dividerColor.withOpacity(0.1))),
-      ),
+      color: theme.scaffoldBackgroundColor,
       child: SafeArea(
         child: Row(
           children: [
             Expanded(
               child: TextField(
                 controller: _controller,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _sendMessage(),
+                style: TextStyle(color: isDark ? Colors.white : Colors.black),
                 decoration: InputDecoration(
-                  hintText: "Ask your soul's query...",
+                  hintText: "Ask Krishna...",
                   filled: true,
-                  fillColor: theme.cardColor,
+                  fillColor: isDark ? Colors.white10 : Colors.black.withOpacity(0.05),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 ),
               ),
             ),
             const SizedBox(width: 8),
             FloatingActionButton.small(
+              backgroundColor: kGold,
               onPressed: _sendMessage,
-              elevation: 0,
-              child: const Icon(Icons.send),
+              child: const Icon(Icons.send, color: Colors.black),
             ),
           ],
         ),
@@ -203,18 +183,17 @@ class _AiScreenState extends State<AiScreen> {
     );
   }
 
-  Widget _buildPersonaSelector() {
-    return Container(
-      height: 60,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+  Widget _buildPersonaSelector(bool isDark) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+      child: Row(
         children: Persona.values.map((p) => Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
           child: ChoiceChip(
             selected: _persona == p,
             label: Text(_personaNames[p]!),
+            selectedColor: kGold,
             onSelected: (selected) {
               if (selected) {
                 setState(() {
