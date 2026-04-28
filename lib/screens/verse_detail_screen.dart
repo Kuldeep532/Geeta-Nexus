@@ -7,6 +7,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../models/models.dart';
 import '../state/app_state.dart';
+import '../theme.dart'; // ERROR FIX: Theme import added
 
 class VerseDetailScreen extends StatefulWidget {
   final Verse verse;
@@ -21,7 +22,6 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
   late TabController _tabs;
   bool _showTransliteration = true;
   
-  // Audio & Speech objects
   final FlutterTts _tts = FlutterTts();
   final stt.SpeechToText _stt = stt.SpeechToText();
   bool _isListening = false;
@@ -33,7 +33,6 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
     _tabs = TabController(length: 3, vsync: this);
     _initSpeech();
     
-    // Mark as read
     Future.microtask(() {
       if (mounted) {
         context.read<AppState>().markVerseRead(widget.verse.id);
@@ -42,9 +41,8 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
   }
 
   void _initSpeech() async {
-    await _stt.initialize();
-    await _tts.setLanguage("hi-IN"); // Best for Sanskrit/Hindi pronunciation
-    await _tts.setSpeechRate(0.4);   // Slow rate for better learning
+    await _tts.setLanguage("hi-IN");
+    await _tts.setSpeechRate(0.4);
   }
 
   @override
@@ -55,7 +53,7 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
     super.dispose();
   }
 
-  // --- Logic Features ---
+  // --- Core Features ---
 
   Future<void> _speakVerse(String text) async {
     HapticFeedback.selectionClick();
@@ -97,7 +95,7 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
       _showSnack("Sahi Uchcharan! ✨", Colors.green);
     } else {
       HapticFeedback.heavyImpact(); 
-      _showSnack("Galti hui! Phir se koshish karein.", Colors.red);
+      _showSnack("Phir se koshish karein.", Colors.red);
     }
   }
 
@@ -109,92 +107,110 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    final Color goldColor = isDark ? const Color(0xFFFFD700) : const Color(0xFFB8860B);
+    final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         elevation: 0,
+        backgroundColor: Colors.transparent,
+        leading: BackButton(color: kGold),
         title: Text('Verse ${widget.verse.chapter}.${widget.verse.verse}', 
-          style: GoogleFonts.cinzel(color: goldColor, fontWeight: FontWeight.bold)),
+          style: GoogleFonts.cinzel(color: kGold, fontWeight: FontWeight.bold, fontSize: 18)),
         actions: [
           IconButton(
-            tooltip: "Listen",
-            icon: Icon(Icons.volume_up, color: goldColor),
+            icon: const Icon(Icons.volume_up, color: kGold),
             onPressed: () => _speakVerse(_showTransliteration ? widget.verse.transliteration : widget.verse.sanskrit),
           ),
           IconButton(
-            icon: const Icon(Icons.copy),
+            icon: const Icon(Icons.copy, color: kGold),
             onPressed: () => _copyVerse(widget.verse),
           ),
         ],
       ),
       body: Column(
         children: [
-          _buildHeroCard(context, goldColor, isDark),
-          _buildPracticeBar(goldColor),
-          _buildTabSystem(goldColor),
+          _buildHeroCard(context),
+          _buildPracticeBar(),
+          _buildTabSystem(theme),
         ],
       ),
-      bottomNavigationBar: _buildBottomNav(goldColor),
     );
   }
 
-  Widget _buildHeroCard(BuildContext context, Color gold, bool isDark) {
+  Widget _buildHeroCard(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isDark ? [const Color(0xFF2A1F00), const Color(0xFF1A1500)] : [Colors.white, const Color(0xFFFFF9E6)],
+          colors: isDark 
+              ? [const Color(0xFF2A1F00), const Color(0xFF1A1500)] 
+              : [Colors.white, const Color(0xFFFFF9E6)],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: gold.withOpacity(0.3)),
+        border: Border.all(color: kGold.withOpacity(0.3)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
       ),
       child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('BG ${widget.verse.chapter}.${widget.verse.verse}', 
-                style: GoogleFonts.cinzel(color: gold, fontSize: 14)),
-              _languageToggle(gold),
+              Text('SHLOKA', style: GoogleFonts.cinzel(color: kGold, fontSize: 12, fontWeight: FontWeight.bold)),
+              _languageToggle(),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           Text(
             _showTransliteration ? widget.verse.transliteration : widget.verse.sanskrit,
             textAlign: TextAlign.center,
             style: _showTransliteration 
               ? GoogleFonts.crimsonText(fontSize: 20, fontStyle: FontStyle.italic)
-              : GoogleFonts.notoSansDevanagari(fontSize: 22, fontWeight: FontWeight.bold),
+              : GoogleFonts.notoSansDevanagari(fontSize: 24, fontWeight: FontWeight.bold),
           ),
         ],
       ),
     );
   }
 
-  Widget _languageToggle(Color gold) {
+  Widget _languageToggle() {
     return InkWell(
       onTap: () => setState(() => _showTransliteration = !_showTransliteration),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        decoration: BoxDecoration(border: Border.all(color: gold), borderRadius: BorderRadius.circular(20)),
-        child: Text(_showTransliteration ? "IAST" : "Sanskrit", style: TextStyle(color: gold, fontSize: 12)),
+        decoration: BoxDecoration(
+          color: kGold.withOpacity(0.1),
+          border: Border.all(color: kGold), 
+          borderRadius: BorderRadius.circular(20)
+        ),
+        child: Text(_showTransliteration ? "IAST" : "Sanskrit", 
+          style: const TextStyle(color: kGold, fontSize: 11, fontWeight: FontWeight.bold)),
       ),
     );
   }
 
-  Widget _buildPracticeBar(Color gold) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+  Widget _buildPracticeBar() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: kGold.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Row(
         children: [
-          Expanded(child: Text(_isListening ? "Listening..." : "Practice Pronunciation:")),
+          Expanded(
+            child: Text(
+              _isListening ? "Listening... Pronounce now" : "Practice Pronunciation",
+              style: TextStyle(color: _isListening ? Colors.red : kGold, fontSize: 14, fontWeight: FontWeight.w500),
+            ),
+          ),
           IconButton(
-            icon: Icon(_isListening ? Icons.stop_circle : Icons.mic, color: _isListening ? Colors.red : gold),
+            icon: Icon(_isListening ? Icons.stop_circle : Icons.mic, 
+              color: _isListening ? Colors.red : kGold),
             onPressed: _startPractice,
           ),
         ],
@@ -202,22 +218,34 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
     );
   }
 
-  Widget _buildTabSystem(Color gold) {
+  Widget _buildTabSystem(ThemeData theme) {
     return Expanded(
       child: Column(
         children: [
           TabBar(
             controller: _tabs,
-            labelColor: gold,
+            labelColor: kGold,
+            unselectedLabelColor: theme.hintColor,
+            indicatorColor: kGold,
             tabs: const [Tab(text: "Translation"), Tab(text: "Meaning"), Tab(text: "Tags")],
           ),
           Expanded(
             child: TabBarView(
               controller: _tabs,
               children: [
-                _tabPadding(Text(widget.verse.translation, style: GoogleFonts.crimsonText(fontSize: 18))),
-                _tabPadding(Text(widget.verse.meaning, style: const TextStyle(height: 1.5))),
-                _tabPadding(Wrap(spacing: 8, children: widget.verse.keywords.map((k) => Chip(label: Text(k))).toList())),
+                _tabPadding(Text(widget.verse.translation, 
+                  style: GoogleFonts.crimsonText(fontSize: 19, height: 1.4))),
+                _tabPadding(Text(widget.verse.meaning, 
+                  style: const TextStyle(height: 1.6, fontSize: 16))),
+                _tabPadding(Wrap(
+                  spacing: 8, 
+                  runSpacing: 8,
+                  children: widget.verse.keywords.map((k) => Chip(
+                    backgroundColor: kGold.withOpacity(0.1),
+                    side: BorderSide(color: kGold.withOpacity(0.2)),
+                    label: Text(k, style: const TextStyle(color: kGold, fontSize: 12)),
+                  )).toList(),
+                )),
               ],
             ),
           ),
@@ -226,22 +254,13 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
     );
   }
 
-  Widget _tabPadding(Widget child) => SingleChildScrollView(padding: const EdgeInsets.all(24), child: child);
-
-  Widget _buildBottomNav(Color gold) {
-    return BottomAppBar(
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          TextButton.icon(onPressed: () {}, icon: const Icon(Icons.arrow_back_ios), label: const Text("Prev")),
-          TextButton.icon(onPressed: () {}, label: const Text("Next"), icon: const Icon(Icons.arrow_forward_ios)),
-        ],
-      ),
-    );
-  }
+  Widget _tabPadding(Widget child) => SingleChildScrollView(
+    padding: const EdgeInsets.all(24), 
+    child: child
+  );
 
   void _copyVerse(Verse v) {
-    Clipboard.setData(ClipboardData(text: "${v.sanskrit}\n${v.translation}"));
-    _showSnack("Copied to clipboard", Colors.black87);
+    Clipboard.setData(ClipboardData(text: "${v.sanskrit}\n\n${v.translation}"));
+    _showSnack("Copied to clipboard", kGold);
   }
 }
