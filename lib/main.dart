@@ -17,27 +17,26 @@ import 'screens/update_checker.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final prefs = await SharedPreferences.getInstance();
+  
+  // App initialization
   final appState = AppState();
   
+  // Wait for data and preferences to load
   await Future.wait([
     appState.load(),
     loadGitaData(), 
   ]);
 
-  final bool onboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
-
   runApp(
     ChangeNotifierProvider<AppState>.value(
       value: appState,
-      child: MyApp(showOnboarding: !onboardingCompleted),
+      child: const MyApp(),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  final bool showOnboarding;
-  const MyApp({super.key, required this.showOnboarding});
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +45,7 @@ class MyApp extends StatelessWidget {
         final baseLight = buildLightTheme();
         final baseDark = buildDarkTheme(); 
         
+        // Dynamic accessibility themes
         final lightTheme = state.highContrast
             ? baseLight.copyWith(
                 colorScheme: baseLight.colorScheme.copyWith(
@@ -94,7 +94,8 @@ class MyApp extends StatelessWidget {
               child: child ?? const SizedBox.shrink(),
             );
           },
-          home: showOnboarding ? const OnboardingScreen() : const MainShell(),
+          // Home determines navigation based on onboarding state
+          home: state.onboardingComplete ? const MainShell() : const OnboardingScreen(),
         );
       },
     );
