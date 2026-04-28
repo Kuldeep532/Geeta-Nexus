@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 class Verse {
   final String id;
   final int chapter;
@@ -11,7 +13,6 @@ class Verse {
   // UI Compatibility Getters
   int get number => verse; 
   String get text => translation;
-  // Added to fix potential reference errors in UI screens
   int get verseNumber => verse; 
 
   const Verse({
@@ -103,12 +104,18 @@ class JournalEntry {
     required this.date,
   });
 
+  // UI Fix: Adding toJson to match AppState calls
+  Map<String, dynamic> toJson() => toMap();
+  
   Map<String, dynamic> toMap() => {
         'id': id,
         'content': content,
         'mood': mood,
         'date': date.toIso8601String(),
       };
+
+  // UI Fix: Adding fromJson to match AppState calls
+  factory JournalEntry.fromJson(Map<String, dynamic> json) => JournalEntry.fromMap(json);
 
   factory JournalEntry.fromMap(Map<String, dynamic> m) {
     return JournalEntry(
