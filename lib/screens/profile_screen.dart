@@ -16,10 +16,8 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = false;
   
-  // GoogleSignIn setup with safety
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
-    scopes: ['email', 'profile'],
-  );
+  // GoogleSignIn simplified constructor
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   // Logout Function
   Future<void> _handleLogout(BuildContext context) async {
@@ -72,13 +70,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: kGold),
             onPressed: () {
               if (titleCtrl.text.isNotEmpty && bodyCtrl.text.isNotEmpty) {
-                state.sendGlobalNotification(
-                  title: titleCtrl.text,
-                  body: bodyCtrl.text,
-                );
+                // FIXED: Now passing both title and body
+                state.sendGlobalNotification(titleCtrl.text, bodyCtrl.text);
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Notification sent silently!")),
+                  const SnackBar(content: Text("Notification sent successfully!")),
                 );
               }
             },
@@ -95,7 +91,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final theme = Theme.of(context);
     final accentColor = kGold;
 
-    // Matches with AppState Role Logic
     final bool isSuperAdmin = state.isSuperAdmin; 
     final bool isAdmin = state.isAdmin;
 
@@ -111,26 +106,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         children: [
-          // 1. Profile Info
           _buildInfoCard(state, accentColor, theme, isSuperAdmin, isAdmin),
-          
           const SizedBox(height: 32),
-
-          // 2. Stats
           _buildSectionTitle("YOUR PROGRESS", accentColor),
           _buildStatRow(Icons.bolt, "Level", "${state.level}", accentColor),
           _buildStatRow(Icons.local_fire_department, "Streak", "${state.streak} Days", Colors.orange),
-
           const SizedBox(height: 32),
-
-          // 3. Admin Command Centre
           if (isAdmin) ...[
             _buildSectionTitle("CONTROL CENTRE", accentColor),
             _buildAdminControls(accentColor, theme, isSuperAdmin, state),
             const SizedBox(height: 32),
           ],
-
-          // 4. Auth Button
           _buildAuthButton(state, accentColor),
         ],
       ),
@@ -154,7 +140,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: Column(
         children: [
-          // Push Notifications - Available for all Admins
           _buildAdminTile(
             icon: Icons.campaign_rounded,
             iconColor: Colors.amber,
@@ -162,9 +147,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             subtitle: "Send push notification",
             onTap: () => _showNotificationDialog(context, state),
           ),
-          
           const Divider(height: 1),
-
           if (isSuper) ...[
             _buildAdminTile(
               icon: Icons.people_alt_outlined,
@@ -175,7 +158,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const Divider(height: 1),
           ],
-
           _buildAdminTile(
             icon: Icons.edit_note_rounded,
             iconColor: Colors.green,
@@ -183,7 +165,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             subtitle: "Update verses and lessons",
             onTap: () {},
           ),
-          
           if (isSuper) ...[
             const Divider(height: 1),
             _buildAdminTile(
@@ -244,7 +225,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             radius: 40,
             backgroundColor: gold.withOpacity(0.1),
             child: Text(state.userName.isNotEmpty ? state.userName[0].toUpperCase() : "G", 
-              style: TextStyle(color: gold, fontSize: 30, fontWeight: FontWeight.bold)),
+                 style: TextStyle(color: gold, fontSize: 30, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(height: 16),
           Text(state.userName.isEmpty ? "Guest Seeker" : state.userName,
@@ -285,7 +266,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       width: double.infinity,
       height: 50,
       child: OutlinedButton.icon(
-        onPressed: _isLoading ? null : (isGuest ? () {} : () => _handleLogout(context)),
+        onPressed: _isLoading ? null : (isGuest ? null : () => _handleLogout(context)),
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: isGuest ? gold : Colors.redAccent),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -294,7 +275,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         icon: _isLoading 
             ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
             : Icon(isGuest ? Icons.login : Icons.logout),
-        label: Text(isGuest ? "Login with Google" : "Logout Account"),
+        label: Text(isGuest ? "GUEST MODE (NO LOGIN)" : "LOGOUT FROM DIVINE"),
       ),
     );
   }
