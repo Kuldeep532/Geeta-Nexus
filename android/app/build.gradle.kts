@@ -19,7 +19,7 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace = "com.satviktechnologies.geetanexus"
     // Explicitly pin compile SDK to satisfy AAR metadata requirements of newer AndroidX/Google libraries
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     signingConfigs {
@@ -41,7 +41,7 @@ android {
         applicationId = "com.satviktechnologies.geetanexus"
         minSdk = 21 // Kam se kam 21 rakhein Firebase ke liye
         // Keep target SDK aligned with current Play and dependency expectations
-        targetSdk = 35
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         
