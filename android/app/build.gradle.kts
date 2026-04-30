@@ -19,8 +19,8 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace = "com.satviktechnologies.geetanexus"
     
-    // SDK 34 stable hai aur Play Store ki requirements ko pura karta hai
-    compileSdk = 34 
+    // Plugins ki requirement ke mutabiq compileSdk 36 kar diya gaya hai
+    compileSdk = 36 
     ndkVersion = flutter.ndkVersion
 
     signingConfigs {
@@ -41,11 +41,10 @@ android {
     defaultConfig {
         applicationId = "com.satviktechnologies.geetanexus"
         minSdk = 21 
-        targetSdk = 34 
+        targetSdk = 36 
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         
-        // MultiDex release builds ke liye zaroori hai
         multiDexEnabled = true 
     }
 
@@ -53,7 +52,6 @@ android {
         release {
             signingConfig = signingConfigs.getByName("release")
             
-            // Code ko chota aur secure banane ke liye
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -63,7 +61,6 @@ android {
         }
     }
 
-    // Isse metadata mismatch ke errors solve ho jate hain
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -76,13 +73,11 @@ flutter {
 }
 
 dependencies {
-    // Firebase setup
     implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-messaging") 
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.android.gms:play-services-auth:21.1.1")
     
-    // Multidex support
     implementation("androidx.multidex:multidex:2.0.1")
 }
