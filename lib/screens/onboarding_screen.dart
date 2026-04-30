@@ -36,7 +36,7 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
   // FIX: GoogleSignIn constructor simplified to avoid build errors
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
   int _page = 0;
   final TextEditingController _nameController = TextEditingController();
@@ -94,12 +94,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Future<void> _continueWithGoogle() async {
     setState(() => _isLoading = true);
     try {
-      final GoogleSignInAccount? account = await _googleSignIn.signIn();
-      if (account == null) {
-        setState(() => _isLoading = false);
-        return;
-      }
-
+      final GoogleSignInAccount account = await _googleSignIn.authenticate();
       if (!mounted) return;
       
       _nameController.text = account.displayName ?? "Seeker";
