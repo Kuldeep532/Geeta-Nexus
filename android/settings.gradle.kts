@@ -19,13 +19,13 @@ pluginManagement {
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
     
-    // Android Gradle Plugin: 8.2.1 ya 8.3.0 zyada stable hain SDK 34 ke liye
+    // Android Gradle Plugin version
     id("com.android.application") version "8.3.0" apply false
     
-    // Kotlin: 1.9.20+ version SDK 34 aur 35 ke liye sabse best hai
-    id("org.jetbrains.kotlin.android") version "1.9.22" apply false
+    // ✅ Kotlin version update kar ke 2.1.0 kiya gaya hai
+    id("org.jetbrains.kotlin.android") version "2.1.0" apply false
     
-    // Firebase/Google Services: 4.4.1 ek dam sahi hai
+    // Firebase/Google Services plugin
     id("com.google.gms.google-services") version "4.4.1" apply false
 }
 
