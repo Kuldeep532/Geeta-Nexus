@@ -261,7 +261,7 @@ class ProgressScreen extends StatelessWidget {
       itemCount: kChapters.length,
       itemBuilder: (context, i) {
         final ch = kChapters[i];
-        final bool isDone = state.isChapterCompleted(ch.number);
+        final bool isDone = state.isChapterCompleted(ch.number.toString());
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
