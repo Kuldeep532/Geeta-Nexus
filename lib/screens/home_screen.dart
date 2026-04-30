@@ -59,22 +59,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return 'Good Night · Hare Krishna';
   }
 
-
-
-  String _timeBasedGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour >= 5 && hour < 12) {
-      return 'Good Morning · Jai Shri Krishna';
-    }
-    if (hour >= 12 && hour < 17) {
-      return 'Good Afternoon · Jai Shri Krishna';
-    }
-    if (hour >= 17 && hour < 21) {
-      return 'Good Evening · Jai Shri Krishna';
-    }
-    return 'Good Night · Hare Krishna';
-  }
-
   final List<Map<String, String>> _newFeatures = const [
     {'title': 'Adaptive Reading Mode', 'subtitle': 'Cleaner typography and calmer spacing for long study sessions'},
     {'title': 'Smart Verse Context', 'subtitle': 'Chapter-aware suggestions to continue reading with flow'},
@@ -125,7 +109,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: theme.brightness == Brightness.dark
                             ? kGoldLight
                             : kGoldDim,
-                        color: kGoldLight,
                         fontSize: 17,
                         fontStyle: FontStyle.italic,
                       ),
@@ -152,13 +135,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildSectionTitle('Quick Actions'),
                   const SizedBox(height: 16),
                   _buildQuickActions(context),
-                  const SizedBox(height: 24),
-                  _buildSectionTitle('New Features'),
-                  const SizedBox(height: 12),
-                  Semantics(
-                    label: 'New features list',
-                    child: _buildNewFeatures(),
-                  ),
                   const SizedBox(height: 24),
                   _buildSectionTitle("Today's Wisdom"),
                   const SizedBox(height: 12),
@@ -420,6 +396,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    );
+  }
+
   Widget _buildNewFeatures() {
     return Column(
       children: _newFeatures
@@ -474,7 +453,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
     return Text(
       title.toUpperCase(),
-      style: GoogleFonts.cinzel( // FIXED: Removed leading comma
+      style: GoogleFonts.cinzel(
         color: theme.colorScheme.primary,
         fontSize: 13,
         fontWeight: FontWeight.bold,
@@ -491,36 +470,41 @@ class _HomeScreenState extends State<HomeScreen> {
       {'icon': Icons.map, 'label': 'Plan', 'color': const Color(0xFF1B5E20), 'screen': const ReadingPlanScreen()},
     ];
 
-    return Row(
-      children: actions.map((action) {
-        return Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: InkWell(
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => action['screen'] as Widget)),
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  color: action['color'] as Color,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white10),
-                ),
-                child: Column(
-                  children: [
-                    Icon(action['icon'] as IconData, color: kGold, size: 22),
-                    const SizedBox(height: 8),
-                    Text(
-                      action['label'] as String,
-                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                    ),
-                  ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final itemWidth = (constraints.maxWidth - 12) / 2;
+        return Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: actions.map((action) {
+            return SizedBox(
+              width: itemWidth,
+              child: InkWell(
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => action['screen'] as Widget)),
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    color: action['color'] as Color,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(action['icon'] as IconData, color: kGold, size: 22),
+                      const SizedBox(height: 8),
+                      Text(
+                        action['label'] as String,
+                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          }).toList(),
         );
-      }).toList(),
+      },
     );
   }
 

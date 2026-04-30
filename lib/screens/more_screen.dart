@@ -4,15 +4,20 @@ import 'package:provider/provider.dart';
 
 import '../state/app_state.dart';
 import 'astrology_screen.dart';
+import 'about_screen.dart';
 import 'breathing_screen.dart';
 import 'chants_screen.dart';
+import 'contact_screen.dart';
 import 'flashcards_screen.dart';
 import 'geeta_voice_practice_screen.dart';
 import 'glossary_screen.dart';
 import 'journal_screen.dart';
 import 'meditation_screen.dart';
+import 'privacy_policy_screen.dart';
+import 'profile_screen.dart';
 import 'quiz_screen.dart';
 import 'reading_plan_screen.dart';
+import 'terms_screen.dart';
 
 class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
@@ -75,7 +80,7 @@ class _MoreScreenState extends State<MoreScreen> {
     final accountName = appState.userName.isNotEmpty ? appState.userName : 'Not connected';
     final accountEmail = appState.userEmail.isNotEmpty
         ? appState.userEmail
-        : 'Connect Google sign-in';
+        : 'Connect Google or email sign-in';
 
     return Container(
       width: double.infinity,
@@ -118,13 +123,23 @@ class _MoreScreenState extends State<MoreScreen> {
             decoration: BoxDecoration(
               color: appState.isGoogleAccountLinked
                   ? Colors.green.withOpacity(0.18)
+                  : appState.isEmailAccountLinked
+                      ? cs.primary.withOpacity(0.15)
                   : cs.outline.withOpacity(0.2),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              appState.isGoogleAccountLinked ? 'Google Linked' : 'Local Profile',
+              appState.isGoogleAccountLinked
+                  ? 'Google Linked'
+                  : appState.isEmailAccountLinked
+                      ? 'Email Linked'
+                      : 'Local Profile',
               style: TextStyle(
-                color: appState.isGoogleAccountLinked ? cs.secondary : cs.onSurface.withOpacity(0.6),
+                color: appState.isGoogleAccountLinked
+                    ? cs.secondary
+                    : appState.isEmailAccountLinked
+                        ? cs.primary
+                        : cs.onSurface.withOpacity(0.6),
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
               ),
@@ -175,6 +190,16 @@ class _MoreScreenState extends State<MoreScreen> {
                 _Item('📿', 'Japa Counter', 'Mantra repetition', const ChantsScreen()),
                 _Item('✍️', 'Journal', 'Daily reflection', const JournalScreen()),
                 _Item('🎙️', 'Voice Practice', 'Recite with feedback', const GeetaVoicePracticeScreen()),
+              ]),
+              const SizedBox(height: 24),
+              _sectionTitle('Legal & Support', context),
+              const SizedBox(height: 12),
+              _buildGrid(context, [
+                _Item('👤', 'Profile', 'Manage linked account', const ProfileScreen()),
+                _Item('ℹ️', 'About Us', 'App mission & version', const AboutScreen()),
+                _Item('🔐', 'Privacy Policy', 'How your data is handled', const PrivacyPolicyScreen()),
+                _Item('📜', 'Terms', 'Terms and conditions', const TermsScreen()),
+                _Item('✉️', 'Contact Us', 'Reach support team', const ContactScreen()),
               ]),
               const SizedBox(height: 24),
               _sectionTitle('Profile Account', context),

@@ -22,8 +22,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   );
   int _page = 0;
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   final FocusNode _nameFocus = FocusNode();
   String? _nameError;
+  String? _emailError;
+  String? _passwordError;
 
   bool _googleLoading = false;
   String? _googleError;
@@ -118,6 +122,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void dispose() {
     _controller.dispose();
     _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     _nameFocus.dispose();
     super.dispose();
   }
@@ -150,6 +156,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     await _finishOnboarding();
   }
 
+  Future<void> _continueWithEmail() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    setState(() {
+      _nameError = name.isEmpty ? 'Please enter your name' : null;
+      _emailError =
+          RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email) ? null : 'Enter a valid email';
+      _passwordError =
+          password.length >= 6 ? null : 'Password must be at least 6 characters';
+    });
+    if (_nameError != null || _emailError != null || _passwordError != null) {
+      return;
+    }
+    context.read<AppState>().updateEmailAccount(name: name, email: email);
+    await _handlePermissions();
+  }
+
   void _next() {
     if (_isNamePage) {
       final name = _nameController.text.trim();
@@ -173,8 +197,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       resizeToAvoidBottomInset: true,
       body: SafeArea(
         child: Column(
@@ -203,6 +229,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildBottomControls() {
+    final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
       child: Column(
@@ -217,7 +244,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 width: _page == i ? 24 : 8,
                 height: 8,
                 decoration: BoxDecoration(
-                  color: _page == i ? kGold : kDivider,
+                  color: _page == i ? cs.primary : cs.outline,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -230,7 +257,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               onPressed: _next,
               style: ElevatedButton.styleFrom(
                 backgroundColor: kGold,
-                foregroundColor: kBg,
+                foregroundColor: cs.onPrimary,
                 padding: const EdgeInsets.symmetric(vertical: 18),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
@@ -245,9 +272,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           if (!_isNamePage)
             TextButton(
               onPressed: _handlePermissions,
-              child: const Text(
+              child: Text(
                 'Skip Tour',
-                style: TextStyle(color: kTextDim, fontSize: 14),
+                style: TextStyle(color: cs.onSurface.withOpacity(0.7), fontSize: 14),
               ),
             )
           else
@@ -258,6 +285,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildPageLayout(_OnboardPageData page) {
+    final cs = Theme.of(context).colorScheme;
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
@@ -270,7 +298,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: kGold.withOpacity(0.1),
-                border: Border.all(color: kGoldDim, width: 2),
+                border: Border.all(color: cs.primary, width: 2),
               ),
               child: Center(
                 child:
@@ -291,8 +319,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             Text(
               page.subtitle,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                  color: kGoldDim,
+              style: TextStyle(
+                  color: cs.primary.withOpacity(0.85),
                   fontSize: 16,
                   fontWeight: FontWeight.w500),
             ),
@@ -301,7 +329,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               page.body,
               textAlign: TextAlign.center,
               style: GoogleFonts.crimsonText(
-                color: kText,
+                color: cs.onSurface,
                 fontSize: 18,
                 height: 1.6,
               ),
@@ -313,6 +341,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildNamePage(_OnboardPageData page) {
+    final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -325,7 +355,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: kGold.withOpacity(0.1),
-                border: Border.all(color: kGoldDim, width: 2),
+                border: Border.all(color: cs.primary, width: 2),
               ),
               child: Center(
                 child:
@@ -337,7 +367,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               page.title,
               textAlign: TextAlign.center,
               style: GoogleFonts.cinzel(
-                color: kGold,
+                color: cs.primary,
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
@@ -347,7 +377,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               page.body,
               textAlign: TextAlign.center,
               style: GoogleFonts.crimsonText(
-                color: kText,
+                color: cs.onSurface,
                 fontSize: 16,
                 height: 1.5,
               ),
@@ -360,26 +390,47 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _next(),
               style: GoogleFonts.cinzel(
-                color: kText,
+                color: cs.onSurface,
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
               decoration: InputDecoration(
                 hintText: 'Your name',
-                hintStyle: const TextStyle(color: kTextDim),
-                filled: true,
-                fillColor: kCard,
+                hintStyle: TextStyle(color: cs.onSurface.withOpacity(0.6)),
                 contentPadding: const EdgeInsets.symmetric(
                     horizontal: 18, vertical: 18),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: BorderSide(color: kDivider.withOpacity(0.6)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: kGold, width: 1.6),
-                ),
                 errorText: _nameError,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              style: TextStyle(color: cs.onSurface),
+              decoration: InputDecoration(
+                hintText: 'Email address',
+                errorText: _emailError,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _passwordController,
+              obscureText: true,
+              textInputAction: TextInputAction.done,
+              style: TextStyle(color: cs.onSurface),
+              decoration: InputDecoration(
+                hintText: 'Password (6+ chars)',
+                errorText: _passwordError,
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _continueWithEmail,
+                icon: const Icon(Icons.mail_outline),
+                label: const Text('Continue with Email'),
               ),
             ),
             const SizedBox(height: 14),
@@ -391,15 +442,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ? const SizedBox(
                         width: 16,
                         height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: kGold),
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(Icons.login, color: kGold),
+                    : const Icon(Icons.login),
                 label: Text(
                   _googleLoading ? 'Connecting to Google...' : 'Continue with Google',
-                  style: GoogleFonts.cinzel(color: kGold, fontWeight: FontWeight.w600),
+                  style: GoogleFonts.cinzel(fontWeight: FontWeight.w600),
                 ),
                 style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: kGold.withOpacity(0.7)),
+                  side: BorderSide(color: cs.primary.withOpacity(0.7)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -414,9 +465,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             ],
             const SizedBox(height: 10),
-            const Text(
+            Text(
               'You can change this anytime in Settings.',
-              style: TextStyle(color: kTextDim, fontSize: 12),
+              style: TextStyle(color: cs.onSurface.withOpacity(0.7), fontSize: 12),
             ),
           ],
         ),

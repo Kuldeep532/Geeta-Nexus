@@ -24,6 +24,7 @@ class AppState extends ChangeNotifier {
   String _userName = '';
   String _userEmail = '';
   bool _isGoogleAccountLinked = false;
+  bool _isEmailAccountLinked = false;
   List<AppNotification> _notifications = [];
   ThemeMode _themeMode = ThemeMode.system;
   bool _highContrast = false;
@@ -35,6 +36,7 @@ class AppState extends ChangeNotifier {
   String get userName => _userName;
   String get userEmail => _userEmail;
   bool get isGoogleAccountLinked => _isGoogleAccountLinked;
+  bool get isEmailAccountLinked => _isEmailAccountLinked;
   bool get isAdmin => _userEmail.toLowerCase() == kAdminEmail;
   List<AppNotification> get notifications => List.unmodifiable(_notifications);
   int get unreadNotificationCount =>
@@ -96,6 +98,7 @@ class AppState extends ChangeNotifier {
     _userName = prefs.getString('userName') ?? '';
     _userEmail = prefs.getString('userEmail') ?? '';
     _isGoogleAccountLinked = prefs.getBool('isGoogleAccountLinked') ?? false;
+    _isEmailAccountLinked = prefs.getBool('isEmailAccountLinked') ?? false;
     final notificationJson = prefs.getStringList('notifications') ?? [];
     _notifications = notificationJson
         .map((e) => AppNotification.fromMap(jsonDecode(e)))
@@ -167,6 +170,7 @@ class AppState extends ChangeNotifier {
     await prefs.setString('userName', _userName);
     await prefs.setString('userEmail', _userEmail);
     await prefs.setBool('isGoogleAccountLinked', _isGoogleAccountLinked);
+    await prefs.setBool('isEmailAccountLinked', _isEmailAccountLinked);
     final notificationsJson =
         _notifications.map((n) => jsonEncode(n.toMap())).toList();
     await prefs.setStringList('notifications', notificationsJson);
@@ -318,6 +322,19 @@ class AppState extends ChangeNotifier {
     _userName = name.trim();
     _userEmail = email.trim();
     _isGoogleAccountLinked = true;
+    _isEmailAccountLinked = false;
+    notifyListeners();
+    _save();
+  }
+
+  void updateEmailAccount({
+    required String name,
+    required String email,
+  }) {
+    _userName = name.trim();
+    _userEmail = email.trim();
+    _isGoogleAccountLinked = false;
+    _isEmailAccountLinked = true;
     notifyListeners();
     _save();
   }
@@ -325,6 +342,15 @@ class AppState extends ChangeNotifier {
   void clearGoogleAccount() {
     _userEmail = '';
     _isGoogleAccountLinked = false;
+    _isEmailAccountLinked = false;
+    notifyListeners();
+    _save();
+  }
+
+  void clearLinkedAccount() {
+    _userEmail = '';
+    _isGoogleAccountLinked = false;
+    _isEmailAccountLinked = false;
     notifyListeners();
     _save();
   }

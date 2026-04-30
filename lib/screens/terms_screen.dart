@@ -8,7 +8,7 @@ class TermsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Terms & Conditions'),
         centerTitle: true,
@@ -70,7 +70,7 @@ class _Heading extends StatelessWidget {
         padding: const EdgeInsets.only(top: 18, bottom: 6),
         child: Text(text.toUpperCase(),
             style: GoogleFonts.cinzel(
-                color: kGold,
+                color: Theme.of(context).colorScheme.primary,
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1.1)),
@@ -84,6 +84,6 @@ class _Body extends StatelessWidget {
   Widget build(BuildContext context) => Text(
         text,
         style: GoogleFonts.crimsonText(
-            color: kText, fontSize: 15, height: 1.55),
+            color: Theme.of(context).colorScheme.onSurface, fontSize: 15, height: 1.55),
       );
 }
