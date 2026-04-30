@@ -1,10 +1,9 @@
 #!/bin/bash
 
-# Flutter install check aur clone
-if [ ! -d "flutter" ]; then 
-    git clone https://github.com/flutter/flutter.git
-fi
+# Flutter SDK setup
+git clone https://github.com/flutter/flutter.git -b stable
+export PATH="$PATH:`pwd`/flutter/bin"
 
-# Flutter doctor aur build process
-./flutter/bin/flutter doctor
-./flutter/bin/flutter build web --release
+# Project setup aur build
+flutter pub get
+flutter build web --release
