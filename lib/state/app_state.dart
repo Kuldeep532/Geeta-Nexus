@@ -32,7 +32,14 @@ class AppState extends ChangeNotifier {
   String _userEmail = '';
   String _userRole = 'seeker';
 
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  FirebaseFirestore? _firestoreCache;
+  FirebaseFirestore? get _firestore {
+    try {
+      return _firestoreCache ??= FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
 
   // --- Getters ---
   bool get isAdmin => _userEmail.toLowerCase() == kAdminEmail.toLowerCase() || _userRole == 'admin' || _userRole == 'super_admin';
@@ -190,8 +197,13 @@ class AppState extends ChangeNotifier {
   // --- Firebase Logic ---
   Future<void> syncUserRoleWithFirebase() async {
     if (_userEmail.isEmpty) return;
+    final firestore = _firestore;
+    if (firestore == null) {
+      debugPrint("Firebase Sync skipped (Firebase not initialized)");
+      return;
+    }
     try {
-      final doc = await _firestore.collection('users').doc(_userEmail).get().timeout(
+      final doc = await firestore.collection('users').doc(_userEmail).get().timeout(
         const Duration(seconds: 5),
         onTimeout: () => throw TimeoutException('Timeout'),
       );
@@ -199,7 +211,7 @@ class AppState extends ChangeNotifier {
       if (doc.exists) {
         _userRole = doc.data()?['role'] ?? 'seeker';
       } else {
-        await _firestore.collection('users').doc(_userEmail).set({
+        await firestore.collection('users').doc(_userEmail).set({
           'name': _userName,
           'email': _userEmail,
           'role': _userEmail.toLowerCase() == kAdminEmail.toLowerCase() ? 'super_admin' : 'seeker',
