@@ -19,8 +19,8 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace = "com.satviktechnologies.geetanexus"
     
-    // Plugins ki requirement ke mutabiq compileSdk 36 kar diya gaya hai
-    compileSdk = 36 
+    // SDK 35 stable hai aur aapke naye plugins ko support karega
+    compileSdk = 35 
     ndkVersion = flutter.ndkVersion
 
     signingConfigs {
@@ -41,7 +41,7 @@ android {
     defaultConfig {
         applicationId = "com.satviktechnologies.geetanexus"
         minSdk = 21 
-        targetSdk = 36 
+        targetSdk = 35 
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         
@@ -73,6 +73,7 @@ flutter {
 }
 
 dependencies {
+    // Firebase BOM ko update kiya gaya hai stability ke liye
     implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-messaging") 
