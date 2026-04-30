@@ -19,8 +19,8 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace = "com.satviktechnologies.geetanexus"
     
-    // SDK 35 stable hai aur aapke naye plugins ko support karega
-    compileSdk = 35 
+    // ✅ Plugins ki demand ke mutabiq 36 kar diya gaya hai
+    compileSdk = 36 
     ndkVersion = flutter.ndkVersion
 
     signingConfigs {
@@ -41,11 +41,23 @@ android {
     defaultConfig {
         applicationId = "com.satviktechnologies.geetanexus"
         minSdk = 21 
-        targetSdk = 35 
+        targetSdk = 36 
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         
         multiDexEnabled = true 
+    }
+
+    compileOptions {
+        // ✅ Yeh line 77 errors ko fix karegi
+        isCoreLibraryDesugaringEnabled = true
+        
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
     }
 
     buildTypes {
@@ -73,7 +85,9 @@ flutter {
 }
 
 dependencies {
-    // Firebase BOM ko update kiya gaya hai stability ke liye
+    // ✅ Desugaring library jo notifications ke liye zaroori hai
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+
     implementation(platform("com.google.firebase:firebase-bom:33.1.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-messaging") 
