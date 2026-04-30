@@ -5,7 +5,7 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Bhagavad Gita AI app.">
 
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -16,82 +16,8 @@
 
   <title>Geeta AI</title>
   <link rel="manifest" href="manifest.json">
-
-  <script>
-    // Naya update aane par sirf is version number ko badlein
-    var serviceWorkerVersion = '1.0.3';
-  </script>
-
-  <script src="flutter_bootstrap.js?v=1.0.3" async></script>
-
-  <style>
-    .loading-container {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      font-family: sans-serif;
-      background-color: #ffffff;
-    }
-    .loader {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #3498db;
-      border-radius: 50%;
-      width: 30px;
-      height: 30px;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  </style>
 </head>
 <body>
-  <div class="loading-container" id="loading-indicator">
-    <div class="loader"></div>
-    <p style="margin-top: 20px;">Checking for updates...</p>
-  </div>
-
-  <script>
-    window.addEventListener('load', function(ev) {
-      // Service Worker registration aur automatic update logic
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('flutter_service_worker.js?v=' + serviceWorkerVersion)
-          .then(function(reg) {
-            reg.onupdatefound = function() {
-              var installingWorker = reg.installing;
-              installingWorker.onstatechange = function() {
-                if (installingWorker.state === 'installed') {
-                  if (navigator.serviceWorker.controller) {
-                    // Naya version milte hi page automatic reload hoga
-                    console.log('New update installed. Refreshing page...');
-                    window.location.reload();
-                  }
-                }
-              };
-            };
-          });
-      }
-
-      // Flutter App Load karne ka process
-      _flutter.loader.loadEntrypoint({
-        serviceWorker: {
-          serviceWorkerVersion: serviceWorkerVersion,
-        },
-        onEntrypointLoaded: function(engineInitializer) {
-          engineInitializer.initializeEngine().then(function(appRunner) {
-            // App taiyar hone par loading screen hatana
-            var loader = document.getElementById('loading-indicator');
-            if (loader) {
-              loader.remove();
-            }
-            appRunner.runApp();
-          });
-        }
-      });
-    });
-  </script>
+  <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
