@@ -1,13 +1,10 @@
 #!/bin/bash
 
-# 1. Flutter download karein
-git clone https://github.com/flutter/flutter.git -b stable
+# Flutter install check aur clone
+if [ ! -d "flutter" ]; then 
+    git clone https://github.com/flutter/flutter.git
+fi
 
-# 2. Path set karein
-export PATH="$PATH:`pwd`/flutter/bin"
-
-# 3. Flutter ko initialize karein
-flutter doctor
-
-# 4. Web build karein
-flutter build web --release
+# Flutter doctor aur build process
+./flutter/bin/flutter doctor
+./flutter/bin/flutter build web --release
