@@ -17,7 +17,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = false;
   
   // GoogleSignIn simplified constructor
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
   // Logout Function
   Future<void> _handleLogout(BuildContext context) async {

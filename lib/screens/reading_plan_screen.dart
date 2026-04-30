@@ -72,7 +72,7 @@ class ReadingPlanScreen extends StatelessWidget {
                   orElse: () => kChapters[0],
                 );
 
-                final isCompleted = state.isChapterCompleted(chapterNum);
+                final isCompleted = state.isChapterCompleted(chapterNum.toString());
                 final isToday = day == currentDay;
 
                 return Padding(
