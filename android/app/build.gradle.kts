@@ -29,30 +29,10 @@ android {
                 keyAlias = keystoreProperties["keyAlias"]?.toString()
                 keyPassword = keystoreProperties["keyPassword"]?.toString()
                 storePassword = keystoreProperties["storePassword"]?.toString()
-
+                
                 val sFile = keystoreProperties["storeFile"]?.toString()
                 if (sFile != null) {
-                    // Resolve the keystore path against several common roots so
-                    // it works whether the path is written relative to the
-                    // android/app module, the android/ folder, or the Flutter
-                    // project root (the latter is what `android-signing/...`
-                    // implies when committed at the repo root).
-                    val flutterProjectRoot = rootProject.projectDir.parentFile
-                    val candidates = listOf(
-                        file(sFile),                       // relative to android/app/
-                        rootProject.file(sFile),           // relative to android/
-                        File(flutterProjectRoot, sFile),   // relative to project root
-                        File(sFile)                        // absolute path
-                    )
-                    val resolved = candidates.firstOrNull { it.exists() }
-                    if (resolved != null) {
-                        storeFile = resolved
-                    } else {
-                        logger.warn(
-                            "Release keystore not found. Tried: " +
-                                candidates.joinToString { it.absolutePath }
-                        )
-                    }
+                    storeFile = file(sFile)
                 }
             }
         }
