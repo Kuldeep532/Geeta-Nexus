@@ -1,8 +1,0 @@
-# Allow the release keystore (needed for APK signing)
-!gita-ai-release.keystore
-
-# Never commit other keystores or sensitive signing files
-*.jks
-*.p12
-KEYSTORE_INFO.txt
-service-account.json
