@@ -47,11 +47,11 @@ jobs:
             exit 1
           fi
           cat > android/key.properties <<EOF
-storeFile=android-signing/my-release-key.jks
-storePassword=${{ secrets.KEYSTORE_PASSWORD }}
-keyAlias=${{ secrets.KEY_ALIAS }}
-keyPassword=${{ secrets.KEY_PASSWORD }}
-EOF
+          storeFile=android-signing/my-release-key.jks
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          EOF
 
       - name: Create Google Services JSON
         run: |
