@@ -163,7 +163,7 @@ class _AiScreenState extends State<AiScreen> {
     );
   }
 
-  Widget _buildThinkingBubble() => const Padding(
+  Widget _buildThinkingBubble() => Padding(
         padding: EdgeInsets.all(12.0),
         child: Semantics(
           label: 'AI is thinking',
