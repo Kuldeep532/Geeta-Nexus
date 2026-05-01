@@ -15,6 +15,7 @@ import 'breathing_screen.dart';
 import 'chants_screen.dart';
 import 'journal_screen.dart';
 import 'geeta_voice_practice_screen.dart';
+import 'geeta_nexus_media_screen.dart';
 import 'profile_screen.dart';
 import 'about_screen.dart';
 import 'privacy_policy_screen.dart';
@@ -96,6 +97,7 @@ class _MoreScreenState extends State<MoreScreen> {
               _Item('📿', 'Japa', const ChantsScreen()),
               _Item('✍️', 'Journal', const JournalScreen()),
               _Item('🎙️', 'Recitation', const GeetaVoicePracticeScreen()),
+              _Item('🎧', 'Nexus Media', const GeetaNexusMediaScreen()),
             ]),
             const SizedBox(height: 24),
             const _SectionHeader(title: 'Support & Legal'),

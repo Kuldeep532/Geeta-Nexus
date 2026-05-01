@@ -192,20 +192,36 @@ class _JournalScreenState extends State<JournalScreen> {
     return Wrap(
       spacing: 12,
       children: _moods.map((m) {
-        final isSelected = _selectedMood == m['emoji'];
-        return GestureDetector(
-          onTap: () {
-            HapticFeedback.selectionClick();
-            setState(() => _selectedMood = m['emoji']!);
-          },
-          child: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: isSelected ? kGold.withOpacity(0.2) : theme.dividerColor.withOpacity(0.1),
-              border: Border.all(color: isSelected ? kGold : Colors.transparent),
+        final emoji = m['emoji']!;
+        final label = m['label']!;
+        final isSelected = _selectedMood == emoji;
+
+        return Semantics(
+          container: true,
+          button: true,
+          selected: isSelected,
+          label: 'Mood: $label',
+          hint: isSelected ? 'Selected' : 'Double tap to select',
+          child: ExcludeSemantics(
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () {
+                HapticFeedback.selectionClick();
+                setState(() => _selectedMood = emoji);
+              },
+              child: Tooltip(
+                message: 'Mood: $label',
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isSelected ? kGold.withOpacity(0.2) : theme.dividerColor.withOpacity(0.1),
+                    border: Border.all(color: isSelected ? kGold : Colors.transparent),
+                  ),
+                  child: Text(emoji, style: const TextStyle(fontSize: 24)),
+                ),
+              ),
             ),
-            child: Text(m['emoji']!, style: const TextStyle(fontSize: 24)),
           ),
         );
       }).toList(),
