@@ -1,11 +1,7 @@
 name: Geeta AI - Manual Build
 
 on:
-  workflow_dispatch:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch: # Sirf manual trigger allow karne ke liye
 
 jobs:
   build:
