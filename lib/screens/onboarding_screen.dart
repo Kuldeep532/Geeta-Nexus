@@ -41,9 +41,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _page = 0;
   final TextEditingController _nameController = TextEditingController();
   final FocusNode _nameFocus = FocusNode();
+  final TextEditingController _adminEmailController = TextEditingController();
+  final TextEditingController _adminPasswordController = TextEditingController();
   String? _nameError;
   bool _isLoading = false;
-  bool _showNameField = false; 
+  bool _showNameField = false;
+  bool _googleAttempted = false; 
+  bool _showAdminLogin = false;
 
   static const List<_OnboardPageData> _pages = [
     _OnboardPageData(
@@ -88,6 +92,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     _controller.dispose();
     _nameController.dispose();
     _nameFocus.dispose();
+    _adminEmailController.dispose();
+    _adminPasswordController.dispose();
     super.dispose();
   }
 
@@ -95,6 +101,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     setState(() => _isLoading = true);
     try {
       final GoogleSignInAccount account = await _googleSignIn.authenticate();
+      _googleAttempted = true;
       if (!mounted) return;
       
       _nameController.text = account.displayName ?? "Seeker";
@@ -106,8 +113,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
       await _handlePermissions();
     } catch (e) {
-      _showErrorSnackBar("Google Sign-in failed. Try manual setup.");
-      setState(() => _showNameField = true); 
+      _showErrorSnackBar("Google Sign-in failed. Please enter your name to continue.");
+      setState(() {
+        _googleAttempted = true;
+        _showNameField = true;
+      }); 
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -146,6 +156,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     } catch (e) {
       _showErrorSnackBar("Kuch galat hua. Kripya phir koshish karein.");
     }
+  }
+
+
+  void _adminLogin() {
+    final state = Provider.of<AppState>(context, listen: false);
+    final ok = state.loginAdminWithCredentials(
+      email: _adminEmailController.text.trim(),
+      password: _adminPasswordController.text,
+    );
+    if (!ok) {
+      _showErrorSnackBar('Invalid admin email or password');
+      return;
+    }
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const MainShell()),
+      (route) => false,
+    );
   }
 
   void _showErrorSnackBar(String msg) {
@@ -218,6 +245,38 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           if (isLastPage) ...[
             const SizedBox(height: 40),
             if (!_showNameField) _buildLoginButtons(gold) else _buildNameInput(gold),
+            if (_googleAttempted)
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Text(
+                  'You can continue by entering your name if Google sign-in is unavailable.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: theme.hintColor, fontSize: 12),
+                ),
+              ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => setState(() => _showAdminLogin = !_showAdminLogin),
+              child: Text(_showAdminLogin ? 'Hide admin login' : 'Admin login'),
+            ),
+            if (_showAdminLogin) ...[
+              TextField(
+                controller: _adminEmailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(labelText: 'Admin email'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _adminPasswordController,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'Password'),
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton(
+                onPressed: _adminLogin,
+                child: const Text('Login as Admin'),
+              ),
+            ],
           ],
         ],
       ),
