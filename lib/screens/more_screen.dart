@@ -4,9 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../state/app_state.dart';
-import '../theme.dart'; 
-
-// Screens imports
+import '../theme.dart';
 import 'flashcards_screen.dart';
 import 'quiz_screen.dart';
 import 'glossary_screen.dart';
@@ -43,10 +41,8 @@ class _MoreScreenState extends State<MoreScreen> {
     try {
       final info = await PackageInfo.fromPlatform();
       if (!mounted) return;
-      setState(() {
-        _appVersionLabel = 'Version ${info.version} (${info.buildNumber})';
-      });
-    } catch (e) {
+      setState(() => _appVersionLabel = 'Version ${info.version} (${info.buildNumber})');
+    } catch (_) {
       if (mounted) setState(() => _appVersionLabel = 'Version info unavailable');
     }
   }
@@ -54,38 +50,13 @@ class _MoreScreenState extends State<MoreScreen> {
   void _pickTheme(BuildContext context, AppState state) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: 10),
-          ListTile(
-            leading: const Icon(Icons.brightness_auto, color: kGold),
-            title: const Text('System Default'),
-            onTap: () {
-              state.updateTheme(ThemeMode.system);
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.light_mode, color: kGold),
-            title: const Text('Light Mode'),
-            onTap: () {
-              state.updateTheme(ThemeMode.light);
-              Navigator.pop(context);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.dark_mode, color: kGold),
-            title: const Text('Dark Mode'),
-            onTap: () {
-              state.updateTheme(ThemeMode.dark);
-              Navigator.pop(context);
-            },
-          ),
-          const SizedBox(height: 10),
+          ListTile(leading: const Icon(Icons.brightness_auto, color: kGold), title: const Text('System Default'), onTap: () {state.updateTheme(ThemeMode.system); Navigator.pop(context);}),
+          ListTile(leading: const Icon(Icons.light_mode, color: kGold), title: const Text('Light Mode'), onTap: () {state.updateTheme(ThemeMode.light); Navigator.pop(context);}),
+          ListTile(leading: const Icon(Icons.dark_mode, color: kGold), title: const Text('Dark Mode'), onTap: () {state.updateTheme(ThemeMode.dark); Navigator.pop(context);}),
         ],
       ),
     );
@@ -101,60 +72,43 @@ class _MoreScreenState extends State<MoreScreen> {
       appBar: AppBar(
         title: Text('EXPLORE', style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, color: kGold)),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.palette_outlined, color: kGold),
-            onPressed: () => _pickTheme(context, appState),
-          )
-        ],
+        actions: [IconButton(tooltip: 'Theme options', icon: const Icon(Icons.palette_outlined, color: kGold), onPressed: () => _pickTheme(context, appState))],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildAccountCard(context, appState),
-              const SizedBox(height: 24),
-              
-              const _SectionHeader(title: 'Study & Learn'),
-              _buildAccessibleGrid(context, [
-                _Item('📚', 'Flashcards', const FlashcardsScreen()),
-                _Item('🎯', 'Quiz', const QuizScreen()),
-                _Item('📖', 'Glossary', const GlossaryScreen()),
-                _Item('🗺️', 'Reading Plan', const ReadingPlanScreen()),
-                _Item('🔭', 'Astrology', const AstrologyScreen()),
-              ]),
-
-              const SizedBox(height: 24),
-              const _SectionHeader(title: 'Spiritual Practice'),
-              _buildAccessibleGrid(context, [
-                _Item('🧘', 'Meditation', const MeditationScreen()),
-                _Item('🌬️', 'Breathing', const BreathingScreen()),
-                _Item('📿', 'Japa', const ChantsScreen()),
-                _Item('✍️', 'Journal', const JournalScreen()),
-                _Item('🎙️', 'Recitation', const GeetaVoicePracticeScreen()),
-              ]),
-
-              const SizedBox(height: 24),
-              const _SectionHeader(title: 'Support & Legal'),
-              _buildAccessibleGrid(context, [
-                _Item('👤', 'Profile', const ProfileScreen()),
-                _Item('ℹ️', 'About', const AboutScreen()),
-                _Item('🔐', 'Privacy', const PrivacyPolicyScreen()),
-                _Item('📜', 'Terms', const TermsScreen()),
-                _Item('✉️', 'Contact', const ContactScreen()),
-              ]),
-
-              const SizedBox(height: 40),
-              Center(
-                child: Text(
-                  _appVersionLabel,
-                  style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor),
-                ),
-              ),
-            ],
-          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _buildAccountCard(context, appState),
+            const SizedBox(height: 24),
+            const _SectionHeader(title: 'Study & Learn'),
+            _buildAccessibleGrid(context, [
+              _Item('📚', 'Flashcards', const FlashcardsScreen()),
+              _Item('🎯', 'Quiz', const QuizScreen()),
+              _Item('📖', 'Glossary', const GlossaryScreen()),
+              _Item('🗺️', 'Reading Plan', const ReadingPlanScreen()),
+              _Item('🔭', 'Astrology', const AstrologyScreen()),
+            ]),
+            const SizedBox(height: 24),
+            const _SectionHeader(title: 'Spiritual Practice'),
+            _buildAccessibleGrid(context, [
+              _Item('🧘', 'Meditation', const MeditationScreen()),
+              _Item('🌬️', 'Breathing', const BreathingScreen()),
+              _Item('📿', 'Japa', const ChantsScreen()),
+              _Item('✍️', 'Journal', const JournalScreen()),
+              _Item('🎙️', 'Recitation', const GeetaVoicePracticeScreen()),
+            ]),
+            const SizedBox(height: 24),
+            const _SectionHeader(title: 'Support & Legal'),
+            _buildAccessibleGrid(context, [
+              _Item('👤', 'Profile', const ProfileScreen()),
+              _Item('ℹ️', 'About', const AboutScreen()),
+              _Item('🔐', 'Privacy', const PrivacyPolicyScreen()),
+              _Item('📜', 'Terms', const TermsScreen()),
+              _Item('✉️', 'Contact', const ContactScreen()),
+            ]),
+            const SizedBox(height: 40),
+            Center(child: Text(_appVersionLabel, style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor))),
+          ]),
         ),
       ),
     );
@@ -165,21 +119,17 @@ class _MoreScreenState extends State<MoreScreen> {
     return Card(
       elevation: 0,
       color: theme.cardColor,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        // FIX: Border.all ki jagah side property use kari
-        side: BorderSide(color: kGold.withOpacity(0.3)),
-      ),
-      child: ListTile(
-        leading: const CircleAvatar(
-          backgroundColor: kGold,
-          child: Icon(Icons.person, color: Colors.black),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: kGold.withOpacity(0.3))),
+      child: Semantics(
+        button: true,
+        label: 'Open profile and account settings',
+        child: ListTile(
+          leading: const CircleAvatar(backgroundColor: kGold, child: Icon(Icons.person, color: Colors.black)),
+          title: Text(appState.userName.isEmpty ? 'Guest User' : appState.userName, style: const TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: Text(appState.userEmail.isEmpty ? 'Spiritual Journey Settings' : appState.userEmail),
+          trailing: const Icon(Icons.chevron_right, color: kGold),
+          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
         ),
-        title: Text(appState.userName.isEmpty ? 'Guest User' : appState.userName, 
-            style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(appState.userEmail.isEmpty ? 'Spiritual Journey Settings' : appState.userEmail),
-        trailing: const Icon(Icons.chevron_right, color: kGold),
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
       ),
     );
   }
@@ -189,37 +139,26 @@ class _MoreScreenState extends State<MoreScreen> {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        mainAxisSpacing: 12,
-        crossAxisSpacing: 12,
-        childAspectRatio: 1.4,
-      ),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 1.4),
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
-        return Card(
-          margin: EdgeInsets.zero,
-          color: theme.cardColor,
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            // FIX: side property fix ki
-            side: BorderSide(color: theme.dividerColor.withOpacity(0.1)),
-          ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => item.screen)),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(item.emoji, style: const TextStyle(fontSize: 28)),
+        return Semantics(
+          button: true,
+          label: '${item.title} section',
+          child: Card(
+            margin: EdgeInsets.zero,
+            color: theme.cardColor,
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: theme.dividerColor.withOpacity(0.1))),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => item.screen)),
+              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                ExcludeSemantics(child: Text(item.emoji, style: const TextStyle(fontSize: 28))),
                 const SizedBox(height: 8),
-                Text(item.title, 
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.lato(fontWeight: FontWeight.bold, fontSize: 13)
-                ),
-              ],
+                Text(item.title, textAlign: TextAlign.center, style: GoogleFonts.lato(fontWeight: FontWeight.bold, fontSize: 13)),
+              ]),
             ),
           ),
         );
@@ -231,19 +170,12 @@ class _MoreScreenState extends State<MoreScreen> {
 class _SectionHeader extends StatelessWidget {
   final String title;
   const _SectionHeader({required this.title});
+
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12, left: 4),
-      child: Text(
-        title.toUpperCase(), 
-        style: GoogleFonts.cinzel(
-          fontSize: 14, 
-          fontWeight: FontWeight.bold, 
-          color: kGold,
-          letterSpacing: 1.2
-        )
-      ),
+      child: Text(title.toUpperCase(), style: GoogleFonts.cinzel(fontSize: 14, fontWeight: FontWeight.bold, color: kGold, letterSpacing: 1.2)),
     );
   }
 }

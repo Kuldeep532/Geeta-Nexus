@@ -9,6 +9,8 @@ import '../data/gita_data.dart';
 class AppState extends ChangeNotifier {
   static const String kAdminEmail = 'kuldeepky538@gmail.com';
 
+  static const String kAdminLoginPassword = String.fromEnvironment('ADMIN_LOGIN_PASSWORD', defaultValue: 'admin@123');
+
   // --- State Variables ---
   int _xp = 0;
   int _streak = 0;
@@ -137,6 +139,21 @@ class AppState extends ChangeNotifier {
   }
 
   bool isBookmarked(String verseId) => _bookmarks.contains(verseId);
+
+
+  bool loginAdminWithCredentials({required String email, required String password}) {
+    final normalizedEmail = email.trim().toLowerCase();
+    if (normalizedEmail != kAdminEmail.toLowerCase() || password != kAdminLoginPassword) {
+      return false;
+    }
+    _userEmail = normalizedEmail;
+    _userName = 'Admin';
+    _userRole = 'super_admin';
+    _onboardingComplete = true;
+    _save();
+    notifyListeners();
+    return true;
+  }
 
   void updateGoogleAccount({required String name, required String email}) {
     _userName = name;
