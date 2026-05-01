@@ -2,6 +2,10 @@ name: Geeta AI - Manual Build
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build:
@@ -29,11 +33,25 @@ jobs:
 
       - name: Decode Release Keystore
         run: |
+          mkdir -p android-signing
+          if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "KEYSTORE_BASE64 is missing"
+            exit 1
+          fi
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android-signing/my-release-key.jks
 
       - name: Create key.properties
         run: |
-          printf "storeFile=android-signing/my-release-key.jks\nstorePassword=${{ secrets.KEYSTORE_PASSWORD }}\nkeyAlias=${{ secrets.KEY_ALIAS }}\nkeyPassword=${{ secrets.KEY_PASSWORD }}\n" > android/key.properties
+          if [ ! -f android-signing/my-release-key.jks ]; then
+            echo "Keystore file missing"
+            exit 1
+          fi
+          cat > android/key.properties <<EOF
+storeFile=android-signing/my-release-key.jks
+storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+keyAlias=${{ secrets.KEY_ALIAS }}
+keyPassword=${{ secrets.KEY_PASSWORD }}
+EOF
 
       - name: Create Google Services JSON
         run: |
