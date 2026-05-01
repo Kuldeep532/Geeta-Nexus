@@ -1,7 +1,7 @@
 name: Geeta AI - Manual Build
 
 on:
-  workflow_dispatch: # Sirf manual trigger allow karne ke liye
+  workflow_dispatch: # Manual trigger ke liye
 
 jobs:
   build:
@@ -29,21 +29,15 @@ jobs:
 
       - name: Decode Release Keystore
         run: |
-          mkdir -p android-signing
-          if [ -z "${{ secrets.KEYSTORE_BASE64 }}" ]; then
-            echo "KEYSTORE_BASE64 is missing"
-            exit 1
-          fi
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android-signing/my-release-key.jks
+          # Keystore ko 'android/app' ke andar rakhna zyada safe aur asaan hai
+          mkdir -p android/app/signing
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/signing/my-release-key.jks
 
       - name: Create key.properties
         run: |
-          if [ ! -f android-signing/my-release-key.jks ]; then
-            echo "Keystore file missing"
-            exit 1
-          fi
+          # Path ko fix kiya gaya hai taaki Gradle ise sahi se dhoond sake
           cat > android/key.properties <<EOF
-          storeFile=android-signing/my-release-key.jks
+          storeFile=../app/signing/my-release-key.jks
           storePassword=${{ secrets.KEYSTORE_PASSWORD }}
           keyAlias=${{ secrets.KEY_ALIAS }}
           keyPassword=${{ secrets.KEY_PASSWORD }}
@@ -53,11 +47,9 @@ jobs:
         run: |
           echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > android/app/google-services.json
 
-      - name: Set Gemini API Key
-        run: |
-          echo "GEMINI_AI_API_KEY=${{ secrets.GEMINI_AI_API_KEY }}" >> $GITHUB_ENV
-
       - name: Build APK
+        env:
+          GEMINI_AI_API_KEY: ${{ secrets.GEMINI_AI_API_KEY }}
         run: |
           chmod +x android/gradlew
           flutter build apk --release
