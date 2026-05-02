@@ -72,6 +72,13 @@ class _GeetaNexusMediaScreenState extends State<GeetaNexusMediaScreen> with Sing
   }
 
   Future<void> _loadAudioLibrary(String identifier) async {
+    identifier = identifier.trim();
+    if (identifier.isEmpty) {
+      if (!mounted) return;
+      setState(() => _audioError = 'Please enter a valid audio identifier.');
+      return;
+    }
+
     final metadataUrl = Uri.parse('https://archive.org/metadata/$identifier');
     if (mounted) {
       setState(() {
