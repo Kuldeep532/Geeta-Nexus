@@ -91,7 +91,6 @@ class _ContactScreenState extends State<ContactScreen> {
             child: const Text("OK", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber)),
           )
         ],
-      ),
     );
   }
 
@@ -119,15 +118,11 @@ class _ContactScreenState extends State<ContactScreen> {
                 _name,
                 "Aapka Naam",
                 Icons.person,
-                semanticLabel: 'Name',
-                semanticHint: 'Enter your full name',
                 textInputAction: TextInputAction.next,
                 autofillHints: const [AutofillHints.name],
               ),
               const SizedBox(height: 16),
-              _buildField(context, _email, "Aapka Email", Icons.email, 
-                semanticLabel: 'Email',
-                semanticHint: 'Enter your email address',
+              _buildField(context, _email, "Aapka Email", Icons.email,
                 textInputAction: TextInputAction.next,
                 autofillHints: const [AutofillHints.email],
                 keyboard: TextInputType.emailAddress,
@@ -143,8 +138,6 @@ class _ContactScreenState extends State<ContactScreen> {
                 _message,
                 "Message",
                 Icons.message,
-                semanticLabel: 'Message',
-                semanticHint: 'Type your message',
                 textInputAction: TextInputAction.newline,
                 maxLines: 5,
               ),
@@ -179,14 +172,11 @@ class _ContactScreenState extends State<ContactScreen> {
             ],
           ),
         ),
-      ),
     );
   }
 
-  Widget _buildField(BuildContext context, TextEditingController ctrl, String label, IconData icon, 
-      {required String semanticLabel,
-      required String semanticHint,
-      int maxLines = 1,
+  Widget _buildField(BuildContext context, TextEditingController ctrl, String label, IconData icon,
+      {int maxLines = 1,
       TextInputType? keyboard,
       TextInputAction? textInputAction,
       Iterable<String>? autofillHints,
@@ -195,11 +185,7 @@ class _ContactScreenState extends State<ContactScreen> {
     final theme = Theme.of(context);
     final goldColor = const Color(0xFFFFD700);
 
-    return Semantics(
-      textField: true,
-      label: semanticLabel,
-      hint: semanticHint,
-      child: TextFormField(
+    return TextFormField(
         controller: ctrl,
         maxLines: maxLines,
         keyboardType: keyboard,
@@ -219,7 +205,6 @@ class _ContactScreenState extends State<ContactScreen> {
             borderSide: BorderSide(color: goldColor, width: 1.5),
           ),
         ),
-      ),
     );
   }
 }

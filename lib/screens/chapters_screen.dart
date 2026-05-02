@@ -32,8 +32,11 @@ class ChaptersScreen extends StatelessWidget {
           final bool isCompleted = state.isChapterCompleted(chapter.number.toString());
 
           return Semantics(
+            container: true,
             label: "Chapter ${chapter.number}: ${chapter.name}. ${chapter.verses.length} verses. ${isCompleted ? 'Completed' : 'Not completed'}",
+            hint: 'Double tap to open chapter details',
             button: true,
+            excludeSemantics: true,
             child: Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Material(
@@ -61,13 +64,16 @@ class ChaptersScreen extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        _buildChapterIndicator(context, chapter.number, isCompleted),
+                        ExcludeSemantics(
+                          child: _buildChapterIndicator(context, chapter.number, isCompleted),
+                        ),
                         const SizedBox(width: 14),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              ExcludeSemantics(
+                                child: Text(
                                 chapter.name,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -75,24 +81,29 @@ class ChaptersScreen extends StatelessWidget {
                                   fontWeight: FontWeight.bold,
                                   color: isCompleted ? kGold : null,
                                 ),
+                                ),
                               ),
-                              Text(
+                              ExcludeSemantics(
+                                child: Text(
                                 chapter.nameSanskrit,
                                 style: TextStyle(
                                   color: kGold.withOpacity(0.8),
                                   fontSize: 13,
                                   fontStyle: FontStyle.italic,
                                 ),
+                                ),
                               ),
                               const SizedBox(height: 8),
-                              _buildChapterMeta(context, chapter),
+                              ExcludeSemantics(child: _buildChapterMeta(context, chapter)),
                             ],
                           ),
                         ),
-                        Icon(
+                        ExcludeSemantics(
+                          child: Icon(
                           Icons.chevron_right,
                           color: kGold.withOpacity(0.5),
                           size: 20,
+                        ),
                         ),
                       ],
                     ),

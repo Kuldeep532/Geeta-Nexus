@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
+import '../data/gita_data.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
 import '../theme.dart'; 
@@ -31,6 +32,7 @@ class ChapterDetailScreen extends StatelessWidget {
             elevation: 0,
             backgroundColor: theme.scaffoldBackgroundColor,
             leading: IconButton(
+              tooltip: 'Back',
               icon: const Icon(Icons.arrow_back_ios, color: kGold, size: 20),
               onPressed: () => Navigator.pop(context),
             ),
@@ -57,7 +59,9 @@ class ChapterDetailScreen extends StatelessWidget {
                   const SizedBox(height: 20),
                   _SummaryCard(summary: chapter.summary),
                   const SizedBox(height: 28),
-                  Text(
+                  Semantics(
+                    header: true,
+                    child: Text(
                     'VERSES',
                     style: GoogleFonts.cinzel(
                       color: kGold,
@@ -65,12 +69,15 @@ class ChapterDetailScreen extends StatelessWidget {
                       letterSpacing: 2,
                       fontWeight: FontWeight.bold,
                     ),
+                    ),
                   ),
                   Divider(color: kGold.withOpacity(0.3), thickness: 0.5),
                   const SizedBox(height: 12),
                   _VerseList(verses: chapter.verses),
                   const SizedBox(height: 32),
                   _CompletionButton(chapterNumber: chapter.number),
+                  const SizedBox(height: 16),
+                  _ChapterNavButtons(currentChapter: chapter.number),
                   const SizedBox(height: 80),
                 ],
               ),
@@ -161,7 +168,11 @@ class _VerseRowItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
+    return Semantics(
+      button: true,
+      label: 'Verse ${verse.verseNumber}',
+      hint: 'Double tap to open verse details',
+      child: Card(
       color: theme.cardColor,
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -187,7 +198,7 @@ class _VerseRowItem extends StatelessWidget {
           );
         },
       ),
-    );
+    ));
   }
 }
 
@@ -197,7 +208,10 @@ class _CompletionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Semantics(
+      button: true,
+      label: 'Mark chapter $chapterNumber as completed',
+      child: SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
@@ -217,7 +231,7 @@ class _CompletionButton extends StatelessWidget {
           style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, letterSpacing: 1.5),
         ),
       ),
-    );
+    ));
   }
 }
 
@@ -256,6 +270,47 @@ class _ChapterStats extends StatelessWidget {
   }
 }
 
+class _ChapterNavButtons extends StatelessWidget {
+  final int currentChapter;
+  const _ChapterNavButtons({required this.currentChapter});
+
+  @override
+  Widget build(BuildContext context) {
+    final previous = currentChapter > 1 ? kChapters[currentChapter - 2] : null;
+    final next = currentChapter < kChapters.length ? kChapters[currentChapter] : null;
+
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: previous == null
+                ? null
+                : () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => ChapterDetailScreen(chapter: previous)),
+                    ),
+            icon: const Icon(Icons.arrow_back),
+            label: const Text('Previous Chapter'),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: next == null
+                ? null
+                : () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => ChapterDetailScreen(chapter: next)),
+                    ),
+            icon: const Icon(Icons.arrow_forward),
+            label: const Text('Next Chapter'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _SummaryCard extends StatelessWidget { // FIX: Extra comma hataya
   final String summary;
   const _SummaryCard({required this.summary});
@@ -264,7 +319,10 @@ class _SummaryCard extends StatelessWidget { // FIX: Extra comma hataya
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
+    return Semantics(
+      container: true,
+      label: 'Chapter summary',
+      child: Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: theme.cardColor,
@@ -282,6 +340,6 @@ class _SummaryCard extends StatelessWidget { // FIX: Extra comma hataya
           ),
         ],
       ),
-    );
+    ));
   }
 }

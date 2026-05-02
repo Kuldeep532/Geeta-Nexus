@@ -41,15 +41,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   int _page = 0;
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final FocusNode _nameFocus = FocusNode();
-  final TextEditingController _adminEmailController = TextEditingController();
-  final TextEditingController _adminPasswordController = TextEditingController();
   String? _nameError;
   bool _isLoading = false;
   bool _googleReady = false;
   bool _showNameField = false;
+  bool _showEmailField = false;
   bool _googleAttempted = false; 
-  bool _showAdminLogin = false;
   bool _acceptedPolicies = false;
 
   static const List<_OnboardPageData> _pages = [
@@ -111,9 +110,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void dispose() {
     _controller.dispose();
     _nameController.dispose();
+    _emailController.dispose();
     _nameFocus.dispose();
-    _adminEmailController.dispose();
-    _adminPasswordController.dispose();
     super.dispose();
   }
 
@@ -194,20 +192,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
 
-  void _adminLogin() {
+  Future<void> _continueWithEmail() async {
     if (!_acceptedPolicies) {
       _showErrorSnackBar('Please accept Privacy Policy and Terms & Conditions first.');
       return;
     }
-    final state = Provider.of<AppState>(context, listen: false);
-    final ok = state.loginAdminWithCredentials(
-      email: _adminEmailController.text.trim(),
-      password: _adminPasswordController.text,
-    );
-    if (!ok) {
-      _showErrorSnackBar('Invalid admin email or password');
+    final email = _emailController.text.trim();
+    if (!email.contains('@')) {
+      _showErrorSnackBar('Please enter a valid email address.');
       return;
     }
+    final state = Provider.of<AppState>(context, listen: false);
+    final name = _nameController.text.trim().isEmpty ? email.split('@').first : _nameController.text.trim();
+    state.updateGoogleAccount(name: name, email: email);
+    state.completeOnboarding();
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const MainShell()),
       (route) => false,
@@ -245,6 +243,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   _page = i;
                   _nameError = null;
                   _showNameField = false; 
+                  _showEmailField = false;
                 }),
                 itemBuilder: (ctx, i) => _buildPage(i, kGold, theme),
               ),
@@ -296,28 +295,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ),
             const SizedBox(height: 12),
-            TextButton(
-              onPressed: () => setState(() => _showAdminLogin = !_showAdminLogin),
-              child: Text(_showAdminLogin ? 'Hide admin login' : 'Admin login'),
-            ),
-            if (_showAdminLogin) ...[
-              TextField(
-                controller: _adminEmailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'Admin email'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _adminPasswordController,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Password'),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                onPressed: _adminLogin,
-                child: const Text('Login as Admin'),
-              ),
-            ],
+            if (_showEmailField) _buildEmailInput(kGold),
           ],
         ],
       ),
@@ -342,6 +320,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         TextButton(
           onPressed: !_acceptedPolicies ? null : () => setState(() => _showNameField = true),
           child: Text("Skip Login & Continue as Guest", style: TextStyle(color: gold)),
+        ),
+        TextButton(
+          onPressed: !_acceptedPolicies ? null : () => setState(() => _showEmailField = true),
+          child: Text("Sign in with Email", style: TextStyle(color: gold)),
         ),
       ],
     );
@@ -370,6 +352,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             onPressed: !_acceptedPolicies ? null : _finishOnboarding,
             style: ElevatedButton.styleFrom(backgroundColor: gold, foregroundColor: Colors.black),
             child: const Text("FINISH SETUP"),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmailInput(Color gold) {
+    return Column(
+      children: [
+        const SizedBox(height: 10),
+        TextField(
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          decoration: InputDecoration(
+            hintText: "Enter email address",
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            prefixIcon: Icon(Icons.email, color: gold),
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: _continueWithEmail,
+            style: ElevatedButton.styleFrom(backgroundColor: gold, foregroundColor: Colors.black),
+            child: const Text('CONTINUE WITH EMAIL'),
           ),
         ),
       ],
