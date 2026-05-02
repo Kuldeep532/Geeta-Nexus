@@ -29,8 +29,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
             children: const [
               _Heading('Introduction'),
               _Body(
-                'This Privacy Policy governs the data practices of Satvik Technologies. '
-                'By using Bhagavad Gita AI, you agree to the collection and use of information '
+                'This Privacy Policy governs the data practices of Satvik Technologys, '
+                'an independent developer entity of Geeta Nexus. '
+                'By using Geeta Nexus, you agree to the collection and use of information '
                 'in accordance with this policy. We prioritize your spiritual journey by '
                 'ensuring your data remains private and secure.',
               ),
@@ -44,10 +45,16 @@ class PrivacyPolicyScreen extends StatelessWidget {
               ),
               _Heading('Data Synchronization'),
               _Body(
-                'For authenticated users, your reading progress, bookmarks, and "Satvik Streaks" '
+                'For authenticated users, your reading progress, bookmarks, and streak data '
                 'are synced to our secure database. This allows you to restore your progress '
                 'should you switch devices. Guest users continue to have all data stored '
                 'strictly on their local hardware.',
+              ),
+              _Heading('India Compliance'),
+              _Body(
+                'We aim to process personal data in line with applicable Indian laws and '
+                'platform policies, including reasonable safeguards for consent, access, '
+                'correction, and deletion requests where applicable.',
               ),
               _Heading('Artificial Intelligence'),
               _Body(
@@ -70,8 +77,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
               ),
               _Heading('Contact Administration'),
               _Body(
-                'For legal inquiries or data protection concerns, contact Satvik Technologies at: '
-                'kuldeepky538@gmail.com',
+                'For legal inquiries or data protection concerns, contact Satvik Technologys at:\n'
+                'Email: kuldeepky538@gmail.com\n'
+                'Address: Korba, Chhattisgarh, India',
               ),
               SizedBox(height: 50),
             ],

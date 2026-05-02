@@ -120,21 +120,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _actionCard(BuildContext context, String title, IconData icon, Widget target, bool isDark) {
-    return InkWell(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => target)),
-      child: Container(
-        decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1A1500) : const Color(0xFFFFF9E5),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: kGold.withOpacity(0.3)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: kGold, size: 20),
-            const SizedBox(width: 10),
-            Text(title, style: GoogleFonts.cinzel(color: kGold, fontWeight: FontWeight.bold, fontSize: 13)),
-          ],
+    return Semantics(
+      button: true,
+      label: 'Open $title',
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => target)),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1A1500) : const Color(0xFFFFF9E5),
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: kGold.withOpacity(0.3)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ExcludeSemantics(child: Icon(icon, color: kGold, size: 20)),
+              const SizedBox(width: 10),
+              Text(title, style: GoogleFonts.cinzel(color: kGold, fontWeight: FontWeight.bold, fontSize: 13)),
+            ],
+          ),
         ),
       ),
     );

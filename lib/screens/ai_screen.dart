@@ -203,6 +203,7 @@ class _AiScreenState extends State<AiScreen> {
               button: true,
               enabled: !_thinking,
               label: 'Send message',
+              excludeSemantics: true,
               child: FloatingActionButton.small(
                 tooltip: 'Send message',
                 backgroundColor: kGold,

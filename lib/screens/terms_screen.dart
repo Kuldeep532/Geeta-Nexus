@@ -23,11 +23,11 @@ class TermsScreen extends StatelessWidget {
             children: const [
               _Heading('Terms & Conditions'),
               _Body(
-                'Bhagavad Gita AI is owned and operated by Satvik Technology and developed by Kuldeep Kumar Yadav. By installing and using the app, you agree to the following terms.',
+                'Geeta Nexus is provided by Satvik Technologys, an independent developer entity led by Kuldeep Kumar Yadav. By installing and using the app, you agree to the following terms.',
               ),
               _Heading('1. Use of the app'),
               _Body(
-                'Bhagavad Gita AI is provided for personal, non-commercial spiritual and educational use. You agree to use the app respectfully and lawfully.',
+                'Geeta Nexus is provided for personal, non-commercial spiritual and educational use. You agree to use the app respectfully and lawfully.',
               ),
               _Heading('2. Spiritual content'),
               _Body(
@@ -39,19 +39,23 @@ class TermsScreen extends StatelessWidget {
               ),
               _Heading('4. Intellectual property'),
               _Body(
-                'The Bhagavad Gita is in the public domain. App design, code, UI, and original content are the property of Satvik Technology.',
+                'The Bhagavad Gita is in the public domain. App design, code, UI, and original content are the property of Satvik Technologys.',
               ),
               _Heading('5. Limitation of liability'),
               _Body(
-                'The app is provided "as is" without warranties of any kind. Satvik Technology and the developer are not liable for any decisions made based on the content of the app.',
+                'The app is provided "as is" without warranties of any kind. Satvik Technologys and the developer are not liable for any decisions made based on the content of the app.',
               ),
               _Heading('6. Changes to terms'),
               _Body(
                 'These terms may be updated from time to time. Continued use of the app means you accept the latest version.',
               ),
-              _Heading('7. Contact'),
+              _Heading('7. Governing context'),
               _Body(
-                'For questions about these terms, write to kuldeepky538@gmail.com.',
+                'These terms are intended to be interpreted in line with applicable laws of India.',
+              ),
+              _Heading('8. Contact'),
+              _Body(
+                'For questions about these terms, contact Satvik Technologys:\nEmail: kuldeepky538@gmail.com\nAddress: Korba, Chhattisgarh, India.',
               ),
               SizedBox(height: 30),
             ],

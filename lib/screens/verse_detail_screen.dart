@@ -118,13 +118,25 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
         title: Text('Verse ${widget.verse.chapter}.${widget.verse.verse}', 
           style: GoogleFonts.cinzel(color: kGold, fontWeight: FontWeight.bold, fontSize: 18)),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.volume_up, color: kGold),
-            onPressed: () => _speakVerse(_showTransliteration ? widget.verse.transliteration : widget.verse.sanskrit),
+          Semantics(
+            button: true,
+            label: 'Listen to verse',
+            excludeSemantics: true,
+            child: IconButton(
+              tooltip: 'Listen to verse',
+              icon: const Icon(Icons.volume_up, color: kGold),
+              onPressed: () => _speakVerse(_showTransliteration ? widget.verse.transliteration : widget.verse.sanskrit),
+            ),
           ),
-          IconButton(
-            icon: const Icon(Icons.copy, color: kGold),
-            onPressed: () => _copyVerse(widget.verse),
+          Semantics(
+            button: true,
+            label: 'Copy verse text',
+            excludeSemantics: true,
+            child: IconButton(
+              tooltip: 'Copy verse text',
+              icon: const Icon(Icons.copy, color: kGold),
+              onPressed: () => _copyVerse(widget.verse),
+            ),
           ),
         ],
       ),
@@ -177,17 +189,23 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
   }
 
   Widget _languageToggle() {
-    return InkWell(
-      onTap: () => setState(() => _showTransliteration = !_showTransliteration),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        decoration: BoxDecoration(
-          color: kGold.withOpacity(0.1),
-          border: Border.all(color: kGold), 
-          borderRadius: BorderRadius.circular(20)
+    return Semantics(
+      button: true,
+      toggled: _showTransliteration,
+      label: _showTransliteration ? 'Switch to Sanskrit script' : 'Switch to transliteration',
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: () => setState(() => _showTransliteration = !_showTransliteration),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            color: kGold.withOpacity(0.1),
+            border: Border.all(color: kGold), 
+            borderRadius: BorderRadius.circular(20)
+          ),
+          child: Text(_showTransliteration ? "IAST" : "Sanskrit", 
+            style: const TextStyle(color: kGold, fontSize: 11, fontWeight: FontWeight.bold)),
         ),
-        child: Text(_showTransliteration ? "IAST" : "Sanskrit", 
-          style: const TextStyle(color: kGold, fontSize: 11, fontWeight: FontWeight.bold)),
       ),
     );
   }
@@ -208,10 +226,16 @@ class _VerseDetailScreenState extends State<VerseDetailScreen>
               style: TextStyle(color: _isListening ? Colors.red : kGold, fontSize: 14, fontWeight: FontWeight.w500),
             ),
           ),
-          IconButton(
-            icon: Icon(_isListening ? Icons.stop_circle : Icons.mic, 
-              color: _isListening ? Colors.red : kGold),
-            onPressed: _startPractice,
+          Semantics(
+            button: true,
+            label: _isListening ? 'Stop pronunciation practice' : 'Start pronunciation practice',
+            excludeSemantics: true,
+            child: IconButton(
+              tooltip: _isListening ? 'Stop pronunciation practice' : 'Start pronunciation practice',
+              icon: Icon(_isListening ? Icons.stop_circle : Icons.mic, 
+                color: _isListening ? Colors.red : kGold),
+              onPressed: _startPractice,
+            ),
           ),
         ],
       ),
