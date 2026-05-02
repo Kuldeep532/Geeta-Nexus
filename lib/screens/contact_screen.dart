@@ -91,6 +91,7 @@ class _ContactScreenState extends State<ContactScreen> {
             child: const Text("OK", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber)),
           )
         ],
+      ),
     );
   }
 
@@ -172,6 +173,7 @@ class _ContactScreenState extends State<ContactScreen> {
             ],
           ),
         ),
+      ),
     );
   }
 
