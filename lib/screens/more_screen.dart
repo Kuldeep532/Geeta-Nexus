@@ -125,6 +125,7 @@ class _MoreScreenState extends State<MoreScreen> {
       child: Semantics(
         button: true,
         label: 'Open profile and account settings',
+        excludeSemantics: true,
         child: ListTile(
           leading: const CircleAvatar(backgroundColor: kGold, child: Icon(Icons.person, color: Colors.black)),
           title: Text(appState.userName.isEmpty ? 'Guest User' : appState.userName, style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -147,7 +148,8 @@ class _MoreScreenState extends State<MoreScreen> {
         final item = items[index];
         return Semantics(
           button: true,
-          label: '${item.title} section',
+          label: 'Open ${item.title}',
+          excludeSemantics: true,
           child: Card(
             margin: EdgeInsets.zero,
             color: theme.cardColor,

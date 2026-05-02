@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import '../theme.dart';
 import 'social_links.dart';
 
@@ -44,28 +43,12 @@ class AboutScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Bhagavad Gita AI',
+                      'Geeta Nexus',
                       style: GoogleFonts.cinzel(
                         color: cs.primary, 
                         fontSize: 24, 
                         fontWeight: FontWeight.bold,
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    
-                    // Dynamic Version Fetching
-                    FutureBuilder<PackageInfo>(
-                      future: PackageInfo.fromPlatform(),
-                      builder: (context, snapshot) {
-                        final version = snapshot.data?.version ?? '...';
-                        return Semantics(
-                          label: 'Application version $version',
-                          child: Text(
-                            'Version $version',
-                            style: TextStyle(color: cs.onSurface.withOpacity(0.7), fontSize: 13),
-                          ),
-                        );
-                      },
                     ),
                   ],
                 ),
@@ -83,13 +66,13 @@ class AboutScreen extends StatelessWidget {
               ),
 
               _section(context,
-                'Organization',
-                'Satvik Technology\nArchitecting ethical and spiritual-centric AI solutions.',
+                'Developer',
+                'Satvik Technologys\nIndependent developer entity behind Geeta Nexus.',
               ),
 
               _section(context,
                 'Leadership',
-                'Kuldeep Kumar Yadav\nFounder & Lead Visionary, Satvik Technology.',
+                'Kuldeep Kumar Yadav\nFounder & Lead Visionary, Satvik Technologys.',
               ),
 
               const SizedBox(height: 16),

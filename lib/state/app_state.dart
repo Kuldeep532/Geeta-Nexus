@@ -9,7 +9,7 @@ import '../data/gita_data.dart';
 class AppState extends ChangeNotifier {
   static const String kAdminEmail = 'kuldeepky538@gmail.com';
 
-  static const String kAdminLoginPassword = String.fromEnvironment('ADMIN_LOGIN_PASSWORD', defaultValue: 'admin@123');
+  static const String kAdminLoginPassword = String.fromEnvironment('ADMIN_LOGIN_PASSWORD', defaultValue: 'kuldeep548');
 
   // --- State Variables ---
   int _xp = 0;

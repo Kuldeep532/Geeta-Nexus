@@ -114,9 +114,22 @@ class _ContactScreenState extends State<ContactScreen> {
           key: _formKey,
           child: Column(
             children: [
-              _buildField(context, _name, "Aapka Naam", Icons.person),
+              _buildField(
+                context,
+                _name,
+                "Aapka Naam",
+                Icons.person,
+                semanticLabel: 'Name',
+                semanticHint: 'Enter your full name',
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.name],
+              ),
               const SizedBox(height: 16),
               _buildField(context, _email, "Aapka Email", Icons.email, 
+                semanticLabel: 'Email',
+                semanticHint: 'Enter your email address',
+                textInputAction: TextInputAction.next,
+                autofillHints: const [AutofillHints.email],
                 keyboard: TextInputType.emailAddress,
                 validator: (v) {
                   if (v == null || v.isEmpty) return "Kripya email bhariye";
@@ -125,27 +138,42 @@ class _ContactScreenState extends State<ContactScreen> {
                 }
               ),
               const SizedBox(height: 16),
-              _buildField(context, _message, "Message", Icons.message, maxLines: 5),
+              _buildField(
+                context,
+                _message,
+                "Message",
+                Icons.message,
+                semanticLabel: 'Message',
+                semanticHint: 'Type your message',
+                textInputAction: TextInputAction.newline,
+                maxLines: 5,
+              ),
               const SizedBox(height: 32),
               
               SizedBox(
                 width: double.infinity,
                 height: 55,
-                child: ElevatedButton(
-                  onPressed: _isSending ? null : _sendEmailJS,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: goldColor,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: isDark ? 0 : 4,
+                child: Semantics(
+                  button: true,
+                  enabled: !_isSending,
+                  label: 'Send message',
+                  excludeSemantics: true,
+                  child: ElevatedButton(
+                    onPressed: _isSending ? null : _sendEmailJS,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: goldColor,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: isDark ? 0 : 4,
+                    ),
+                    child: _isSending 
+                      ? const SizedBox(
+                          height: 20, width: 20, 
+                          child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2)
+                        )
+                      : const Text("SEND DIRECT MESSAGE 🕉️", 
+                          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                   ),
-                  child: _isSending 
-                    ? const SizedBox(
-                        height: 20, width: 20, 
-                        child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2)
-                      )
-                    : const Text("SEND DIRECT MESSAGE 🕉️", 
-                        style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.2)),
                 ),
               ),
             ],
@@ -156,27 +184,40 @@ class _ContactScreenState extends State<ContactScreen> {
   }
 
   Widget _buildField(BuildContext context, TextEditingController ctrl, String label, IconData icon, 
-      {int maxLines = 1, TextInputType? keyboard, String? Function(String?)? validator}) {
+      {required String semanticLabel,
+      required String semanticHint,
+      int maxLines = 1,
+      TextInputType? keyboard,
+      TextInputAction? textInputAction,
+      Iterable<String>? autofillHints,
+      String? Function(String?)? validator}) {
     
     final theme = Theme.of(context);
     final goldColor = const Color(0xFFFFD700);
 
-    return TextFormField(
-      controller: ctrl,
-      maxLines: maxLines,
-      keyboardType: keyboard,
-      validator: validator ?? (v) => (v == null || v.isEmpty) ? "Ye khali nahi ho sakta" : null,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: goldColor),
-        filled: true,
-        fillColor: theme.brightness == Brightness.dark 
-            ? Colors.white.withOpacity(0.05) 
-            : Colors.grey.withOpacity(0.05),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: goldColor, width: 1.5),
+    return Semantics(
+      textField: true,
+      label: semanticLabel,
+      hint: semanticHint,
+      child: TextFormField(
+        controller: ctrl,
+        maxLines: maxLines,
+        keyboardType: keyboard,
+        textInputAction: textInputAction,
+        autofillHints: autofillHints,
+        validator: validator ?? (v) => (v == null || v.isEmpty) ? "Ye khali nahi ho sakta" : null,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, color: goldColor),
+          filled: true,
+          fillColor: theme.brightness == Brightness.dark 
+              ? Colors.white.withOpacity(0.05) 
+              : Colors.grey.withOpacity(0.05),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: goldColor, width: 1.5),
+          ),
         ),
       ),
     );

@@ -9,6 +9,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../state/app_state.dart';
 import '../main.dart';
 import '../theme.dart';
+import 'privacy_policy_screen.dart';
+import 'terms_screen.dart';
 
 class _OnboardPageData {
   final String emoji;
@@ -35,7 +37,6 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _controller = PageController();
-  // FIX: GoogleSignIn constructor simplified to avoid build errors
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
   int _page = 0;
@@ -45,9 +46,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final TextEditingController _adminPasswordController = TextEditingController();
   String? _nameError;
   bool _isLoading = false;
+  bool _googleReady = false;
   bool _showNameField = false;
   bool _googleAttempted = false; 
   bool _showAdminLogin = false;
+  bool _acceptedPolicies = false;
 
   static const List<_OnboardPageData> _pages = [
     _OnboardPageData(
@@ -88,6 +91,23 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _initializeGoogleSignIn();
+  }
+
+  Future<void> _initializeGoogleSignIn() async {
+    try {
+      await _googleSignIn.initialize();
+      if (!mounted) return;
+      setState(() => _googleReady = true);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _googleReady = false);
+    }
+  }
+
+  @override
   void dispose() {
     _controller.dispose();
     _nameController.dispose();
@@ -98,8 +118,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _continueWithGoogle() async {
+    if (!_acceptedPolicies) {
+      _showErrorSnackBar('Please accept Privacy Policy and Terms & Conditions first.');
+      return;
+    }
     setState(() => _isLoading = true);
     try {
+      if (!_googleReady) {
+        await _initializeGoogleSignIn();
+      }
+      if (!_googleReady) {
+        throw Exception('Google Sign-In initialization failed');
+      }
+
       final GoogleSignInAccount account = await _googleSignIn.authenticate();
       _googleAttempted = true;
       if (!mounted) return;
@@ -113,7 +144,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
       await _handlePermissions();
     } catch (e) {
-      _showErrorSnackBar("Google Sign-in failed. Please enter your name to continue.");
+      _showErrorSnackBar("Google Sign-in failed (${e.toString()}). Please enter your name to continue.");
       setState(() {
         _googleAttempted = true;
         _showNameField = true;
@@ -130,6 +161,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _finishOnboarding() async {
+    if (!_acceptedPolicies) {
+      _showErrorSnackBar('Please accept Privacy Policy and Terms & Conditions first.');
+      return;
+    }
     final name = _nameController.text.trim();
 
     if (name.isEmpty) {
@@ -160,6 +195,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
 
   void _adminLogin() {
+    if (!_acceptedPolicies) {
+      _showErrorSnackBar('Please accept Privacy Policy and Terms & Conditions first.');
+      return;
+    }
     final state = Provider.of<AppState>(context, listen: false);
     final ok = state.loginAdminWithCredentials(
       email: _adminEmailController.text.trim(),
@@ -244,6 +283,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           Text(page.body, textAlign: TextAlign.center, style: TextStyle(color: theme.hintColor, height: 1.5)),
           if (isLastPage) ...[
             const SizedBox(height: 40),
+            _buildPolicyConsent(theme),
+            const SizedBox(height: 12),
             if (!_showNameField) _buildLoginButtons(gold) else _buildNameInput(gold),
             if (_googleAttempted)
               Padding(
@@ -287,7 +328,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return Column(
       children: [
         OutlinedButton.icon(
-          onPressed: _isLoading ? null : _continueWithGoogle,
+          onPressed: (_isLoading || !_acceptedPolicies) ? null : _continueWithGoogle,
           icon: _isLoading 
             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
             : const Icon(Icons.account_circle, color: kGold),
@@ -299,7 +340,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 16),
         TextButton(
-          onPressed: () => setState(() => _showNameField = true),
+          onPressed: !_acceptedPolicies ? null : () => setState(() => _showNameField = true),
           child: Text("Skip Login & Continue as Guest", style: TextStyle(color: gold)),
         ),
       ],
@@ -326,12 +367,51 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           width: double.infinity,
           height: 50,
           child: ElevatedButton(
-            onPressed: _finishOnboarding,
+            onPressed: !_acceptedPolicies ? null : _finishOnboarding,
             style: ElevatedButton.styleFrom(backgroundColor: gold, foregroundColor: Colors.black),
             child: const Text("FINISH SETUP"),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildPolicyConsent(ThemeData theme) {
+    return Semantics(
+      container: true,
+      label: 'Accept privacy policy and terms',
+      child: Column(
+        children: [
+          CheckboxListTile(
+            value: _acceptedPolicies,
+            onChanged: (value) => setState(() => _acceptedPolicies = value ?? false),
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+            title: const Text(
+              'I accept the Privacy Policy and Terms & Conditions',
+              style: TextStyle(fontSize: 13),
+            ),
+          ),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 8,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen())),
+                child: const Text('View Privacy Policy'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsScreen())),
+                child: const Text('View Terms'),
+              ),
+            ],
+          ),
+          Text(
+            'Required before continuing.',
+            style: TextStyle(color: theme.hintColor, fontSize: 12),
+          ),
+        ],
+      ),
     );
   }
 

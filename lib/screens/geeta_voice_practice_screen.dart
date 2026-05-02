@@ -154,8 +154,27 @@ class _GeetaVoicePracticeScreenState extends State<GeetaVoicePracticeScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                IconButton.filled(onPressed: _isSpeaking ? null : _speakTarget, icon: const Icon(Icons.volume_up)),
-                                IconButton.outlined(onPressed: _loadRandomVerse, icon: const Icon(Icons.shuffle)),
+                                Semantics(
+                                  button: true,
+                                  enabled: !_isSpeaking,
+                                  label: 'Listen to verse audio',
+                                  excludeSemantics: true,
+                                  child: IconButton.filled(
+                                    tooltip: 'Listen to verse audio',
+                                    onPressed: _isSpeaking ? null : _speakTarget,
+                                    icon: const Icon(Icons.volume_up),
+                                  ),
+                                ),
+                                Semantics(
+                                  button: true,
+                                  label: 'Load another practice verse',
+                                  excludeSemantics: true,
+                                  child: IconButton.outlined(
+                                    tooltip: 'Load another practice verse',
+                                    onPressed: _loadRandomVerse,
+                                    icon: const Icon(Icons.shuffle),
+                                  ),
+                                ),
                               ],
                             ),
                           ],
@@ -178,14 +197,20 @@ class _GeetaVoicePracticeScreenState extends State<GeetaVoicePracticeScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    ElevatedButton.icon(
-                      onPressed: _speechReady ? _toggleListen : null,
-                      icon: Icon(_listening ? Icons.stop : Icons.mic),
-                      label: Text(_listening ? 'STOP PRACTICE' : 'START PRACTICE'),
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        backgroundColor: _listening ? Colors.redAccent : theme.colorScheme.primary,
-                        foregroundColor: theme.colorScheme.onPrimary,
+                    Semantics(
+                      button: true,
+                      enabled: _speechReady,
+                      label: _listening ? 'Stop voice practice' : 'Start voice practice',
+                      excludeSemantics: true,
+                      child: ElevatedButton.icon(
+                        onPressed: _speechReady ? _toggleListen : null,
+                        icon: Icon(_listening ? Icons.stop : Icons.mic),
+                        label: Text(_listening ? 'STOP PRACTICE' : 'START PRACTICE'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          backgroundColor: _listening ? Colors.redAccent : theme.colorScheme.primary,
+                          foregroundColor: theme.colorScheme.onPrimary,
+                        ),
                       ),
                     ),
                   ],
