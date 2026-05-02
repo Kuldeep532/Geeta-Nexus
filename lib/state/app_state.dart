@@ -21,6 +21,7 @@ class AppState extends ChangeNotifier {
   bool _onboardingComplete = false;
   List<String> _completedChapters = [];
   List<String> _badges = [];
+  List<AppNotification> _notifications = [];
   
   // Flashcards state
   int _currentFlashcardIndex = 0;
@@ -59,6 +60,7 @@ class AppState extends ChangeNotifier {
   int get japaCount => _japaCount;
   List<JournalEntry> get journalEntries => _journalEntries;
   List<String> get badges => _badges; 
+  List<AppNotification> get notifications => _notifications;
   int get currentFlashcardIndex => _currentFlashcardIndex;
   
   bool get highContrast => _highContrast;
@@ -181,9 +183,25 @@ class AppState extends ChangeNotifier {
   }
 
   // FIX: Build 'sendGlobalNotification' dhund raha hai (Screenshot line 104)
-  Future<void> sendGlobalNotification(String title, String body) async {
-    // Logic for notification (Placeholder for build stability)
-    debugPrint("Sending Notification: $title");
+  Future<void> sendGlobalNotification({required String title, required String body}) async {
+    final notification = AppNotification(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: title,
+      body: body,
+      createdAt: DateTime.now(),
+      isRead: false,
+    );
+    _notifications.insert(0, notification);
+    _save();
+    notifyListeners();
+  }
+
+  void markNotificationRead(String id) {
+    final idx = _notifications.indexWhere((n) => n.id == id);
+    if (idx == -1 || _notifications[idx].isRead) return;
+    _notifications[idx] = _notifications[idx].copyWith(isRead: true);
+    _save();
+    notifyListeners();
   }
 
   void addJournalEntry({required String content, required String mood}) {
@@ -253,9 +271,16 @@ class AppState extends ChangeNotifier {
       _completedChapters = prefs.getStringList('completedChapters') ?? [];
       
       final journalData = prefs.getString('journalEntries');
+      final notificationsData = prefs.getString('notifications');
       if (journalData != null) {
         final List<dynamic> decoded = jsonDecode(journalData);
         _journalEntries = decoded.map((e) => JournalEntry.fromJson(e as Map<String, dynamic>)).toList();
+      }
+      if (notificationsData != null) {
+        final List<dynamic> decoded = jsonDecode(notificationsData);
+        _notifications = decoded
+            .map((e) => AppNotification.fromMap(e as Map<String, dynamic>))
+            .toList();
       }
       
       if (_userEmail.isNotEmpty) syncUserRoleWithFirebase();
@@ -277,6 +302,8 @@ class AppState extends ChangeNotifier {
       
       final journalJson = jsonEncode(_journalEntries.map((e) => e.toJson()).toList());
       await prefs.setString('journalEntries', journalJson);
+      final notificationsJson = jsonEncode(_notifications.map((n) => n.toMap()).toList());
+      await prefs.setString('notifications', notificationsJson);
     } catch (e) {
        debugPrint("Save Failure");
     }
