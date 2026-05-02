@@ -15,7 +15,6 @@ import 'breathing_screen.dart';
 import 'chants_screen.dart';
 import 'journal_screen.dart';
 import 'geeta_voice_practice_screen.dart';
-import 'geeta_nexus_media_screen.dart';
 import 'profile_screen.dart';
 import 'about_screen.dart';
 import 'privacy_policy_screen.dart';
@@ -97,7 +96,6 @@ class _MoreScreenState extends State<MoreScreen> {
               _Item('📿', 'Japa', const ChantsScreen()),
               _Item('✍️', 'Journal', const JournalScreen()),
               _Item('🎙️', 'Recitation', const GeetaVoicePracticeScreen()),
-              _Item('🎧', 'Nexus Media', const GeetaNexusMediaScreen()),
             ]),
             const SizedBox(height: 24),
             const _SectionHeader(title: 'Support & Legal'),
@@ -124,7 +122,7 @@ class _MoreScreenState extends State<MoreScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: kGold.withOpacity(0.3))),
       child: Semantics(
         button: true,
-        label: 'Open profile and account settings',
+        label: 'Profile button, opens account settings',
         excludeSemantics: true,
         child: ListTile(
           leading: const CircleAvatar(backgroundColor: kGold, child: Icon(Icons.person, color: Colors.black)),
@@ -148,7 +146,7 @@ class _MoreScreenState extends State<MoreScreen> {
         final item = items[index];
         return Semantics(
           button: true,
-          label: 'Open ${item.title}',
+          label: '${item.title} button',
           excludeSemantics: true,
           child: Card(
             margin: EdgeInsets.zero,
