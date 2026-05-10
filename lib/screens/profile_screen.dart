@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../state/app_state.dart';
 import '../theme.dart';
-import 'notifications_screen.dart';
+import 'admin_dashboard_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -61,21 +61,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
 
-  void _showAdminSecurityDialog(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Admin Security'),
-        content: const Text(
-          'Admin password is controlled by ADMIN_LOGIN_PASSWORD environment config.\n\nCurrent admin email: kuldeepky538@gmail.com',
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
@@ -104,7 +89,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (isAdmin) ...[
             const SizedBox(height: 32),
             _buildSectionTitle('ADMIN CONTROLS', accentColor),
-            _buildAdminControlsCard(context, accentColor, isSuperAdmin),
+            _buildAdminDashboardEntry(context, accentColor),
           ],
           const SizedBox(height: 16),
           _buildAuthButton(state, accentColor),
@@ -181,34 +166,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   
 
-  Widget _buildAdminControlsCard(BuildContext context, Color color, bool isSuperAdmin) {
+  Widget _buildAdminDashboardEntry(BuildContext context, Color color) {
     return Card(
-      child: Column(
-        children: [
-          ListTile(
-            leading: Icon(Icons.notifications_active, color: color),
-            title: const Text('Notification control'),
-            subtitle: const Text('Send and manage app announcements'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            leading: Icon(Icons.security, color: color),
-            title: const Text('Admin password'),
-            subtitle: Text(isSuperAdmin ? 'View admin security details' : 'Super admin only'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: isSuperAdmin ? () => _showAdminSecurityDialog(context) : null,
-          ),
-          const Divider(height: 1),
-          ListTile(
-            leading: Icon(Icons.tune, color: color),
-            title: const Text('Lifestyle & notification settings'),
-            subtitle: const Text('Open controls for alerts and daily routine options'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen())),
-          ),
-        ],
+      child: ListTile(
+        leading: Icon(Icons.admin_panel_settings, color: color),
+        title: const Text('Open admin dashboard'),
+        subtitle: const Text('Manage notifications, security, and lifestyle controls'),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+        ),
       ),
     );
   }
