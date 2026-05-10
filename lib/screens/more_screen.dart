@@ -122,7 +122,7 @@ class _MoreScreenState extends State<MoreScreen> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: kGold.withOpacity(0.3))),
       child: Semantics(
         button: true,
-        label: 'Profile button, opens account settings',
+        label: 'Profile, opens account settings',
         excludeSemantics: true,
         child: ListTile(
           leading: const CircleAvatar(backgroundColor: kGold, child: Icon(Icons.person, color: Colors.black)),
@@ -146,7 +146,7 @@ class _MoreScreenState extends State<MoreScreen> {
         final item = items[index];
         return Semantics(
           button: true,
-          label: '${item.title} button',
+          label: item.title,
           excludeSemantics: true,
           child: Card(
             margin: EdgeInsets.zero,

@@ -14,7 +14,6 @@ import 'verse_detail_screen.dart';
 import 'random_verse_screen.dart';
 import 'wisdom_cards_screen.dart';
 import 'affirmations_screen.dart';
-import 'geeta_nexus_media_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -116,7 +115,6 @@ class _HomeScreenState extends State<HomeScreen> {
         _actionCard(context, 'Random', Icons.casino, const RandomVerseScreen(), isDark),
         _actionCard(context, 'Wisdom', Icons.auto_awesome, const WisdomCardsScreen(), isDark),
         _actionCard(context, 'Affirm', Icons.favorite, const AffirmationsScreen(), isDark),
-        _actionCard(context, 'Media', Icons.library_music, const GeetaNexusMediaScreen(), isDark),
       ],
     );
   }
@@ -124,7 +122,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _actionCard(BuildContext context, String title, IconData icon, Widget target, bool isDark) {
     return Semantics(
       button: true,
-      label: '$title button',
+      label: title,
       excludeSemantics: true,
       child: InkWell(
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => target)),
