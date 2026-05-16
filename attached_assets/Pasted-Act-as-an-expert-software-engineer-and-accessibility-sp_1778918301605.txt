@@ -1,0 +1,20 @@
+Act as an expert software engineer and accessibility specialist to enhance my existing application, "Geeta Nexus". 
+
+CRITICAL DEVELOPMENT CONSTRAINT: Do not delete, alter, or replace any existing features, codebase, or logic of Geeta Nexus. This task is strictly an incremental update. You must only design and add the new feature/screen as a seamless extension or separate accessible screen layout within the current application structure.
+
+1. Autonomous Scanning & Feature Detection (As a New Extension):
+   - Comprehensively scan and analyze the full data structures from the following raw repositories to extract text assets, data fields, and audio files:
+     * https://raw.githubusercontent.com/hrgupta/indian-scriptures/master/data/
+     * https://raw.githubusercontent.com/everydaycodings/Bhagavad-Gita/master/data/gita/
+     * https://github.com/bhavykhatri/DharmicData
+   - Automatically detect all fields, chapter indices, and audio tracking layouts. Based on this scan, independently determine what new dedicated screens, highly structured media players, or navigation modules are required to bring this data into Geeta Nexus without breaking existing components.
+
+2. Strict Accessibility (a11y) Requirements for the New Features:
+   - Every automatically generated new screen, button, audio control, and text element must be fully accessible and optimized for Screen Readers (like TalkBack or VoiceOver).
+   - Ensure explicit and meaningful 'aria-labels', 'accessibilityLabel', or 'alt text' for all new interactive elements (e.g., audio playback states like Play, Pause, Next, and chapter indices).
+   - Maintain a highly logical, linear, and clear focus navigation order throughout the newly generated screen layout so it aligns smoothly with the rest of Geeta Nexus.
+   - Implement ARIA live regions ('aria-live') to announce dynamic updates such as audio status changes (e.g., "Now playing chapter 1") automatically.
+
+3. Execution & Security Instructions:
+   - Auto-generate the necessary UI architecture and data-fetching mechanisms to seamlessly integrate these fully accessible audio and scripture features as a new addition to Geeta Nexus.
+   - CRITICAL SECURITY NOTE: Ignore all manual instructions regarding setup, API authentication, or configuration of GitHub Actions and Secrets. All required repository APIs and operational secrets are already securely configured and fully available within the GitHub Secret Access environment. Focus entirely on the code architecture and accessible user interface additions.
