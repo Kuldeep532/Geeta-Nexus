@@ -363,7 +363,7 @@
     },
     {
       "name": "flutter",
-      "rootUri": "file:///home/runner/.local/flutter_sdk/packages/flutter",
+      "rootUri": "file:///nix/store/i07crp4mg1rimd97s1byrq4gasg7dsk5-flutter-wrapped-3.32.0-sdk-links/packages/flutter",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
@@ -399,7 +399,7 @@
     },
     {
       "name": "flutter_localizations",
-      "rootUri": "file:///home/runner/.local/flutter_sdk/packages/flutter_localizations",
+      "rootUri": "file:///nix/store/i07crp4mg1rimd97s1byrq4gasg7dsk5-flutter-wrapped-3.32.0-sdk-links/packages/flutter_localizations",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
@@ -465,7 +465,7 @@
     },
     {
       "name": "flutter_test",
-      "rootUri": "file:///home/runner/.local/flutter_sdk/packages/flutter_test",
+      "rootUri": "file:///nix/store/i07crp4mg1rimd97s1byrq4gasg7dsk5-flutter-wrapped-3.32.0-sdk-links/packages/flutter_test",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
@@ -477,7 +477,7 @@
     },
     {
       "name": "flutter_web_plugins",
-      "rootUri": "file:///home/runner/.local/flutter_sdk/packages/flutter_web_plugins",
+      "rootUri": "file:///nix/store/i07crp4mg1rimd97s1byrq4gasg7dsk5-flutter-wrapped-3.32.0-sdk-links/packages/flutter_web_plugins",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
@@ -951,7 +951,7 @@
     },
     {
       "name": "sky_engine",
-      "rootUri": "file:///home/runner/.local/flutter_sdk/bin/cache/pkg/sky_engine",
+      "rootUri": "file:///nix/store/i07crp4mg1rimd97s1byrq4gasg7dsk5-flutter-wrapped-3.32.0-sdk-links/bin/cache/pkg/sky_engine",
       "packageUri": "lib/",
       "languageVersion": "3.7"
     },
@@ -1228,7 +1228,7 @@
   ],
   "generator": "pub",
   "generatorVersion": "3.8.0",
-  "flutterRoot": "file:///home/runner/.local/flutter_sdk",
+  "flutterRoot": "file:///nix/store/i07crp4mg1rimd97s1byrq4gasg7dsk5-flutter-wrapped-3.32.0-sdk-links",
   "flutterVersion": "3.32.0",
   "pubCache": "file:///home/runner/.pub-cache"
 }
