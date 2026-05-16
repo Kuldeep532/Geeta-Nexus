@@ -6,7 +6,8 @@ import '../data/gita_data.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
 import '../theme.dart'; 
-import 'verse_detail_screen.dart';
+import '../models/scripture_model.dart';
+import 'scripture_verse_detail_screen.dart';
 
 // FIX: 'import' ko hatakar 'class' kiya gaya
 class ChapterDetailScreen extends StatelessWidget {
@@ -155,14 +156,24 @@ class _VerseList extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       itemCount: verses.length,
       separatorBuilder: (context, index) => const SizedBox(height: 8),
-      itemBuilder: (context, index) => _VerseRowItem(verse: verses[index]),
+      itemBuilder: (context, index) => _VerseRowItem(
+        verse: verses[index],
+        allVerses: verses,
+        currentIndex: index,
+      ),
     );
   }
 }
 
 class _VerseRowItem extends StatelessWidget {
   final Verse verse;
-  const _VerseRowItem({required this.verse});
+  final List<Verse> allVerses;
+  final int currentIndex;
+  const _VerseRowItem({
+    required this.verse,
+    required this.allVerses,
+    required this.currentIndex,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -194,7 +205,14 @@ class _VerseRowItem extends StatelessWidget {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => VerseDetailScreen(verse: verse)),
+            MaterialPageRoute(
+              builder: (_) => ScriptureVerseDetailScreen(
+                allVerses: allVerses
+                    .map((v) => ScriptureVerse.fromLocalVerse(v))
+                    .toList(),
+                initialIndex: currentIndex,
+              ),
+            ),
           );
         },
       ),

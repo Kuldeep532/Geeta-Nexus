@@ -10,7 +10,8 @@ import '../models/models.dart';
 
 // Screens imports
 import 'search_screen.dart';
-import 'verse_detail_screen.dart';
+import '../models/scripture_model.dart';
+import 'scripture_verse_detail_screen.dart';
 import 'random_verse_screen.dart';
 import 'wisdom_cards_screen.dart';
 import 'affirmations_screen.dart';
@@ -210,7 +211,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildDailyVerseCard(BuildContext context, Verse verse, bool isDark, ThemeData theme) {
     return GestureDetector(
-      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => VerseDetailScreen(verse: verse))),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ScriptureVerseDetailScreen(
+            allVerses: [ScriptureVerse.fromLocalVerse(verse)],
+            initialIndex: 0,
+          ),
+        ),
+      ),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(20),

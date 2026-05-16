@@ -6,7 +6,8 @@ import '../theme.dart';
 import '../data/gita_data.dart';
 import '../models/models.dart';
 import '../state/app_state.dart';
-import 'verse_detail_screen.dart';
+import '../models/scripture_model.dart';
+import 'scripture_verse_detail_screen.dart';
 
 class RandomVerseScreen extends StatefulWidget {
   const RandomVerseScreen({super.key});
@@ -246,7 +247,10 @@ class _RandomVerseScreenState extends State<RandomVerseScreen>
                       onPressed: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => VerseDetailScreen(verse: _verse),
+                          builder: (_) => ScriptureVerseDetailScreen(
+                            allVerses: [ScriptureVerse.fromLocalVerse(_verse)],
+                            initialIndex: 0,
+                          ),
                         ),
                       ),
                       icon: const Icon(Icons.open_in_new),

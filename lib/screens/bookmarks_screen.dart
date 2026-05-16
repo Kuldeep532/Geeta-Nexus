@@ -5,7 +5,8 @@ import '../theme.dart';
 import '../state/app_state.dart';
 import '../data/gita_data.dart'; // Direct access to allVerses
 import '../models/models.dart';
-import 'verse_detail_screen.dart';
+import '../models/scripture_model.dart';
+import 'scripture_verse_detail_screen.dart';
 
 class BookmarksScreen extends StatelessWidget {
   const BookmarksScreen({super.key});
@@ -76,7 +77,12 @@ class BookmarksScreen extends StatelessWidget {
       child: InkWell(
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => VerseDetailScreen(verse: verse)),
+          MaterialPageRoute(
+            builder: (_) => ScriptureVerseDetailScreen(
+              allVerses: [ScriptureVerse.fromLocalVerse(verse)],
+              initialIndex: 0,
+            ),
+          ),
         ),
         borderRadius: BorderRadius.circular(16),
         child: _verseCard(verse),

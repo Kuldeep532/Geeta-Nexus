@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'models.dart';
 
-enum ScriptureSource { gitaDharmicData, ramayanaValmiki, ramcharitmanas }
+enum ScriptureSource { localGita, gitaDharmicData, ramayanaValmiki, ramcharitmanas }
 
 @immutable
 class ScriptureSectionInfo {
@@ -23,6 +24,9 @@ class ScriptureVerse {
   final ScriptureSectionInfo section;
   final int verseIndex;
   final String originalText;
+  final String? transliteration;
+  final List<String> keywords;
+  final String? localVerseId;
   final Map<String, String> translations;
   final Map<String, String> commentaries;
   final String? verseType;
@@ -33,14 +37,38 @@ class ScriptureVerse {
     required this.section,
     required this.verseIndex,
     required this.originalText,
+    this.transliteration,
+    this.keywords = const [],
+    this.localVerseId,
     this.translations = const {},
     this.commentaries = const {},
     this.verseType,
     this.audioUrl,
   });
 
+  factory ScriptureVerse.fromLocalVerse(Verse v) {
+    return ScriptureVerse(
+      source: ScriptureSource.localGita,
+      section: ScriptureSectionInfo(
+        label: 'Chapter ${v.chapter}',
+        sectionIndex: v.chapter,
+      ),
+      verseIndex: v.verse,
+      originalText: v.sanskrit,
+      transliteration: v.transliteration.isNotEmpty ? v.transliteration : null,
+      keywords: v.keywords,
+      localVerseId: v.id,
+      translations: v.translation.isNotEmpty ? {'English': v.translation} : const {},
+      commentaries: v.meaning.isNotEmpty ? {'Meaning': v.meaning} : const {},
+      audioUrl:
+          'https://raw.githubusercontent.com/everydaycodings/Bhagavad-Gita/master/data/gita/audio/verse_recitation/${v.chapter}/${v.verse}.mp3',
+    );
+  }
+
   String get sourceLabel {
     switch (source) {
+      case ScriptureSource.localGita:
+        return 'Bhagavad Gita';
       case ScriptureSource.gitaDharmicData:
         return 'Bhagavad Gita';
       case ScriptureSource.ramayanaValmiki:
@@ -55,10 +83,12 @@ class ScriptureVerse {
     sb.write('$sourceLabel. ${section.displayLabel}. Verse $verseIndex. ');
     if (verseType != null) sb.write('Type: $verseType. ');
     final cleanText = originalText.replaceAll('\n', ' ');
-    sb.write('Text: $cleanText. ');
+    sb.write('Sanskrit text: $cleanText. ');
+    if (transliteration != null) {
+      sb.write('Transliteration: ${transliteration!.replaceAll('\n', ' ')}. ');
+    }
     if (translations.isNotEmpty) {
-      final first = translations.values.first;
-      sb.write('Translation: $first. ');
+      sb.write('Translation: ${translations.values.first}. ');
     }
     return sb.toString();
   }
@@ -69,6 +99,9 @@ class ScriptureVerse {
       section: section,
       verseIndex: verseIndex,
       originalText: originalText,
+      transliteration: transliteration,
+      keywords: keywords,
+      localVerseId: localVerseId,
       translations: translations,
       commentaries: commentaries,
       verseType: verseType,
@@ -116,11 +149,11 @@ const List<ScriptureSectionDef> kRamayanaSections = [
 ];
 
 const List<ScriptureSectionDef> kRamchariSections = [
-  ScriptureSectionDef(index: 1, englishName: 'Balkand',       devanagariName: 'बालकाण्ड',        fileName: '1_बाल_काण्ड_data.json'),
-  ScriptureSectionDef(index: 2, englishName: 'Ayodhyakand',   devanagariName: 'अयोध्याकाण्ड',   fileName: '2_अयोध्या_काण्ड_data.json'),
-  ScriptureSectionDef(index: 3, englishName: 'Aranyakand',    devanagariName: 'अरण्यकाण्ड',     fileName: '3_अरण्य_काण्ड_data.json'),
-  ScriptureSectionDef(index: 4, englishName: 'Kishkindhakand',devanagariName: 'किष्किन्धाकाण्ड',fileName: '4_किष्किन्धा_काण्ड_data.json'),
-  ScriptureSectionDef(index: 5, englishName: 'Sundarkand',    devanagariName: 'सुंदरकाण्ड',     fileName: '5_सुंदर_काण्ड_data.json'),
-  ScriptureSectionDef(index: 6, englishName: 'Lankakand',     devanagariName: 'लंकाकाण्ड',      fileName: '6_लंका_काण्ड_data.json'),
-  ScriptureSectionDef(index: 7, englishName: 'Uttarkand',     devanagariName: 'उत्तरकाण्ड',     fileName: '7_उत्तर_काण्ड_data.json'),
+  ScriptureSectionDef(index: 1, englishName: 'Balkand',        devanagariName: 'बालकाण्ड',        fileName: '1_बाल_काण्ड_data.json'),
+  ScriptureSectionDef(index: 2, englishName: 'Ayodhyakand',    devanagariName: 'अयोध्याकाण्ड',   fileName: '2_अयोध्या_काण्ड_data.json'),
+  ScriptureSectionDef(index: 3, englishName: 'Aranyakand',     devanagariName: 'अरण्यकाण्ड',     fileName: '3_अरण्य_काण्ड_data.json'),
+  ScriptureSectionDef(index: 4, englishName: 'Kishkindhakand', devanagariName: 'किष्किन्धाकाण्ड', fileName: '4_किष्किन्धा_काण्ड_data.json'),
+  ScriptureSectionDef(index: 5, englishName: 'Sundarkand',     devanagariName: 'सुंदरकाण्ड',     fileName: '5_सुंदर_काण्ड_data.json'),
+  ScriptureSectionDef(index: 6, englishName: 'Lankakand',      devanagariName: 'लंकाकाण्ड',      fileName: '6_लंका_काण्ड_data.json'),
+  ScriptureSectionDef(index: 7, englishName: 'Uttarkand',      devanagariName: 'उत्तरकाण्ड',     fileName: '7_उत्तर_काण्ड_data.json'),
 ];

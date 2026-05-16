@@ -228,6 +228,8 @@ class ScriptureRepository {
         return 'ramcharitmanas ${verse.section.label.toLowerCase()} recitation audio';
       case ScriptureSource.gitaDharmicData:
         return '';
+      case ScriptureSource.localGita:
+        return '';
     }
   }
 }
