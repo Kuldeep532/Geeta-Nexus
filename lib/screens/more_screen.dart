@@ -20,6 +20,7 @@ import 'about_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'terms_screen.dart';
 import 'contact_screen.dart';
+import 'scripture_library_screen.dart';
 
 class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
@@ -79,6 +80,11 @@ class _MoreScreenState extends State<MoreScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             _buildAccountCard(context, appState),
+            const SizedBox(height: 24),
+            const _SectionHeader(title: 'Scripture Library'),
+            _buildAccessibleGrid(context, [
+              _Item('🕉️', 'Scripture\nLibrary', const ScriptureLibraryScreen()),
+            ]),
             const SizedBox(height: 24),
             const _SectionHeader(title: 'Study & Learn'),
             _buildAccessibleGrid(context, [
