@@ -1,0 +1,41 @@
+## Role & Core Objective
+You are a Principal Flutter Architect specializing in dynamic code generation, resilient multi-source JSON serialization, and blind-accessible (Screen Reader/Semantics) engineering. 
+
+Your task is to refactor the existing application or automatically compile completely new screens, controllers, and models. The objective is to scale scripture data and audio ingestion across the top 10 open-source GitHub repositories AND the Internet Archive (archive.org), eliminate legacy visual clutter, and build a unified, highly optimized "Verse Detail Screen".
+
+---
+
+## Architectural Tasks & New Directives
+
+### 1. Multi-Source Ingestion & Internet Archive Audio Engine
+The network layer must natively index and automatically map the existing sources, top 10 GitHub scripture repositories, and archive.org media pipelines:
+- **Existing Source 1 (Bhagavad Gita):** https://raw.githubusercontent.com/bhavykhatri/DharmicData/main/SrimadBhagvadGita/bhagavad_gita_chapter_1.json
+- **Existing Source 2 (Valmiki Ramayana):** https://raw.githubusercontent.com/bhavykhatri/DharmicData/main/ValmikiRamayana/1_balakanda.json
+- **Existing Source 3 (Ramcharitmanas/Sundarkand):** https://raw.githubusercontent.com/bhavykhatri/DharmicData/main/Ramcharitmanas/1_%E0%A4%AC%E0%A4%BE%E0%A4%B2_%E0%A4%95%E0%A4%BE%E0%A4%A3%E0%A5%8D%E0%A4%A1_data.json
+- **Internet Archive Integration:** Implement dynamic query patterns to match the selected Scripture and Verse against Archive.org item identifiers to pull corresponding High-Quality Audio streams (MP3/Ogg) for Bhagavad Gita and Ramayana.
+- **Binary Safeguard:** Force byte-level `utf8.decode(response.bodyBytes)` decoding across all network pipelines to guarantee complex Sanskrit, Hindi, and regional Indian scripts (Devanagari, Gurmukhi, etc.) never experience character corruption.
+
+### 2. Decommissioning Legacy Layouts & Transitioning to "Verse Detail Screen"
+- **CRITICAL TERMINOLOGY FIX:** Completely remove or replace references to misspelled "words" components. The correct architectural entity is **Verse**.
+- **Decommission Legacy Layouts:** Completely remove the old radar screen implementation, including generic "verse details train" layouts and "random verse details" blocks.
+- **The New Verse Detail Screen:** Create a single, unified view named exactly `VerseDetailScreen`. This screen must act as the absolute central layout where ALL data points (Verse Index, original Devanagari Shloka/Chaupai lines, multi-language translations, and streaming audio status) are completely visible, crisp, and neatly organized simultaneously.
+
+### 3. Integrated Dynamic Audio Playback Layer (At Screen Bottom)
+Optimize the playback experience within the `VerseDetailScreen` based on runtime Internet Archive / GitHub audio asset availability:
+- **Audio NOT Available Condition:** If no streaming audio metadata is found for the active verse, completely remove the Play/Pause button, Seek Slider, and Time Stamps from the widget tree. Render ONLY the highly visible and accessible "Previous Verse" and "Next Verse" navigation buttons.
+- **Audio AVAILABLE Condition:** - Position all audio interaction controls cleanly at the **Bottom of the Verse Detail Screen** to establish a predictable, stationary tactile footprint.
+  - Implement an advanced, fluid Playback Seek Slider for smooth manual track scrubbing and rewinding.
+  - Provide dedicated **10-Second Rewind** and **30-Second Fast-Forward** action buttons placed directly adjacent to the main tracking control.
+
+### 4. Eliminating Confusing Accessibility Clutter
+- Eradicate fragmented focus points where screen readers get trapped on decorative dividers, empty padding blocks, or isolated brackets.
+- Merge the entire verse entity (Scripture Name, Verse Index, Section Header, Original Devnagari Text lines, and Target Translation) into one singular, unified, contiguous `Semantics` container block with `explicitChildNodes: false` and `container: true`.
+- For the bottom audio controls, ensure every interactive target (Play, Rewind, Fast-Forward, Next, Previous) has a clear, unambiguous, high-contrast, fully spoken semantic label (e.g., "Button, Rewind 10 seconds", "Button, Go to Next Verse").
+
+---
+
+## Output Expectations
+Generate fully completed, modular, production-grade Dart architecture files across these distinct modules:
+1. `scripture_model.dart` (Robust data structures with field-level try-catch exception shielding for all repository and Internet Archive payload structures).
+2. `scripture_repository.dart` (Automated network service layer with schema detection, archive.org audio query resolvers, and strict binary UTF-8 handling).
+3. `verse_detail_screen.dart` (The newly built, clean, fully accessible screen showing all text details combined with the dynamic adaptive bottom audio panel and unified Semantics cards).

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../models/scripture_model.dart';
+import '../services/scripture_repository.dart';
 import '../services/scripture_service.dart';
 import '../theme.dart';
 import 'scripture_chapter_reader_screen.dart';
+import 'scripture_dharmicdata_verse_list_screen.dart';
 import 'scripture_upanishads_screen.dart';
 
 class ScriptureLibraryScreen extends StatefulWidget {
@@ -28,7 +31,7 @@ class _ScriptureLibraryScreenState extends State<ScriptureLibraryScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _loadChapters();
     _loadUpanishads();
   }
@@ -84,15 +87,13 @@ class _ScriptureLibraryScreenState extends State<ScriptureLibraryScreen>
           indicatorColor: kGold,
           labelColor: kGold,
           unselectedLabelColor: theme.hintColor,
+          isScrollable: true,
+          tabAlignment: TabAlignment.start,
           tabs: const [
-            Tab(
-              icon: Icon(Icons.menu_book_rounded),
-              text: 'Bhagavad Gita',
-            ),
-            Tab(
-              icon: Icon(Icons.auto_stories_rounded),
-              text: 'Upanishads',
-            ),
+            Tab(icon: Icon(Icons.menu_book_rounded), text: 'Bhagavad Gita'),
+            Tab(icon: Icon(Icons.auto_stories_rounded), text: 'Upanishads'),
+            Tab(icon: Icon(Icons.temple_hindu_rounded), text: 'Ramayana'),
+            Tab(icon: Icon(Icons.brightness_5_rounded), text: 'Ramcharitmanas'),
           ],
         ),
       ),
@@ -113,7 +114,137 @@ class _ScriptureLibraryScreenState extends State<ScriptureLibraryScreen>
             onRetry: _loadUpanishads,
             isDark: isDark,
           ),
+          _DharmicSectionListView(
+            source: ScriptureSource.ramayanaValmiki,
+            sections: kRamayanaSections,
+            title: 'Valmiki Ramayana',
+            accent: kSaffron,
+            isDark: isDark,
+          ),
+          _DharmicSectionListView(
+            source: ScriptureSource.ramcharitmanas,
+            sections: kRamchariSections,
+            title: 'Ramcharitmanas',
+            accent: kGold,
+            isDark: isDark,
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _DharmicSectionListView extends StatelessWidget {
+  final ScriptureSource source;
+  final List<ScriptureSectionDef> sections;
+  final String title;
+  final Color accent;
+  final bool isDark;
+
+  const _DharmicSectionListView({
+    required this.source,
+    required this.sections,
+    required this.title,
+    required this.accent,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final repo = ScriptureRepository();
+
+    return Semantics(
+      label: '$title, ${sections.length} sections available',
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: sections.length,
+        itemBuilder: (context, index) {
+          final sec = sections[index];
+          return Semantics(
+            button: true,
+            label: '${sec.englishName}, ${sec.devanagariName}. Double tap to open.',
+            excludeSemantics: true,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Material(
+                color: theme.cardColor,
+                elevation: 0,
+                borderRadius: BorderRadius.circular(16),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ScriptureDharmicVerseListScreen(
+                        section: sec,
+                        source: source,
+                        fetchVerses: source == ScriptureSource.ramayanaValmiki
+                            ? () => repo.fetchRamayanaKanda(sec)
+                            : () => repo.fetchRamchariKanda(sec),
+                      ),
+                    ),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: accent.withOpacity(0.22)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: accent.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: accent.withOpacity(0.3)),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${sec.index}',
+                              style: GoogleFonts.cinzel(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: accent,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                sec.englishName,
+                                style: GoogleFonts.lato(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: isDark ? kText : null,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                sec.devanagariName,
+                                style: GoogleFonts.notoSansDevanagari(
+                                  fontSize: 13,
+                                  color: accent.withOpacity(0.75),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(Icons.chevron_right, color: accent.withOpacity(0.6)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
