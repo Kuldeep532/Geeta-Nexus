@@ -3,8 +3,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart';
 import 'social_links.dart';
 
-class AboutScreen extends StatelessWidget {
-  const AboutScreen({super.key});
+class AboutUsScreen extends StatelessWidget {
+  const AboutUsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +12,10 @@ class AboutScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('About the Application'),
+        title: Semantics(
+          header: true,
+          child: const Text('About Us'),
+        ),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
@@ -26,7 +29,6 @@ class AboutScreen extends StatelessWidget {
               Center(
                 child: Column(
                   children: [
-                    // Decorative icon hidden from screen readers to reduce noise
                     ExcludeSemantics(
                       child: Container(
                         width: 100,
@@ -42,12 +44,15 @@ class AboutScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Text(
-                      'Geeta Nexus',
-                      style: GoogleFonts.cinzel(
-                        color: cs.primary, 
-                        fontSize: 24, 
-                        fontWeight: FontWeight.bold,
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        'Geeta Nexus',
+                        style: GoogleFonts.cinzel(
+                          color: cs.primary,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],
@@ -55,30 +60,22 @@ class AboutScreen extends StatelessWidget {
               ),
               const SizedBox(height: 40),
 
-              _section(context,
-                'Our Mission',
-                'Synthesizing timeless Vedic wisdom with cutting-edge Large Language Models (LLMs). Bhagavad Gita AI provides an immersive, personalized spiritual ecosystem designed to foster self-realization and mental clarity in the modern age.',
-              ),
-              
-              _section(context,
-                'Core Features',
-                '• High-fidelity translations of all 700 Shlokas.\n• Context-aware AI philosophical guidance.\n• Integrated modules for Prāṇāyāma and Japa meditation.\n• Gamified Vedic learning via cognitive flashcards.\n• Progress analytics and spiritual streak tracking.',
-              ),
+              _section(context, 'Our Mission',
+                'Synthesizing timeless Vedic wisdom with cutting-edge Large Language Models (LLMs). Bhagavad Gita AI provides an immersive, personalized spiritual ecosystem designed to foster self-realization and mental clarity in the modern age.'),
 
-              _section(context,
-                'Developer',
-                'Satvik Technologys\nIndependent developer entity behind Geeta Nexus.',
-              ),
+              _section(context, 'Core Features',
+                '• High-fidelity translations of all 700 Shlokas.\n• Context-aware AI philosophical guidance.\n• Integrated modules for Prāṇāyāma and Japa meditation.\n• Gamified Vedic learning via cognitive flashcards.\n• Progress analytics and spiritual streak tracking.'),
 
-              _section(context,
-                'Leadership',
-                'Kuldeep Kumar Yadav\nFounder & Lead Visionary, Satvik Technologys.',
-              ),
+              _section(context, 'Developer',
+                'Satvik Technologys\nIndependent developer entity behind Geeta Nexus.'),
+
+              _section(context, 'Leadership',
+                'Kuldeep Kumar Yadav\nFounder & Lead Visionary, Satvik Technologys.'),
 
               const SizedBox(height: 16),
               const SocialLinksRow(),
               const SizedBox(height: 40),
-              
+
               Center(
                 child: Semantics(
                   label: 'Made with gratitude for seekers everywhere',
@@ -99,13 +96,14 @@ class AboutScreen extends StatelessWidget {
 
   Widget _section(BuildContext context, String title, String body) {
     final cs = Theme.of(context).colorScheme;
-    return MergeSemantics(
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 28),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Semantics(
+            header: true,
+            child: Text(
               title.toUpperCase(),
               style: GoogleFonts.cinzel(
                 color: cs.primary,
@@ -114,17 +112,17 @@ class AboutScreen extends StatelessWidget {
                 letterSpacing: 1.5,
               ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              body,
-              style: GoogleFonts.crimsonText(
-                color: cs.onSurface,
-                fontSize: 17,
-                height: 1.6,
-              ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            body,
+            style: GoogleFonts.crimsonText(
+              color: cs.onSurface,
+              fontSize: 17,
+              height: 1.6,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

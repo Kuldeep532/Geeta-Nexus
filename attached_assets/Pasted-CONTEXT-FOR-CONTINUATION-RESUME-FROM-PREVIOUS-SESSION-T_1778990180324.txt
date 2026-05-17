@@ -1,0 +1,24 @@
+CONTEXT FOR CONTINUATION (RESUME FROM PREVIOUS SESSION):
+The previous implementation session was abruptly interrupted due to credit exhaustion. Do not restart the project from scratch. Resume immediately from where the configuration left off, focusing directly on replacing the incomplete screens and applying the new accessibility structure.
+
+Act as an expert mobile app developer specializing in clean UI design and high-level accessibility. Complete the in-progress layout redesign for the following screens by strictly following these instructions. 
+
+### 1. Core Design & Accessibility Rules (No Confusing Layouts)
+- Design an incredibly simple, clean, and linear user interface. Avoid complex gestures or hidden elements.
+- Fix Flutter's Heading Announcement Issue: The app is currently not announcing heading texts to screen readers correctly. If Flutter's standard Semantics tree fails, use Jetpack Compose via Android Platform Channels for rendering elements that require strict TalkBack native behavior.
+- Every screen MUST have a clear title heading at the very top.
+- DO NOT use double buttons on the same row that confuse screen readers. Every action must be clean, single-button, and grouped perfectly with its title so it announces context first, then the action (e.g., "Title + Single Action announcement").
+
+### 2. Screen Redesigns & Renaming
+- Remove the old contact form entirely.
+- Create a brand new screen named "Contact Us" (Class: ContactUsScreen). It must feature a clean vertical layout with exactly three fields with proper labels and placeholders:
+  1. Your Name (Placeholder: "Enter your full name")
+  2. Your Email (Placeholder: "Enter your email address")
+  3. Your Message (Placeholder: "Type your message here")
+  - Include exactly ONE single large action button at the bottom labeled "Send Message" (Minimum 48x48 dp touch target).
+- Rename the "About" screen to "About Us" (Class: AboutUsScreen) and update its top heading title to "About Us".
+- Rename the "Privacy" page to "Privacy Policy" (Class: PrivacyPolicyScreen) and update its top heading title to "Privacy Policy".
+- Rename the "Terms" page to "Terms and Conditions" (Class: TermsAndConditionsScreen) and update its top heading title to "Terms and Conditions".
+
+### 3. Output Requirement
+Provide the complete, finalized, and production-ready code files for the updated navigation routing, the redesigned Flutter screens, and any necessary Jetpack Compose platform channel code to ensure flawless header announcements. Resume directly from where the project configuration left off.

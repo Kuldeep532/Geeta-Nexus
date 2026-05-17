@@ -10,7 +10,7 @@ import '../state/app_state.dart';
 import '../main.dart';
 import '../theme.dart';
 import 'privacy_policy_screen.dart';
-import 'terms_screen.dart';
+import 'terms_screen.dart'; // TermsAndConditionsScreen
 
 class _OnboardPageData {
   final String emoji;
@@ -409,8 +409,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 child: const Text('View Privacy Policy'),
               ),
               TextButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsScreen())),
-                child: const Text('View Terms'),
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsAndConditionsScreen())),
+                child: const Text('View Terms and Conditions'),
               ),
             ],
           ),

@@ -10,10 +10,9 @@ class PrivacyPolicyScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        // FIX 1: Removed 'const' before Semantics because it was causing a build error
         title: Semantics(
           header: true,
-          child: const Text('Privacy & Data Policy'),
+          child: const Text('Privacy Policy'),
         ),
         centerTitle: true,
         elevation: 0,
@@ -24,8 +23,6 @@ class PrivacyPolicyScreen extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            // FIX 2: Removed 'const' from the children list because custom widgets 
-            // like _Heading and _Body are being instantiated here.
             children: const [
               _Heading('Introduction'),
               _Body(
@@ -100,7 +97,7 @@ class _Heading extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 28, bottom: 10),
       child: Semantics(
-        header: true, 
+        header: true,
         child: Text(
           text.toUpperCase(),
           style: GoogleFonts.cinzel(
@@ -122,7 +119,8 @@ class _Body extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    return MergeSemantics( 
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
         style: GoogleFonts.crimsonText(
@@ -132,5 +130,5 @@ class _Body extends StatelessWidget {
         ),
       ),
     );
-  } // FIX 3: Removed the stray comma before the closing brace
+  }
 }

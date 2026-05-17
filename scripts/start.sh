@@ -3,6 +3,15 @@ set -e
 
 FLUTTER=/nix/store/i07crp4mg1rimd97s1byrq4gasg7dsk5-flutter-wrapped-3.32.0-sdk-links/bin/flutter
 
+# Clear stale Dart build cache and restore packages (prevents @protected / Matrix4 kernel errors)
+echo "▶ Cleaning build cache..."
+"$FLUTTER" clean 2>/dev/null || true
+echo "▶ Restoring packages..."
+"$FLUTTER" pub get
+
+# Kill any stale process on port 5000
+fuser -k 5000/tcp 2>/dev/null || true
+
 DART_DEFINES=""
 if [ -n "$GEMINI_AI_API_KEY" ]; then
   DART_DEFINES="--dart-define=GEMINI_AI_API_KEY=$GEMINI_AI_API_KEY"
