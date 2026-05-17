@@ -47,12 +47,18 @@ jobs:
         run: |
           echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > android/app/google-services.json
 
-      - name: Build APK
+      - name: Build APK with Dynamic Secrets Injection
+        # FIXED: Yahan bowler ab teeno balls ko ek sath spin karake compile pipeline ke andar pass karega!
         env:
           GEMINI_AI_API_KEY: ${{ secrets.GEMINI_AI_API_KEY }}
+          ADMIN_EMAILS_DATA: ${{ secrets.ADMIN_LOGIN_EMAILS }}
+          ADMIN_PASSWORD_DATA: ${{ secrets.ADMIN_LOGIN_PASSWORD }}
         run: |
           chmod +x android/gradlew
-          flutter build apk --release
+          flutter build apk --release \
+            --dart-define=GEMINI_API_KEY="$GEMINI_AI_API_KEY" \
+            --dart-define=ADMIN_LOGIN_EMAILS="$ADMIN_EMAILS_DATA" \
+            --dart-define=ADMIN_LOGIN_PASSWORD="$ADMIN_PASSWORD_DATA"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
