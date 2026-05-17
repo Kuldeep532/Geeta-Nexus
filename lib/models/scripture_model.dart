@@ -139,7 +139,7 @@ class ScriptureSectionDef {
 }
 
 const List<ScriptureSectionDef> kRamayanaSections = [
-  ScriptureSectionDef(index: 1, englishName: 'Balakanda',       devanagariName: 'बालकाण्ड',        fileName: '1_balakanda.json'),
+  ScriptureSectionDef(index: 1, englishName: 'Balakanda',       devanagariName: 'बालकाण्ड',       fileName: '1_balakanda.json'),
   ScriptureSectionDef(index: 2, englishName: 'Ayodhyakanda',    devanagariName: 'अयोध्याकाण्ड',   fileName: '2_ayodhyakanda.json'),
   ScriptureSectionDef(index: 3, englishName: 'Aranyakanda',     devanagariName: 'अरण्यकाण्ड',     fileName: '3_aranyakanda.json'),
   ScriptureSectionDef(index: 4, englishName: 'Kishkindhakanda', devanagariName: 'किष्किन्धाकाण्ड', fileName: '4_kishkindhakanda.json'),
