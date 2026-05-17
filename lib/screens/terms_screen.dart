@@ -7,61 +7,175 @@ class TermsAndConditionsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Semantics(
           header: true,
-          child: const Text('Terms and Conditions'),
+          headingLevel: 1, // HTML Style Main Page Heading <h1>
+          child: Text(
+            'TERMS AND CONDITIONS',
+            style: GoogleFonts.cinzel(
+              color: kGold,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.5,
+              fontSize: 18,
+            ),
+          ),
         ),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
+        leading: const BackButton(color: kGold),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              _Heading('Terms and Conditions'),
-              _Body(
-                'Geeta Nexus is provided by Satvik Technologys, an independent developer entity led by Kuldeep Kumar Yadav. By installing and using the app, you agree to the following terms.',
+            children: [
+              Text(
+                "Last Updated: May 18, 2026\nDeveloper Identity: Satvik Technologies\nLocation: Korba, Chhattisgarh, India",
+                style: TextStyle(color: theme.hintColor, fontSize: 12, fontStyle: FontStyle.italic, height: 1.4),
               ),
-              _Heading('1. Use of the App'),
-              _Body(
-                'Geeta Nexus is provided for personal, non-commercial spiritual and educational use. You agree to use the app respectfully and lawfully.',
+              const SizedBox(height: 20),
+              
+              const _TermsHeading('Agreement to Terms'),
+              const _TermsBody(
+                'Geeta Nexus is owned and operated by Satvik Technologies, an independent developer project located in Korba, Chhattisgarh, India. By installing, accessing, or utilizing any component of this application, you explicitly execute a legally binding agreement to comply with these Terms and Conditions.',
               ),
-              _Heading('2. Spiritual Content'),
-              _Body(
-                'Translations, summaries, and AI-generated answers are presented for inspiration and study. They are not a substitute for guidance from a qualified spiritual teacher.',
+
+              const _TermsHeading('1. Scope of Use & Community Guidelines'),
+              const _TermsBody(
+                'Geeta Nexus is provided strictly for personal, non-commercial, spiritual, and intellectual study. You agree to interact with the system platform, its data nodes, and other community vectors lawfully, respectfully, and in perfect alignment with a clean, satvik lifestyle framework.',
               ),
-              _Heading('3. AI-Generated Responses'),
-              _Body(
-                'AI features may occasionally produce inaccurate or incomplete information. Always use your own judgement.',
+
+              const _TermsHeading('2. Nature of Spiritual Content'),
+              const _TermsBody(
+                'All textual translations, content summaries, verse breakdowns, and automated theological answers rendered within the software container are presented solely for inspirational, educational, and reference purposes. This data does not constitute professional instruction or a substitute for expert traditional guidance from verified spiritual mentors.',
               ),
-              _Heading('4. Intellectual Property'),
-              _Body(
-                'The Bhagavad Gita is in the public domain. App design, code, UI, and original content are the property of Satvik Technologys.',
+
+              const _TermsHeading('3. Artificial Intelligence Engine Processing (Google Gemini)'),
+              const _TermsBody(
+                'The analytical chat panels and query synthesis features within the application leverage advanced Large Language Model (LLM) pipelines powered by Google Gemini integration. You acknowledge that AI systems may occasionally output incomplete, incorrect, or inaccurate responses. Users are strictly instructed to apply personal intellectual discernment.',
               ),
-              _Heading('5. Limitation of Liability'),
-              _Body(
-                'The app is provided "as is" without warranties of any kind. Satvik Technologys and the developer are not liable for any decisions made based on the content of the app.',
+
+              const _TermsHeading('4. Account Registration & Data Sovereignty'),
+              const _TermsBody(
+                'Users who voluntarily instantiate dynamic cloud syncing via Google OAuth acknowledge that their display metadata (Name, Email, Profile Picture Asset) is processed by Satvik Technologies to secure account token management. You retain absolute control over your profile and hold the right to invoke permanent deletion of your cloud data node instantly through the application settings at any time.',
               ),
-              _Heading('6. Changes to Terms'),
-              _Body(
-                'These terms may be updated from time to time. Continued use of the app means you accept the latest version.',
+
+              const _TermsHeading('5. Open Source Autonomy & Intellectual Property'),
+              const _TermsBody(
+                'The core scripture verses of the Bhagavad Gita are recognized as public domain material. However, the custom UI compilation, software container code, visual themes, custom layouts, engineering logic, and original architectural content are the exclusive proprietary property of Satvik Technologies.',
               ),
-              _Heading('7. Governing Context'),
-              _Body(
-                'These terms are intended to be interpreted in line with applicable laws of India.',
+
+              const _TermsHeading('6. Comprehensive Limitation of Liability'),
+              const _TermsBody(
+                'This application structure is delivered to the endpoint user on an "As-Is" and "As-Available" baseline without warranties of any variety, either express or implied. Satvik Technologies and its single-member community administration shall bear zero legal or financial liability for any specific choices, conclusions, or actions initiated by you based on the metrics or text processed inside the app.',
               ),
-              _Heading('8. Contact'),
-              _Body(
-                'For questions about these terms, contact Satvik Technologys:\nEmail: kuldeepky538@gmail.com\nAddress: Korba, Chhattisgarh, India.',
+
+              const _TermsHeading('7. Compliance Revisions & Amendments'),
+              const _TermsBody(
+                'Satvik Technologies retains the definitive structural right to modify these terms from time to time to address emerging platform regulatory shifts (Google Play Store and Apple App Store compliance updates) or global statutory privacy legal changes. Continuous usage of the software interface following an update implies complete validation of the revised parameters.',
               ),
-              SizedBox(height: 30),
+
+              const _TermsHeading('8. Statutory Governing Law & Jurisdiction'),
+              const _TermsBody(
+                'These terms, along with your interaction pathway inside Geeta Nexus, are governed completely by and interpreted via the legal framework of the Republic of India. Any official administrative concerns or legal disputes arising directly out of these terms shall be subject strictly to the courts of Chhattisgarh, India.',
+              ),
+
+              const _TermsHeading('9. Official Communication Channel'),
+              const _PolicyBody('For dynamic clarification regarding these binding parameters, or to process legal operational concerns, contact Satvik Technologies at our official node:'),
+              const SizedBox(height: 12),
+              
+              _buildCorporateContactBox(theme),
+              const SizedBox(height: 40),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCorporateContactBox(ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: kGold.withOpacity(0.2), width: 1),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, spreadRadius: 1)
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "SATVIK TECHNOLOGIES",
+            style: GoogleFonts.cinzel(color: kGold, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: 1),
+          ),
+          const Divider(height: 20, color: kGoldDim),
+          Semantics(
+            label: "Official Developer Support Email Asset Link",
+            child: Row(
+              children: [
+                const Icon(Icons.email_outlined, size: 18, color: kGold),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    "kuldeepky538@gmail.com",
+                    style: GoogleFonts.crimsonText(fontSize: 16, color: theme.textTheme.bodyLarge?.color, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Semantics(
+            label: "Developer Operation Base Location Address",
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.location_on_outlined, size: 18, color: kGold),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    "Korba, Chhattisgarh, India",
+                    style: GoogleFonts.crimsonText(fontSize: 16, color: theme.textTheme.bodyLarge?.color),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TermsHeading extends StatelessWidget {
+  final String text;
+  const _TermsHeading(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 28, bottom: 10),
+      child: Semantics(
+        header: true,
+        headingLevel: 2, // Perfect HTML structure for high-level screen reader tracking
+        child: Text(
+          text.toUpperCase(),
+          style: GoogleFonts.cinzel(
+            color: kGold,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 1.1,
           ),
         ),
       ),
@@ -69,42 +183,24 @@ class TermsAndConditionsScreen extends StatelessWidget {
   }
 }
 
-class _Heading extends StatelessWidget {
+class _TermsBody extends StatelessWidget {
   final String text;
-  const _Heading(this.text);
+  const _TermsBody(this.text);
 
   @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(top: 18, bottom: 8),
-        child: Semantics(
-          header: true,
-          child: Text(
-            text,
-            style: GoogleFonts.cinzel(
-              color: Theme.of(context).colorScheme.primary,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.1,
-            ),
-          ),
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        text,
+        textAlign: TextAlign.justify,
+        style: GoogleFonts.crimsonText(
+          color: cs.onSurface.withOpacity(0.85),
+          fontSize: 16,
+          height: 1.5,
         ),
-      );
-}
-
-class _Body extends StatelessWidget {
-  final String text;
-  const _Body(this.text);
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(
-          text,
-          style: GoogleFonts.crimsonText(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 16,
-            height: 1.6,
-          ),
-        ),
-      );
+      ),
+    );
+  }
 }
