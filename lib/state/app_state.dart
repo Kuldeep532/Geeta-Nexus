@@ -7,23 +7,33 @@ import '../models/models.dart';
 import '../data/gita_data.dart';
 
 class AppState extends ChangeNotifier {
-  static const String kAdminEmail = 'kuldeepky538@gmail.com';
+  // --- SECURE MULTI-ADMIN INJECTION LAYER ---
+  // GitHub Actions se aane wali absolute comma-separated dynamic string ko catch karne ke liye setup
+  static const String _rawAdminEmails = String.fromEnvironment('ADMIN_LOGIN_EMAILS', defaultValue: '');
+  static const String kAdminLoginPassword = String.fromEnvironment('ADMIN_LOGIN_PASSWORD', defaultValue: '');
 
-  static const String kAdminLoginPassword = String.fromEnvironment('ADMIN_LOGIN_PASSWORD', defaultValue: 'kuldeep548');
+  /// Raw string data ko process karke dynamic reactive array generate karne ka optimized getter
+  static List<String> get adminEmailsList {
+    if (_rawAdminEmails.trim().isEmpty) return [];
+    return _rawAdminEmails
+        .split(',')
+        .map((email) => email.trim().toLowerCase())
+        .where((email) => email.isNotEmpty)
+        .toList();
+  }
 
   // --- State Variables ---
   int _xp = 0;
   int _streak = 0;
-  Set<String> _bookmarks = {};
-  Set<String> _readVerses = {};
+  final Set<String> _bookmarks = {};
+  final Set<String> _readVerses = {};
   List<JournalEntry> _journalEntries = [];
   int _japaCount = 0;
   bool _onboardingComplete = false;
   List<String> _completedChapters = [];
-  List<String> _badges = [];
+  final List<String> _badges = [];
   List<AppNotification> _notifications = [];
   
-  // Flashcards state
   int _currentFlashcardIndex = 0;
 
   bool _highContrast = false;
@@ -44,9 +54,10 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  // --- Getters ---
-  bool get isAdmin => _userEmail.toLowerCase() == kAdminEmail.toLowerCase() || _userRole == 'admin' || _userRole == 'super_admin';
-  bool get isSuperAdmin => _userEmail.toLowerCase() == kAdminEmail.toLowerCase() || _userRole == 'super_admin';
+  // --- Flexible Multi-Admin Validation Getters ---
+  // Is dynamic registry system ki wajah se email arrays me match check kiya jata hai
+  bool get isAdmin => adminEmailsList.contains(_userEmail.toLowerCase()) || _userRole == 'admin' || _userRole == 'super_admin';
+  bool get isSuperAdmin => adminEmailsList.contains(_userEmail.toLowerCase()) || _userRole == 'super_admin';
   
   String get userName => _userName;
   String get userEmail => _userEmail;
@@ -71,7 +82,6 @@ class AppState extends ChangeNotifier {
 
   double get xpinLevel => (_xp % 100) / 100.0; 
   
-  // FIX: Build 'kAllVerses' dhund raha hai, hum ise yahan define kar rahe hain
   List<Verse> get kAllVerses => kChapters.expand((c) => c.verses).toList();
   List<Verse> get allVerses => kAllVerses; 
 
@@ -80,7 +90,6 @@ class AppState extends ChangeNotifier {
 
   // --- Methods ---
 
-  // FIX: Build 'updateTheme' dhund raha hai (Screenshot line 58-72)
   void updateTheme(ThemeMode mode) {
     _themeMode = mode;
     _save();
@@ -142,14 +151,17 @@ class AppState extends ChangeNotifier {
 
   bool isBookmarked(String verseId) => _bookmarks.contains(verseId);
 
-
+  /// Dynamic Multi-Identity Login Authenticator
   bool loginAdminWithCredentials({required String email, required String password}) {
     final normalizedEmail = email.trim().toLowerCase();
-    if (normalizedEmail != kAdminEmail.toLowerCase() || password != kAdminLoginPassword) {
+    
+    // Hardcoded logic khatam! Ab parsed collection ke andar match dhoonda jata hai
+    if (!adminEmailsList.contains(normalizedEmail) || password != kAdminLoginPassword) {
       return false;
     }
+    
     _userEmail = normalizedEmail;
-    _userName = 'Admin';
+    _userName = 'Admin Profile';
     _userRole = 'super_admin';
     _onboardingComplete = true;
     _save();
@@ -176,13 +188,11 @@ class AppState extends ChangeNotifier {
 
   bool isChapterCompleted(String chapterNumber) => _completedChapters.contains(chapterNumber);
 
-  // FIX: Build 'recordQuizAnswer' dhund raha hai (Screenshot line 93)
   void recordQuizAnswer(bool isCorrect) {
     if (isCorrect) addXp(15);
     notifyListeners();
   }
 
-  // FIX: Build 'sendGlobalNotification' dhund raha hai (Screenshot line 104)
   Future<void> sendGlobalNotification({required String title, required String body}) async {
     final notification = AppNotification(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -249,7 +259,7 @@ class AppState extends ChangeNotifier {
         await firestore.collection('users').doc(_userEmail).set({
           'name': _userName,
           'email': _userEmail,
-          'role': _userEmail.toLowerCase() == kAdminEmail.toLowerCase() ? 'super_admin' : 'seeker',
+          'role': adminEmailsList.contains(_userEmail.toLowerCase()) ? 'super_admin' : 'seeker',
           'lastActive': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
       }
