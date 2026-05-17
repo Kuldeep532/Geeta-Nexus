@@ -5,16 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../state/app_state.dart';
 import '../theme.dart';
-import 'flashcards_screen.dart';
-import 'quiz_screen.dart';
-import 'glossary_screen.dart';
-import 'reading_plan_screen.dart';
-import 'astrology_screen.dart';
-import 'meditation_screen.dart';
-import 'breathing_screen.dart';
-import 'chants_screen.dart';
-import 'journal_screen.dart';
-import 'geeta_voice_practice_screen.dart';
+
+// Shuddh aur relevant imports
 import 'profile_screen.dart';
 import 'about_screen.dart';
 import 'privacy_policy_screen.dart';
@@ -55,9 +47,21 @@ class _MoreScreenState extends State<MoreScreen> {
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          ListTile(leading: const Icon(Icons.brightness_auto, color: kGold), title: const Text('System Default'), onTap: () {state.updateTheme(ThemeMode.system); Navigator.pop(context);}),
-          ListTile(leading: const Icon(Icons.light_mode, color: kGold), title: const Text('Light Mode'), onTap: () {state.updateTheme(ThemeMode.light); Navigator.pop(context);}),
-          ListTile(leading: const Icon(Icons.dark_mode, color: kGold), title: const Text('Dark Mode'), onTap: () {state.updateTheme(ThemeMode.dark); Navigator.pop(context);}),
+          ListTile(
+            leading: const Icon(Icons.brightness_auto, color: kGold), 
+            title: const Text('System Default'), 
+            onTap: () { state.updateTheme(ThemeMode.system); Navigator.pop(context); }
+          ),
+          ListTile(
+            leading: const Icon(Icons.light_mode, color: kGold), 
+            title: const Text('Light Mode'), 
+            onTap: () { state.updateTheme(ThemeMode.light); Navigator.pop(context); }
+          ),
+          ListTile(
+            leading: const Icon(Icons.dark_mode, color: kGold), 
+            title: const Text('Dark Mode'), 
+            onTap: () { state.updateTheme(ThemeMode.dark); Navigator.pop(context); }
+          ),
         ],
       ),
     );
@@ -71,50 +75,57 @@ class _MoreScreenState extends State<MoreScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('EXPLORE', style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, color: kGold)),
+        // FIXED: Title Bar ko proper Semantic Header banaya hai
+        title: Semantics(
+          header: true,
+          label: 'Explore Screen Heading',
+          child: Text(
+            'EXPLORE', 
+            style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, color: kGold, letterSpacing: 1.5)
+          ),
+        ),
         centerTitle: true,
-        actions: [IconButton(tooltip: 'Theme options', icon: const Icon(Icons.palette_outlined, color: kGold), onPressed: () => _pickTheme(context, appState))],
+        actions: [
+          IconButton(
+            tooltip: 'Theme options', 
+            icon: const Icon(Icons.palette_outlined, color: kGold), 
+            onPressed: () => _pickTheme(context, appState)
+          )
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _buildAccountCard(context, appState),
-            const SizedBox(height: 24),
-            const _SectionHeader(title: 'Scripture Library'),
-            _buildAccessibleGrid(context, [
-              _Item('🕉️', 'Scripture\nLibrary', const ScriptureLibraryScreen()),
-            ]),
-            const SizedBox(height: 24),
-            const _SectionHeader(title: 'Study & Learn'),
-            _buildAccessibleGrid(context, [
-              _Item('📚', 'Flashcards', const FlashcardsScreen()),
-              _Item('🎯', 'Quiz', const QuizScreen()),
-              _Item('📖', 'Glossary', const GlossaryScreen()),
-              _Item('🗺️', 'Reading Plan', const ReadingPlanScreen()),
-              _Item('🔭', 'Astrology', const AstrologyScreen()),
-            ]),
-            const SizedBox(height: 24),
-            const _SectionHeader(title: 'Spiritual Practice'),
-            _buildAccessibleGrid(context, [
-              _Item('🧘', 'Meditation', const MeditationScreen()),
-              _Item('🌬️', 'Breathing', const BreathingScreen()),
-              _Item('📿', 'Japa', const ChantsScreen()),
-              _Item('✍️', 'Journal', const JournalScreen()),
-              _Item('🎙️', 'Recitation', const GeetaVoicePracticeScreen()),
-            ]),
-            const SizedBox(height: 24),
-            const _SectionHeader(title: 'Support & Legal'),
-            _buildAccessibleGrid(context, [
-              _Item('👤', 'Profile', const ProfileScreen()),
-              _Item('ℹ️', 'About Us', const AboutUsScreen()),
-              _Item('🔐', 'Privacy Policy', const PrivacyPolicyScreen()),
-              _Item('📜', 'Terms and Conditions', const TermsAndConditionsScreen()),
-              _Item('✉️', 'Contact Us', const ContactUsScreen()),
-            ]),
-            const SizedBox(height: 40),
-            Center(child: Text(_appVersionLabel, style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor))),
-          ]),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start, 
+            children: [
+              _buildAccountCard(context, appState),
+              const SizedBox(height: 24),
+              
+              const _SectionHeader(title: 'Core Scripture'),
+              _buildAccessibleGrid(context, [
+                _Item('🕉️', 'Scripture\nLibrary', const ScriptureLibraryScreen()),
+              ]),
+              const SizedBox(height: 24),
+              
+              const _SectionHeader(title: 'Support & Legal'),
+              _buildAccessibleGrid(context, [
+                _Item('👤', 'Profile', const ProfileScreen()),
+                _Item('ℹ️', 'About Us', const AboutUsScreen()),
+                _Item('🔐', 'Privacy Policy', const PrivacyPolicyScreen()),
+                _Item('📜', 'Terms & Conditions', const TermsAndConditionsScreen()),
+                _Item('✉️', 'Contact Us', const ContactUsScreen()),
+              ]),
+              const SizedBox(height: 40),
+              
+              Center(
+                child: Text(
+                  _appVersionLabel, 
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)
+                )
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -122,18 +133,22 @@ class _MoreScreenState extends State<MoreScreen> {
 
   Widget _buildAccountCard(BuildContext context, AppState appState) {
     final theme = Theme.of(context);
+    final displayName = appState.userName.isEmpty ? 'Guest User' : appState.userName;
+    final displayEmail = appState.userEmail.isEmpty ? 'Spiritual Journey Settings' : appState.userEmail;
+
     return Card(
       elevation: 0,
       color: theme.cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: kGold.withOpacity(0.3))),
       child: Semantics(
         button: true,
-        label: 'Profile, opens account settings',
+        label: 'Account Info Card. User: $displayName. Email: $displayEmail.',
+        hint: 'Double tap to open account settings',
         excludeSemantics: true,
         child: ListTile(
           leading: const CircleAvatar(backgroundColor: kGold, child: Icon(Icons.person, color: Colors.black)),
-          title: Text(appState.userName.isEmpty ? 'Guest User' : appState.userName, style: const TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: Text(appState.userEmail.isEmpty ? 'Spiritual Journey Settings' : appState.userEmail),
+          title: Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: Text(displayEmail),
           trailing: const Icon(Icons.chevron_right, color: kGold),
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
         ),
@@ -146,27 +161,43 @@ class _MoreScreenState extends State<MoreScreen> {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 1.4),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2, 
+        mainAxisSpacing: 12, 
+        crossAxisSpacing: 12, 
+        childAspectRatio: 1.4
+      ),
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
         return Semantics(
           button: true,
-          label: item.title,
+          label: '${item.title} Section Button',
+          hint: 'Double tap to open',
           excludeSemantics: true,
           child: Card(
             margin: EdgeInsets.zero,
             color: theme.cardColor,
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: theme.dividerColor.withOpacity(0.1))),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16), 
+              side: BorderSide(color: theme.dividerColor.withOpacity(0.1))
+            ),
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => item.screen)),
-              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                ExcludeSemantics(child: Text(item.emoji, style: const TextStyle(fontSize: 28))),
-                const SizedBox(height: 8),
-                Text(item.title, textAlign: TextAlign.center, style: GoogleFonts.lato(fontWeight: FontWeight.bold, fontSize: 13)),
-              ]),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center, 
+                children: [
+                  ExcludeSemantics(child: Text(item.emoji, style: const TextStyle(fontSize: 28))),
+                  const SizedBox(height: 8),
+                  Text(
+                    item.title, 
+                    textAlign: TextAlign.center, 
+                    style: GoogleFonts.lato(fontWeight: FontWeight.bold, fontSize: 13)
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -183,7 +214,16 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12, left: 4),
-      child: Text(title.toUpperCase(), style: GoogleFonts.cinzel(fontSize: 14, fontWeight: FontWeight.bold, color: kGold, letterSpacing: 1.2)),
+      // FIXED: Headers ko proper semantic node bana diya taaki section jumps aasan hon
+      child: Semantics(
+        header: true,
+        label: '$title section heading',
+        excludeSemantics: true,
+        child: Text(
+          title.toUpperCase(), 
+          style: GoogleFonts.cinzel(fontSize: 14, fontWeight: FontWeight.bold, color: kGold, letterSpacing: 1.2)
+        ),
+      ),
     );
   }
 }
