@@ -26,14 +26,14 @@ class ScriptureChapterData {
 
   factory ScriptureChapterData.fromJson(Map<String, dynamic> j) {
     return ScriptureChapterData(
-      chapterNumber: (j['chapter_number'] as num).toInt(),
+      chapterNumber: (j['chapter_number'] as num? ?? 0).toInt(),
       name: j['name'] as String? ?? '',
       nameTranslation: j['name_translation'] as String? ?? '',
       nameTransliterated: j['name_transliterated'] as String? ?? '',
       nameMeaning: j['name_meaning'] as String? ?? '',
       chapterSummary: j['chapter_summary'] as String? ?? '',
       chapterSummaryHindi: j['chapter_summary_hindi'] as String? ?? '',
-      versesCount: (j['verses_count'] as num).toInt(),
+      versesCount: (j['verses_count'] as num? ?? 0).toInt(),
       imageName: j['image_name'] as String? ?? '',
     );
   }
@@ -56,8 +56,8 @@ class ScriptureVerseData {
 
   factory ScriptureVerseData.fromJson(Map<String, dynamic> j) {
     return ScriptureVerseData(
-      chapterNumber: (j['chapter_number'] as num).toInt(),
-      verseNumber: (j['verse_number'] as num).toInt(),
+      chapterNumber: (j['chapter_number'] as num? ?? 0).toInt(),
+      verseNumber: (j['verse_number'] as num? ?? 0).toInt(),
       text: j['text'] as String? ?? '',
       transliteration: j['transliteration'] as String? ?? '',
       wordMeanings: j['word_meanings'] as String? ?? '',
@@ -104,25 +104,32 @@ class UpanishadVerseData {
 }
 
 class ScriptureService {
-  static const String _gitaBase =
-      'https://raw.githubusercontent.com/everydaycodings/Bhagavad-Gita/master/data/gita';
+  // Screen ke repositories ke mutabik synchronized Base URLs (Branch updated to 'main')
+  static const String _everydaycodingsGitaBase =
+      'https://raw.githubusercontent.com/everydaycodings/Bhagavad-Gita/main/data/gita';
+  static const String _dharmicBase =
+      'https://raw.githubusercontent.com/bhavykhatri/DharmicData/main/data';
+  static const String _hinduScripturesBase =
+      'https://raw.githubusercontent.com/jayeshmepani/HinduScriptures/main/data';
   static const String _indianScripturesBase =
       'https://raw.githubusercontent.com/hrgupta/indian-scriptures/master/data/raw';
 
   static const Duration _timeout = Duration(seconds: 15);
 
+  // Audio URLs jo repository fetch karte waqt directly reference karti hai
   static String verseRecitationUrl(int chapter, int verse) =>
-      '$_gitaBase/audio/verse_recitation/$chapter/$verse.mp3';
+      '$_everydaycodingsGitaBase/audio/verse_recitation/$chapter/$verse.mp3';
 
   static String chapterSummaryAudioUrl(int chapter) =>
-      '$_gitaBase/audio/chapters_summary/$chapter.mpga';
+      '$_everydaycodingsGitaBase/audio/chapters_summary/$chapter.mpga';
 
   static String get dhyanamAudioUrl =>
-      '$_gitaBase/audio/Geeta-Dhyanam.m4a';
+      '$_everydaycodingsGitaBase/audio/Geeta-Dhyanam.m4a';
 
+  // Poore chapters ki list fetch karne ke liye
   Future<List<ScriptureChapterData>> fetchChapters() async {
     final response = await http
-        .get(Uri.parse('$_gitaBase/chapters.json'))
+        .get(Uri.parse('$_everydaycodingsGitaBase/chapters.json'))
         .timeout(_timeout);
     if (response.statusCode != 200) throw Exception('Failed to load chapters');
     final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
@@ -131,31 +138,54 @@ class ScriptureService {
         .toList();
   }
 
-  Future<List<ScriptureVerseData>> fetchVerses() async {
+  // Screen ke logic ke mutabik single chapter-wise verses fetch karne ka naya functional structure
+  Future<List<ScriptureVerseData>> fetchVersesForChapter(int chapter) async {
     final response = await http
-        .get(Uri.parse('$_gitaBase/verse.json'))
+        .get(Uri.parse('$_everydaycodingsGitaBase/chapters/$chapter.json'))
         .timeout(_timeout);
-    if (response.statusCode != 200) throw Exception('Failed to load verses');
+    if (response.statusCode != 200) throw Exception('Failed to load verses for chapter $chapter');
     final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
     return data
         .map((e) => ScriptureVerseData.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
+  // Legacy full verses endpoint fallback ke liye
+  Future<List<ScriptureVerseData>> fetchAllVerses() async {
+    final response = await http
+        .get(Uri.parse('$_everydaycodingsGitaBase/verse.json'))
+        .timeout(_timeout);
+    if (response.statusCode != 200) throw Exception('Failed to load all verses');
+    final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
+    return data
+        .map((e) => ScriptureVerseData.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  // Translations fetch karne ke liye
   Future<List<ScriptureTranslationData>> fetchTranslations() async {
     final response = await http
-        .get(Uri.parse('$_gitaBase/translation.json'))
+        .get(Uri.parse('$_everydaycodingsGitaBase/translation.json'))
         .timeout(_timeout);
     if (response.statusCode != 200) {
       throw Exception('Failed to load translations');
     }
     final List<dynamic> data = jsonDecode(response.body) as List<dynamic>;
     return data
-        .map((e) =>
-            ScriptureTranslationData.fromJson(e as Map<String, dynamic>))
+        .map((e) => ScriptureTranslationData.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
+  // Dharmic Data ya Hindu Scriptures se additional JSON payloads fetch karne ke liye naya sync method
+  Future<List<dynamic>> fetchDharmicPayload(String path) async {
+    final response = await http
+        .get(Uri.parse('$_dharmicBase/$path'))
+        .timeout(_timeout);
+    if (response.statusCode != 200) throw Exception('Failed to load dharmic data');
+    return jsonDecode(response.body) as List<dynamic>;
+  }
+
+  // Upanishads CSV Fetch aur Parser Logic
   Future<List<UpanishadVerseData>> fetchUpanishads() async {
     final response = await http
         .get(Uri.parse('$_indianScripturesBase/upanishads/upanishads.csv'))
