@@ -2,7 +2,27 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../theme.dart'; // Ensure kGold, kTextDim, etc., are defined here
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../theme.dart';
+
+class LocalAstrologyData {
+  final String name;
+  final String place;
+  final DateTime dob;
+  final TimeOfDay tob;
+  final String zodiacSign;
+  final String insights;
+
+  LocalAstrologyData({
+    required this.name,
+    required this.place,
+    required this.dob,
+    required this.tob,
+    required this.zodiacSign,
+    required this.insights,
+  });
+}
 
 class AstrologyScreen extends StatefulWidget {
   const AstrologyScreen({super.key});
@@ -17,6 +37,13 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
   DateTime? _dob;
   TimeOfDay? _tob;
   String? _result;
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAllStoredData();
+  }
 
   @override
   void dispose() {
@@ -25,8 +52,53 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
     super.dispose();
   }
 
-  // Western Zodiac Calculation with Vedic names
-  String _calculateZodiac(DateTime d) {
+  Future<void> _loadAllStoredData() async {
+    setState(() => _isLoading = true);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedName = prefs.getString('standalone_astro_name') ?? '';
+      final savedPlace = prefs.getString('standalone_astro_place') ?? '';
+      final savedDobStr = prefs.getString('standalone_astro_dob');
+      final savedTobHour = prefs.getInt('standalone_astro_tob_hour');
+      final savedTobMin = prefs.getInt('standalone_astro_tob_min');
+
+      if (mounted) {
+        setState(() {
+          _nameController.text = savedName;
+          _birthPlaceController.text = savedPlace;
+          if (savedDobStr != null) {
+            _dob = DateTime.tryParse(savedDobStr);
+          }
+          if (savedTobHour != null && savedTobMin != null) {
+            _tob = TimeOfDay(hour: savedTobHour, minute: savedTobMin);
+          }
+        });
+      }
+    } catch (e) {
+      debugPrint('Storage loading error: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _saveCurrentData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('standalone_astro_name', _nameController.text.trim());
+      await prefs.setString('standalone_astro_place', _birthPlaceController.text.trim());
+      if (_dob != null) {
+        await prefs.setString('standalone_astro_dob', _dob!.toIso8601String());
+      }
+      if (_tob != null) {
+        await prefs.setInt('standalone_astro_tob_hour', _tob!.hour);
+        await prefs.setInt('standalone_astro_tob_min', _tob!.minute);
+      }
+    } catch (e) {
+      debugPrint('Storage saving error: $e');
+    }
+  }
+
+  String _calculateInternalZodiac(DateTime d) {
     final month = d.month;
     final day = d.day;
     if ((month == 3 && day >= 21) || (month == 4 && day <= 19)) return 'Aries (Mesh)';
@@ -43,7 +115,7 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
     return 'Pisces (Meen)';
   }
 
-  String _getDynamicInsight(String sign) {
+  String _getInternalInsight(String sign) {
     final dayOfWeek = DateTime.now().weekday;
     final planetaryRulers = {
       1: 'Moon (Chandra) - Focus on peace and emotional balance.',
@@ -59,7 +131,7 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
         'Insight: Your $sign energy suggests a period of internal grounding.';
   }
 
-  void _generateKundli() {
+  void _processSelfSustainedInsights() {
     HapticFeedback.mediumImpact();
     if (_dob == null || _tob == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -68,17 +140,28 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
       return;
     }
 
-    final sign = _calculateZodiac(_dob!);
+    final sign = _calculateInternalZodiac(_dob!);
     final name = _nameController.text.trim().isEmpty ? 'Seeker' : _nameController.text.trim();
     final city = _birthPlaceController.text.trim().isEmpty ? 'Unknown' : _birthPlaceController.text.trim();
 
+    final localData = LocalAstrologyData(
+      name: name,
+      place: city,
+      dob: _dob!,
+      tob: _tob!,
+      zodiacSign: sign,
+      insights: _getInternalInsight(sign),
+    );
+
+    _saveCurrentData();
+
     setState(() {
-      _result = 'Kundli Summary for $name\n'
+      _result = 'Kundli Summary for ${localData.name}\n'
           '----------------------------------\n'
-          'Birth: ${_dob!.day}/${_dob!.month}/${_dob!.year} at ${_tob!.format(context)}\n'
-          'Place: $city\n'
-          'Zodiac: $sign\n\n'
-          '${_getDynamicInsight(sign)}\n\n'
+          'Birth: ${localData.dob.day}/${localData.dob.month}/${localData.dob.year} at ${localData.tob.format(context)}\n'
+          'Place: ${localData.place}\n'
+          'Zodiac: ${localData.zodiacSign}\n\n'
+          '${localData.insights}\n\n'
           'Daily Guidelines:\n'
           '• Diet: Pure Satvik food for mental clarity.\n'
           '• Practice: Prioritize meditation during Brahma Muhurta or evening.\n'
@@ -127,46 +210,65 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text('ASTROLOGY & INSIGHTS', 
-          style: GoogleFonts.cinzel(color: kGold, fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+        title: Semantics(
+          header: true,
+          label: 'Astrology and Spiritual Insights Page',
+          child: Text(
+            'ASTROLOGY & INSIGHTS', 
+            style: GoogleFonts.cinzel(color: kGold, fontWeight: FontWeight.bold, letterSpacing: 1.5)
+          ),
+        ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-          children: [
-            Text(
-              "Know your celestial alignment and daily spiritual focus.",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: theme.hintColor, fontSize: 14),
+        child: _isLoading 
+          ? const Center(child: CircularProgressIndicator(color: kGold))
+          : ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              children: [
+                Text(
+                  "Know your celestial alignment and daily spiritual focus.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: theme.hintColor, fontSize: 14),
+                ),
+                const SizedBox(height: 30),
+                
+                _buildInputFields(theme),
+                const SizedBox(height: 25),
+                
+                _buildDateTimeButtons(theme),
+                const SizedBox(height: 40),
+                
+                Semantics(
+                  button: true,
+                  label: 'Generate Insights Button',
+                  hint: 'Double tap to calculate zodiac sign and save your details locally',
+                  excludeSemantics: true,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kGold,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 4,
+                    ),
+                    onPressed: _processSelfSustainedInsights,
+                    child: const Text('GENERATE INSIGHTS', 
+                      style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                
+                if (_result != null) ...[
+                  const SizedBox(height: 40),
+                  _buildResultDisplay(theme),
+                  const SizedBox(height: 40),
+                ],
+              ],
             ),
-            const SizedBox(height: 30),
-            _buildInputFields(theme),
-            const SizedBox(height: 25),
-            _buildDateTimeButtons(theme),
-            const SizedBox(height: 40),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kGold,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                elevation: 4,
-              ),
-              onPressed: _generateKundli,
-              child: const Text('GENERATE INSIGHTS', 
-                style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.bold)),
-            ),
-            if (_result != null) ...[
-              const SizedBox(height: 40),
-              _buildResultDisplay(theme),
-              const SizedBox(height: 40),
-            ],
-          ],
-        ),
       ),
     );
   }
@@ -177,6 +279,7 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
         TextField(
           controller: _nameController,
           style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+          textInputAction: TextInputAction.next,
           decoration: InputDecoration(
             labelText: 'Full Name',
             labelStyle: TextStyle(color: kGold.withOpacity(0.8)),
@@ -189,6 +292,7 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
         TextField(
           controller: _birthPlaceController,
           style: TextStyle(color: theme.textTheme.bodyLarge?.color),
+          textInputAction: TextInputAction.done,
           decoration: InputDecoration(
             labelText: 'City of Birth',
             labelStyle: TextStyle(color: kGold.withOpacity(0.8)),
@@ -202,34 +306,49 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
   }
 
   Widget _buildDateTimeButtons(ThemeData theme) {
+    final String dateLabel = _dob == null ? 'Not Selected' : '${_dob!.day}/${_dob!.month}/${_dob!.year}';
+    final String timeLabel = _tob == null ? 'Not Selected' : _tob!.format(context);
+
     return Row(
       children: [
         Expanded(
-          child: OutlinedButton.icon(
-            onPressed: _pickDob,
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: _dob == null ? theme.dividerColor : kGold),
-              padding: const EdgeInsets.symmetric(vertical: 15),
-            ),
-            icon: const Icon(Icons.calendar_month, color: kGold, size: 20),
-            label: Text(
-              _dob == null ? 'Select Date' : '${_dob!.day}/${_dob!.month}/${_dob!.year}',
-              style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+          child: Semantics(
+            button: true,
+            label: 'Birth Date Selector. Current value: $dateLabel',
+            hint: 'Double tap to open calendar dialog',
+            excludeSemantics: true,
+            child: OutlinedButton.icon(
+              onPressed: _pickDob,
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: _dob == null ? theme.dividerColor : kGold),
+                padding: const EdgeInsets.symmetric(vertical: 15),
+              ),
+              icon: const Icon(Icons.calendar_month, color: kGold, size: 20),
+              label: Text(
+                _dob == null ? 'Select Date' : dateLabel,
+                style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+              ),
             ),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: OutlinedButton.icon(
-            onPressed: _pickTime,
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: _tob == null ? theme.dividerColor : kGold),
-              padding: const EdgeInsets.symmetric(vertical: 15),
-            ),
-            icon: const Icon(Icons.history_toggle_off, color: kGold, size: 20),
-            label: Text(
-              _tob == null ? 'Select Time' : _tob!.format(context),
-              style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+          child: Semantics(
+            button: true,
+            label: 'Birth Time Selector. Current value: $timeLabel',
+            hint: 'Double tap to open time picker dialog',
+            excludeSemantics: true,
+            child: OutlinedButton.icon(
+              onPressed: _pickTime,
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: _tob == null ? theme.dividerColor : kGold),
+                padding: const EdgeInsets.symmetric(vertical: 15),
+              ),
+              icon: const Icon(Icons.history_toggle_off, color: kGold, size: 20),
+              label: Text(
+                _tob == null ? 'Select Time' : timeLabel,
+                style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+              ),
             ),
           ),
         ),
@@ -240,7 +359,7 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
   Widget _buildResultDisplay(ThemeData theme) {
     return Semantics(
       liveRegion: true,
-      label: "Your Kundli Insights generated below",
+      label: "Astrology Output Box",
       child: Container(
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
@@ -260,8 +379,8 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
               textAlign: TextAlign.left,
               style: GoogleFonts.merriweather(
                 fontSize: 15,
-                height: 1.8,
                 color: theme.textTheme.bodyLarge?.color,
+                height: 1.5,
               ),
             ),
           ],
