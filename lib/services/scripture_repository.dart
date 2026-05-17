@@ -5,10 +5,21 @@ import '../models/scripture_model.dart';
 import 'scripture_service.dart' show ScriptureService;
 
 class ScriptureRepository {
+  // Existing Base URL
   static const _dharmicBase =
       'https://raw.githubusercontent.com/bhavykhatri/DharmicData/main';
+  
+  // New Open-Source GitHub Data Sources
+  static const _hinduScripturesBase = 
+      'https://raw.githubusercontent.com/jayeshmepani/HinduScriptures/master';
+  static const _indianScripturesBase = 
+      'https://raw.githubusercontent.com/hrgupta/indian-scriptures/master';
+  static const _everydayCodingsGitaBase = 
+      'https://raw.githubusercontent.com/everydaycodings/Bhagavad-Gita/main';
+
   static const _timeout = Duration(seconds: 20);
 
+  // --- URL Builders ---
   String _gitaChapterUrl(int ch) =>
       '$_dharmicBase/SrimadBhagvadGita/bhagavad_gita_chapter_$ch.json';
 
@@ -18,6 +29,7 @@ class ScriptureRepository {
   String _ramchariKandaUrl(String fileName) =>
       '$_dharmicBase/Ramcharitmanas/$fileName';
 
+  // --- Helper Methods ---
   static String _safeUtf8(List<int> bodyBytes) {
     try {
       return utf8.decode(bodyBytes);
@@ -31,6 +43,7 @@ class ScriptureRepository {
     return http.get(uri).timeout(_timeout);
   }
 
+  // --- 1. Existing DharmicData Source Methods ---
   Future<List<ScriptureVerse>> fetchGitaChapter(int chapter) async {
     final resp = await _get(_gitaChapterUrl(chapter));
     if (resp.statusCode != 200) {
@@ -167,6 +180,67 @@ class ScriptureRepository {
     return verses;
   }
 
+  // --- 2. New Data Source Methods ---
+
+  /// Fetches chapter data from everydaycodings/Bhagavad-Gita source
+  Future<List<ScriptureVerse>> fetchEverydayCodingsGita(int chapter) async {
+    // Format assumes path style matches chapter structure, adjustment may be needed depending on precise repository layout
+    final url = '$_everydayCodingsGitaBase/chapters/$chapter.json';
+    final resp = await _get(url);
+    if (resp.statusCode != 200) throw Exception('Failed everydaycodings fetch');
+
+    final root = jsonDecode(_safeUtf8(resp.bodyBytes));
+    if (root is! List) return [];
+
+    final section = ScriptureSectionInfo(label: 'Gita Ch $chapter', sectionIndex: chapter);
+
+    return root.map<ScriptureVerse>((e) {
+      final map = e as Map<String, dynamic>;
+      return ScriptureVerse(
+        source: ScriptureSource.gitaDharmicData, 
+        section: section,
+        verseIndex: (map['verse_number'] ?? 0).toInt(),
+        originalText: (map['text'] ?? '').toString(),
+        translations: {'English': (map['translation'] ?? '').toString()},
+      );
+    }).toList();
+  }
+
+  /// Fetches various text payloads from hrgupta/indian-scriptures source
+  Future<List<ScriptureVerse>> fetchIndianScripturesPayload(String path, String sectionTitle) async {
+    final url = '$_indianScripturesBase/$path';
+    final resp = await _get(url);
+    if (resp.statusCode != 200) throw Exception('Failed indian-scriptures fetch');
+
+    final root = jsonDecode(_safeUtf8(resp.bodyBytes));
+    if (root is! List) return [];
+
+    final section = ScriptureSectionInfo(label: sectionTitle, sectionIndex: 1);
+    int index = 1;
+
+    return root.map<ScriptureVerse>((e) {
+      final map = e as Map<String, dynamic>;
+      return ScriptureVerse(
+        source: ScriptureSource.gitaDharmicData,
+        section: section,
+        verseIndex: index++,
+        originalText: (map['text'] ?? map['verse'] ?? '').toString(),
+        translations: {'Translation': (map['translation'] ?? '').toString()},
+      );
+    }).toList();
+  }
+
+  /// Map direct track addresses from designated Internet Archive items
+  Map<String, String> getStaticArchiveAudioTracks() {
+    return {
+      'YatharthGeetaEnglish': 'https://archive.org/download/YatharthGeetaEnglishAudio/',
+      'GitaBesantMeier': 'https://archive.org/download/bhagavadgita-1-besant-meier/',
+      'RamcharitmanasSukhanandaPranam': 'https://archive.org/download/Ramcharitmanas_by_Swami_Sukhananda_in_Hindi/001_Pranam_Mantra_Ramcharitmanas_2018.mp3',
+      'ValmikiRamayanaKannadaBala': 'https://archive.org/download/ValmikiRamayanaKannadaSlokaPravachanaCompleteRamayana/Ramayanam_Bala+Swamyji/Ramayanam-Kannada+Day+01/K001-01+Sri+Ganeshaya+Namaha.mp3'
+    };
+  }
+
+  // --- 3. Dynamic Metadata Audio Search ---
   Future<ArchiveAudioResult?> searchArchiveAudio(String query) async {
     try {
       final searchUrl = Uri.parse(
