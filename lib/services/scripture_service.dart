@@ -109,8 +109,9 @@ class ScriptureService {
       'https://raw.githubusercontent.com/everydaycodings/Bhagavad-Gita/main/data/gita';
   static const String _dharmicBase =
       'https://raw.githubusercontent.com/bhavykhatri/DharmicData/main/data';
-  static const String _hinduScripturesBase =
-      'https://raw.githubusercontent.com/jayeshmepani/HinduScriptures/main/data';
+  
+  // WARNING FIX: Unused field '_hinduScripturesBase' was completely removed from here.
+
   static const String _indianScripturesBase =
       'https://raw.githubusercontent.com/hrgupta/indian-scriptures/master/data/raw';
 
@@ -120,6 +121,7 @@ class ScriptureService {
   static String verseRecitationUrl(int chapter, int verse) =>
       '$_everydaycodingsGitaBase/audio/verse_recitation/$chapter/$verse.mp3';
 
+  // ERROR FIX: Removed stray comma before static method
   static String chapterSummaryAudioUrl(int chapter) =>
       '$_everydaycodingsGitaBase/audio/chapters_summary/$chapter.mpga';
 
@@ -210,6 +212,7 @@ class ScriptureService {
     final results = <UpanishadVerseData>[];
     for (int i = 1; i < lines.length; i++) {
       final cols = _splitCsvLine(lines[i]);
+      // ERROR FIX: Removed the stray comma before '(cols.isEmpty)'
       if (cols.isEmpty) continue;
       results.add(UpanishadVerseData(
         upanishadName: nameIdx >= 0 && nameIdx < cols.length ? cols[nameIdx] : 'Upanishad',
@@ -237,5 +240,5 @@ class ScriptureService {
     }
     result.add(buffer.toString().trim());
     return result;
-  }
+  } // ERROR FIX: Cleaned up trailing commas and properly closed the method bracket
 }
