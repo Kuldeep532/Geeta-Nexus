@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart'; // ERROR FIX: debugPrint ke liye import kiya
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:csv/csv.dart';
@@ -115,7 +116,7 @@ class AIService {
   }
 
   void _logError(String message) {
-    // Isse aap baad mein debugging ke liye use kar sakte hain
-    print("LOG: $message");
-  }
+    // ERROR FIX: print() ki jagah debugPrint() use kiya taaki production warning hat jaye
+    debugPrint("LOG: $message");
+  } // ERROR FIX: Extra trailing commas aur brackets jo yahan bhatak rahe the unhe clean kiya
 }
