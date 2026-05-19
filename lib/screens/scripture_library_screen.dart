@@ -6,6 +6,7 @@ import '../services/scripture_service.dart';
 import '../theme.dart';
 import 'scripture_verse_detail_screen.dart';
 import 'scripture_dharmicdata_verse_list_screen.dart';
+import 'scripture_upanishads_screen.dart';
 
 class ScriptureLibraryScreen extends StatefulWidget {
   const ScriptureLibraryScreen({super.key});
@@ -20,36 +21,37 @@ class _ScriptureLibraryScreenState extends State<ScriptureLibraryScreen>
   late TabController _tabController;
 
   List<ScriptureChapterData> _chapters = [];
+  List<UpanishadVerseData> _upanishads = [];
   bool _chaptersLoading = true;
-  String? _chaptersError;
+  bool _upanishadLoading = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _loadAllData();
+  }
+
+  Future<void> _loadAllData() async {
     _loadChapters();
+    _loadUpanishads();
   }
 
   Future<void> _loadChapters() async {
-    setState(() {
-      _chaptersLoading = true;
-      _chaptersError = null;
-    });
     try {
       final data = await _service.fetchChapters();
-      if (mounted) {
-        setState(() {
-          _chapters = data;
-          _chaptersLoading = false;
-        });
-      }
+      if (mounted) setState(() { _chapters = data; _chaptersLoading = false; });
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _chaptersError = e.toString();
-          _chaptersLoading = false;
-        });
-      }
+      if (mounted) setState(() => _chaptersLoading = false);
+    }
+  }
+
+  Future<void> _loadUpanishads() async {
+    try {
+      final data = await _service.fetchUpanishads();
+      if (mounted) setState(() { _upanishads = data; _upanishadLoading = false; });
+    } catch (e) {
+      if (mounted) setState(() => _upanishadLoading = false);
     }
   }
 
@@ -63,29 +65,24 @@ class _ScriptureLibraryScreenState extends State<ScriptureLibraryScreen>
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: theme.appBarTheme.backgroundColor ?? theme.scaffoldBackgroundColor,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
         title: Text('Scripture Library', style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, color: goldColor)),
         centerTitle: true,
-        elevation: 0,
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: goldColor,
           labelColor: goldColor,
           unselectedLabelColor: theme.hintColor,
           isScrollable: true,
-          tabs: const [
-            Tab(text: 'Gita'),
-            Tab(text: 'Upanishads'),
-            Tab(text: 'Ramayana'),
-            Tab(text: 'Manas'),
-          ],
+          tabs: const [Tab(text: 'Gita'), Tab(text: 'Upanishads'), Tab(text: 'Ramayana'), Tab(text: 'Manas')],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
-          _GitaTabView(chapters: _chapters, isLoading: _chaptersLoading, error: _chaptersError, onRetry: _loadChapters),
-          const Center(child: Text("Upanishad Section - Coming Soon")),
+          _GitaTabView(chapters: _chapters, isLoading: _chaptersLoading, onRetry: _loadChapters),
+          _UpanishadTabView(verses: _upanishads, isLoading: _upanishadLoading, onRetry: _loadUpanishads),
           _DharmicSectionListView(source: ScriptureSource.ramayanaValmiki, sections: kRamayanaSections, title: 'Valmiki Ramayana', accent: saffronColor),
           _DharmicSectionListView(source: ScriptureSource.ramcharitmanas, sections: kRamchariSections, title: 'Ramcharitmanas', accent: goldColor),
         ],
@@ -97,40 +94,54 @@ class _ScriptureLibraryScreenState extends State<ScriptureLibraryScreen>
 class _GitaTabView extends StatelessWidget {
   final List<ScriptureChapterData> chapters;
   final bool isLoading;
-  final String? error;
   final VoidCallback onRetry;
 
-  const _GitaTabView({required this.chapters, required this.isLoading, required this.error, required this.onRetry});
+  const _GitaTabView({required this.chapters, required this.isLoading, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
     if (isLoading) return const Center(child: CircularProgressIndicator(color: kGold));
-    if (error != null) return Center(child: ElevatedButton(onPressed: onRetry, child: const Text("Retry")));
-
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: chapters.length,
       itemBuilder: (context, index) {
         final ch = chapters[index];
-        return Semantics(
-          button: true,
-          label: 'Chapter ${ch.chapterNumber}: ${ch.englishName}. Double tap to open.',
-          child: Card(
-            color: Theme.of(context).cardColor,
-            margin: const EdgeInsets.only(bottom: 12),
-            child: InkWell(
-              onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (_) => ScriptureVerseDetailScreen(allVerses: ch.verses, initialIndex: 0),
-              )),
-              child: ListTile(
-                leading: CircleAvatar(backgroundColor: kGold.withOpacity(0.2), child: Text('${ch.chapterNumber}')),
-                title: Text(ch.englishName),
-                subtitle: Text(ch.devanagariName),
-              ),
-            ),
+        return Card(
+          color: Theme.of(context).cardColor,
+          child: ListTile(
+            title: Text(ch.englishName),
+            subtitle: Text(ch.devanagariName),
+            onTap: () => Navigator.push(context, MaterialPageRoute(
+              builder: (_) => ScriptureVerseDetailScreen(allVerses: ch.verses, initialIndex: 0),
+            )),
           ),
         );
       },
+    );
+  }
+}
+
+class _UpanishadTabView extends StatelessWidget {
+  final List<UpanishadVerseData> verses;
+  final bool isLoading;
+  final VoidCallback onRetry;
+
+  const _UpanishadTabView({required this.verses, required this.isLoading, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) return const Center(child: CircularProgressIndicator(color: kGold));
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: 1, // Assuming list of Upanishads
+      itemBuilder: (context, index) => Card(
+        child: ListTile(
+          title: const Text("Upanishad Collection"),
+          onTap: () => Navigator.push(context, MaterialPageRoute(
+            builder: (_) => ScriptureUpanishadsScreen(name: "Upanishad", verses: verses),
+          )),
+        ),
+      ),
     );
   }
 }
@@ -151,27 +162,17 @@ class _DharmicSectionListView extends StatelessWidget {
       itemCount: sections.length,
       itemBuilder: (context, index) {
         final sec = sections[index];
-        return Semantics(
-          button: true,
-          label: '${sec.englishName}. Double tap to open.',
-          child: Card(
-            margin: const EdgeInsets.only(bottom: 12),
-            color: Theme.of(context).cardColor,
-            child: InkWell(
-              onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (_) => ScriptureDharmicVerseListScreen(
-                  section: sec,
-                  source: source,
-                  fetchVerses: () => source == ScriptureSource.ramayanaValmiki ? repo.fetchRamayanaKanda(sec) : repo.fetchRamchariKanda(sec),
-                ),
-              )),
-              child: ListTile(
-                leading: Text('${sec.index}', style: TextStyle(color: accent, fontWeight: FontWeight.bold)),
-                title: Text(sec.englishName),
-                subtitle: Text(sec.devanagariName),
-                trailing: Icon(Icons.chevron_right, color: accent),
+        return Card(
+          child: ListTile(
+            leading: Text('${sec.index}', style: TextStyle(color: accent, fontWeight: FontWeight.bold)),
+            title: Text(sec.englishName),
+            onTap: () => Navigator.push(context, MaterialPageRoute(
+              builder: (_) => ScriptureDharmicVerseListScreen(
+                section: sec,
+                source: source,
+                fetchVerses: () => source == ScriptureSource.ramayanaValmiki ? repo.fetchRamayanaKanda(sec) : repo.fetchRamchariKanda(sec),
               ),
-            ),
+            )),
           ),
         );
       },
