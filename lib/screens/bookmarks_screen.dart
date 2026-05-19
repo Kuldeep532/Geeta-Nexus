@@ -3,8 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../theme.dart';
 import '../state/app_state.dart';
-import '../data/gita_data.dart'; // Direct access to allVerses
-import '../models/models.dart';
 import '../models/scripture_model.dart';
 import 'scripture_verse_detail_screen.dart';
 
@@ -13,175 +11,117 @@ class BookmarksScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Scaffold(
-      backgroundColor: kBg,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        elevation: 0,
+        centerTitle: true,
+        leading: BackButton(color: kGold),
         title: Text(
           'Saved Verses', 
           style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, fontSize: 18, color: kGold)
         ),
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        centerTitle: true,
-        leading: const BackButton(color: kGold),
       ),
-      body: Selector<AppState, List<Verse>>(
-        selector: (context, state) {
-          if (allVerses.isEmpty) return [];
-          return allVerses.where((v) => state.isBookmarked(v.id)).toList();
-        },
-        builder: (context, bookmarkedList, child) {
+      body: Consumer<AppState>(
+        builder: (context, state, child) {
+          final bookmarkedList = state.bookmarkedVerses;
+
           if (bookmarkedList.isEmpty) {
-            return _buildEmptyState();
+            return Semantics(
+              liveRegion: true,
+              child: _buildEmptyState(theme),
+            );
           }
 
-          return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 100),
-            itemCount: bookmarkedList.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 16),
-            itemBuilder: (ctx, i) {
-              final verse = bookmarkedList[i];
-              return _buildDismissibleCard(context, verse);
-            },
+          return Semantics(
+            liveRegion: true,
+            label: 'List of ${bookmarkedList.length} saved verses. Swipe left to delete.',
+            child: ListView.separated(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 100),
+              itemCount: bookmarkedList.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 16),
+              itemBuilder: (ctx, i) => _buildDismissibleCard(context, bookmarkedList[i]),
+            ),
           );
         },
       ),
     );
   }
 
-  Widget _buildDismissibleCard(BuildContext context, Verse verse) {
-    final messenger = ScaffoldMessenger.of(context);
+  Widget _buildDismissibleCard(BuildContext context, ScriptureVerse verse) {
     final appState = Provider.of<AppState>(context, listen: false);
 
     return Dismissible(
-      key: ValueKey('bookmark_${verse.id}'),
+      key: ValueKey('bookmark_${verse.verseIndex}'),
       direction: DismissDirection.endToStart,
       background: _buildDismissBackground(),
       onDismissed: (direction) {
-        appState.toggleBookmark(verse.id);
-        
-        messenger.hideCurrentSnackBar();
-        messenger.showSnackBar(
+        appState.toggleBookmark(verse);
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            backgroundColor: kCard,
-            content: Text('Removed from bookmarks', style: TextStyle(color: kText)),
-            behavior: SnackBarBehavior.floating,
+            content: Text('Removed verse ${verse.verseIndex} from bookmarks'),
             action: SnackBarAction(
               label: 'UNDO',
-              textColor: kGold,
-              onPressed: () => appState.toggleBookmark(verse.id),
+              onPressed: () => appState.toggleBookmark(verse),
             ),
           ),
         );
       },
-      child: InkWell(
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ScriptureVerseDetailScreen(
-              allVerses: [ScriptureVerse.fromLocalVerse(verse)],
-              initialIndex: 0,
-            ),
+      child: Semantics(
+        button: true,
+        label: 'Verse ${verse.verseIndex}. ${verse.originalText.substring(0, 20)}. Double tap to open details.',
+        child: InkWell(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => ScriptureVerseDetailScreen(allVerses: [verse], initialIndex: 0)),
           ),
+          child: _verseCard(verse),
         ),
+      ),
+    );
+  }
+
+  Widget _verseCard(ScriptureVerse verse) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: kCard.withOpacity(0.6),
         borderRadius: BorderRadius.circular(16),
-        child: _verseCard(verse),
+        border: Border.all(color: kGold.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('VERSE ${verse.verseIndex}', style: GoogleFonts.cinzel(color: kGold, fontSize: 10, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          Text(verse.originalText.replaceAll('\n', ' '), maxLines: 2, overflow: TextOverflow.ellipsis),
+        ],
       ),
     );
   }
 
   Widget _buildDismissBackground() {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.redAccent.withOpacity(0.8),
-        borderRadius: BorderRadius.circular(16),
-      ),
+      decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.8), borderRadius: BorderRadius.circular(16)),
       alignment: Alignment.centerRight,
-      padding: const EdgeInsets.only(right: 25),
-      child: const Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.delete_outline, color: Colors.white, size: 28),
-          Text('Remove', style: TextStyle(color: Colors.white, fontSize: 10)),
-        ],
-      ),
+      padding: const EdgeInsets.only(right: 20),
+      child: const Icon(Icons.delete, color: Colors.white, semanticLabel: 'Delete Bookmark'),
     );
   }
 
-  Widget _verseCard(Verse verse) {
-    final String sanskritPreview = verse.sanskrit.split('\n').first;
-
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: kCard.withOpacity(0.6), 
-        borderRadius: BorderRadius.circular(16),
-        // FIXED: Removed the leading comma before kGold
-        border: Border.all(color: kGold.withOpacity(0.1)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'CHAPTER ${verse.chapter} • VERSE ${verse.verse}',
-                style: GoogleFonts.cinzel(
-                  color: kGold, 
-                  fontSize: 10, 
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.5
-                ),
-              ),
-              const Icon(Icons.arrow_forward_ios, color: kGoldDim, size: 10),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            sanskritPreview,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.notoSansDevanagari(
-              color: kGoldLight, 
-              fontSize: 16, 
-              height: 1.5
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            verse.translation,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.lora(
-              color: kTextDim,
-              fontSize: 14,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(ThemeData theme) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.bookmark_border_rounded, size: 60, color: kGold.withOpacity(0.3)),
+          Icon(Icons.bookmark_border, size: 60, color: kGold.withOpacity(0.3)),
           const SizedBox(height: 16),
-          Text(
-            'No Saved Verses',
-            style: GoogleFonts.cinzel(color: kGold, fontSize: 18),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Verses you bookmark will appear here.',
-            style: TextStyle(color: kTextDim, fontSize: 14),
-          ),
+          Text('No Saved Verses', style: TextStyle(color: kGold.withOpacity(0.5))),
         ],
       ),
     );
-  } // FIXED: Removed extra comma before final closing bracket
+  }
 }
