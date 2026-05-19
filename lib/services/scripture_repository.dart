@@ -1,71 +1,63 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-
 import '../models/scripture_model.dart';
-import 'scripture_service.dart' show ScriptureService;
-
-// Model for Archive Audio Search Results
-class ArchiveAudioResult {
-  final String title;
-  final String url;
-  ArchiveAudioResult({required this.title, required this.url});
-}
+import '../services/scripture_service.dart';
 
 class ScriptureRepository {
+  // --- Constants & Base URLs ---
   static const _dharmicBase = 'https://raw.githubusercontent.com/bhavykhatri/DharmicData/main';
   static const _indianScripturesBase = 'https://raw.githubusercontent.com/hrgupta/indian-scriptures/master';
   static const _everydayCodingsGitaBase = 'https://raw.githubusercontent.com/everydaycodings/Bhagavad-Gita/main';
-
   static const _timeout = Duration(seconds: 20);
 
-  // --- Helper Methods ---
-  static String _safeUtf8(List<int> bodyBytes) {
-    try {
-      return utf8.decode(bodyBytes);
-    } catch (_) {
-      return latin1.decode(bodyBytes);
-    }
-  }
-
+  // --- Core Helper ---
   Future<http.Response> _get(String url) async {
     final uri = Uri.parse(Uri.encodeFull(url));
     return http.get(uri).timeout(_timeout);
   }
 
-  // --- 1. Existing DharmicData Methods ---
+  static String _safeUtf8(List<int> bodyBytes) {
+    try { return utf8.decode(bodyBytes); } catch (_) { return latin1.decode(bodyBytes); }
+  }
+
+  // --- A. Gita Methods ---
+  Future<List<ScriptureChapterData>> fetchChapters() async {
+    final resp = await _get('$_dharmicBase/SrimadBhagvadGita/chapters.json');
+    if (resp.statusCode != 200) return [];
+    final list = jsonDecode(_safeUtf8(resp.bodyBytes)) as List;
+    return list.map((e) => ScriptureChapterData.fromJson(e)).toList();
+  }
+
   Future<List<ScriptureVerse>> fetchGitaChapter(int chapter) async {
     final resp = await _get('$_dharmicBase/SrimadBhagvadGita/bhagavad_gita_chapter_$chapter.json');
-    if (resp.statusCode != 200) throw Exception('Failed to load Gita chapter $chapter');
-    
+    if (resp.statusCode != 200) throw Exception('Failed to load Gita');
     final root = jsonDecode(_safeUtf8(resp.bodyBytes));
-    List<dynamic> entries = (root is Map && root.containsKey('BhagavadGitaChapter')) 
-        ? root['BhagavadGitaChapter'] : (root is List ? root : []);
-
+    final entries = (root is Map) ? (root['BhagavadGitaChapter'] as List) : (root as List);
+    
     return entries.map<ScriptureVerse>((e) {
       final map = e as Map<String, dynamic>;
-      final verseNum = (map['verse'] ?? map['verse_number'] ?? 0).toInt();
+      final vNum = (map['verse'] ?? map['verse_number'] ?? 0).toInt();
       return ScriptureVerse(
         source: ScriptureSource.gitaDharmicData,
         section: ScriptureSectionInfo(label: 'Chapter $chapter', sectionIndex: chapter),
-        verseIndex: verseNum,
+        verseIndex: vNum,
         originalText: (map['text'] ?? '').toString().trim(),
-        audioUrl: ScriptureService.verseRecitationUrl(chapter, verseNum),
+        audioUrl: ScriptureService.verseRecitationUrl(chapter, vNum),
       );
     }).toList()..sort((a, b) => a.verseIndex.compareTo(b.verseIndex));
   }
 
+  // --- B. Ramayana & Manas Methods ---
   Future<List<ScriptureVerse>> fetchRamayanaKanda(ScriptureSectionDef def) async {
     final resp = await _get('$_dharmicBase/ValmikiRamayana/${def.fileName}');
     if (resp.statusCode != 200) return [];
-    
     final entries = jsonDecode(_safeUtf8(resp.bodyBytes)) as List;
-    int seqIndex = 1;
     return entries.map((e) {
       final map = e as Map<String, dynamic>;
       return ScriptureVerse(
         source: ScriptureSource.ramayanaValmiki,
         section: ScriptureSectionInfo(label: def.englishName, sectionIndex: def.index),
-        verseIndex: (map['shloka'] ?? seqIndex++).toInt(),
+        verseIndex: (map['shloka'] ?? 0).toInt(),
         originalText: (map['text'] ?? '').toString().trim(),
       );
     }).toList();
@@ -74,25 +66,22 @@ class ScriptureRepository {
   Future<List<ScriptureVerse>> fetchRamchariKanda(ScriptureSectionDef def) async {
     final resp = await _get('$_dharmicBase/Ramcharitmanas/${def.fileName}');
     if (resp.statusCode != 200) return [];
-    
     final entries = jsonDecode(_safeUtf8(resp.bodyBytes)) as List;
-    int seqIndex = 1;
+    int idx = 1;
     return entries.map((e) {
-      final map = e as Map<String, dynamic>;
       return ScriptureVerse(
         source: ScriptureSource.ramcharitmanas,
         section: ScriptureSectionInfo(label: def.englishName, sectionIndex: def.index),
-        verseIndex: seqIndex++,
-        originalText: (map['content'] ?? '').toString().trim(),
+        verseIndex: idx++,
+        originalText: (e['content'] ?? '').toString().trim(),
       );
     }).toList();
   }
 
-  // --- 2. New Data Source Methods ---
+  // --- C. Extra Data Sources ---
   Future<List<ScriptureVerse>> fetchEverydayCodingsGita(int chapter) async {
     final resp = await _get('$_everydayCodingsGitaBase/chapters/$chapter.json');
     if (resp.statusCode != 200) return [];
-
     final root = jsonDecode(_safeUtf8(resp.bodyBytes)) as List;
     return root.map((e) {
       final map = e as Map<String, dynamic>;
@@ -104,7 +93,32 @@ class ScriptureRepository {
     }).toList();
   }
 
-  // --- 3. Audio & Search Logic ---
+  // --- D. Global Search Logic ---
+  Future<List<ScriptureVerse>> searchGita(String query) async {
+    List<ScriptureVerse> results = [];
+    String q = query.toLowerCase();
+    for (int i = 1; i <= 18; i++) {
+      try {
+        final v = await fetchGitaChapter(i);
+        results.addAll(v.where((x) => x.originalText.toLowerCase().contains(q)));
+      } catch (_) {}
+    }
+    return results;
+  }
+
+  Future<List<ScriptureVerse>> searchRamayana(String query) async {
+    List<ScriptureVerse> results = [];
+    String q = query.toLowerCase();
+    for (var def in kRamayanaSections) {
+      try {
+        final v = await fetchRamayanaKanda(def);
+        results.addAll(v.where((x) => x.originalText.toLowerCase().contains(q)));
+      } catch (_) {}
+    }
+    return results;
+  }
+
+  // --- E. Audio Archive Logic ---
   Map<String, String> getStaticArchiveAudioTracks() {
     return {
       'YatharthGeeta': 'https://archive.org/download/YatharthGeetaEnglishAudio/',
