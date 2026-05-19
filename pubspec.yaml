@@ -15,7 +15,7 @@ dependencies:
 
   # --- Firebase Core, Firestore & Messaging ---
   firebase_core: ^4.8.0
-  cloud_firestore: ^6.4.0          # ZAROORI: AppState mein iska use ho raha hai
+  cloud_firestore: ^6.4.0
   firebase_messaging: ^16.2.1
   flutter_local_notifications: ^20.1.0
 
@@ -68,18 +68,26 @@ dependencies:
   flutter_tts: ^4.2.0
   wakelock_plus: ^1.2.8
   vibration: ^3.1.8
-  flutter_cache_manager: ^3.3.0    # ZAROORI: Online audio ko offline cache karne ke liye
+  flutter_cache_manager: ^3.3.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
   build_runner: ^2.15.0
+  flutter_launcher_icons: ^0.13.1 # ZAROORI: Launcher icon automatic banane ke liye
+
+# --- LAUNCHER ICON ENGINE CONFIG ---
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/Logo.png" # Aapka naya divine logo
+  adaptive_icon_background: "#001a4d" # Bhagwan Krishna ka divine Shyam Blue background
+  adaptive_icon_foreground: "assets/images/Logo.png"
 
 flutter:
   uses-material-design: true
   
-  # Fonts section (Cinzel aur Lora)
   fonts:
     - family: Cinzel
       fonts:
@@ -92,4 +100,4 @@ flutter:
     - assets/data/Bhagwad_Gita.csv
     - assets/data/ai_knowledge_base.json
     - assets/data/training_data.csv
-    - assets/images/  
+    - assets/images/Logo.png # ZAROORI: Explicit path in-app usage ke liye
