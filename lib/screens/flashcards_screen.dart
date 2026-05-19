@@ -38,7 +38,7 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
   }
 
   void _loadVersesFromDatabase() {
-    // kChapters se verses ko flat list mein convert karna
+    // Flatten the verses from all chapters into a single list
     if (kChapters.isNotEmpty) {
       setState(() {
         _verses = kChapters.expand((chapter) => chapter.verses).toList();
@@ -62,12 +62,18 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
       _controller.forward();
     }
     setState(() => _flipped = !_flipped);
+
+    // Live accessibility announcement when card flips
+    final sideAnnouncement = _flipped 
+        ? "Showing Translation and Meaning" 
+        : "Showing Sanskrit Verse";
+    SemanticsService.announce(sideAnnouncement, TextDirection.ltr);
   }
 
   void _navigate(AppState state, bool forward) {
     HapticFeedback.lightImpact();
     
-    // Card flip hai to pehle use seedha karein
+    // Reset card to front side before navigating to the next one
     if (_flipped) {
       _controller.reverse();
       setState(() => _flipped = false);
@@ -80,6 +86,12 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
     if (newIndex >= 0 && newIndex < _verses.length) {
       state.updateFlashcardIndex(newIndex);
       if (forward) state.addXp(5);
+
+      // Announce current card position update for screen readers
+      SemanticsService.announce(
+        "Card ${newIndex + 1} of ${_verses.length}", 
+        TextDirection.ltr
+      );
     }
   }
 
@@ -91,11 +103,16 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
     
     if (_verses.isEmpty) {
       return Scaffold(
-        body: Center(child: CircularProgressIndicator(color: goldColor)),
+        body: Center(
+          child: CircularProgressIndicator(
+            color: goldColor,
+            semanticsLabel: "Loading verses",
+          ),
+        ),
       );
     }
 
-    // Index out of bounds se bachne ke liye clamp
+    // Clamp index to prevent out-of-bounds runtime errors
     final safeIndex = appState.currentFlashcardIndex.clamp(0, _verses.length - 1);
     final verse = _verses[safeIndex];
 
@@ -105,49 +122,67 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
-        title: Text('GITA FLASHCARDS', 
-          style: GoogleFonts.cinzel(color: goldColor, fontSize: 16, fontWeight: FontWeight.bold)),
+        title: Text(
+          'GITA FLASHCARDS', 
+          style: GoogleFonts.cinzel(color: goldColor, fontSize: 16, fontWeight: FontWeight.bold),
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16),
             child: Center(
-              child: Text('${safeIndex + 1}/${_verses.length}', 
-                style: TextStyle(color: goldColor, fontWeight: FontWeight.bold)),
+              child: Semantics(
+                label: "Card position",
+                value: "${safeIndex + 1} of ${_verses.length}",
+                excludeSemantics: true,
+                child: Text(
+                  '${safeIndex + 1}/${_verses.length}', 
+                  style: TextStyle(color: goldColor, fontWeight: FontWeight.bold),
+                ),
+              ),
             ),
           )
         ],
       ),
       body: Column(
         children: [
-          LinearProgressIndicator(
-            value: (safeIndex + 1) / _verses.length,
-            backgroundColor: theme.dividerColor.withOpacity(0.1),
-            color: goldColor,
-            minHeight: 4,
+          Semantics(
+            label: "Progress bar",
+            value: "${((safeIndex + 1) / _verses.length * 100).toStringAsFixed(0)} percent completed",
+            child: LinearProgressIndicator(
+              value: (safeIndex + 1) / _verses.length,
+              backgroundColor: theme.dividerColor.withOpacity(0.1),
+              color: goldColor,
+              minHeight: 4,
+            ),
           ),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-              child: GestureDetector(
+              child: Semantics(
+                label: "Flashcard. Double tap to flip between Sanskrit verse and translation.",
+                button: true,
                 onTap: _handleFlip,
-                child: AnimatedBuilder(
-                  animation: _flipAnim,
-                  builder: (context, child) {
-                    final angle = _flipAnim.value * math.pi;
-                    return Transform(
-                      alignment: Alignment.center,
-                      transform: Matrix4.identity()
-                        ..setEntry(3, 2, 0.001)
-                        ..rotateY(angle),
-                      child: _flipAnim.value < 0.5
-                          ? _buildCardSide(verse, true, theme, goldColor)
-                          : Transform(
-                              alignment: Alignment.center,
-                              transform: Matrix4.identity()..rotateY(math.pi),
-                              child: _buildCardSide(verse, false, theme, goldColor),
-                            ),
-                    );
-                  },
+                child: GestureDetector(
+                  onTap: _handleFlip,
+                  child: AnimatedBuilder(
+                    animation: _flipAnim,
+                    builder: (context, child) {
+                      final angle = _flipAnim.value * math.pi;
+                      return Transform(
+                        alignment: Alignment.center,
+                        transform: Matrix4.identity()
+                          ..setEntry(3, 2, 0.001)
+                          ..rotateY(angle),
+                        child: _flipAnim.value < 0.5
+                            ? _buildCardSide(verse, true, theme, goldColor)
+                            : Transform(
+                                alignment: Alignment.center,
+                                transform: Matrix4.identity()..rotateY(math.pi),
+                                child: _buildCardSide(verse, false, theme, goldColor),
+                              ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
@@ -162,42 +197,49 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
   Widget _buildCardSide(Verse verse, bool isFront, ThemeData theme, Color goldColor) {
     final isDark = theme.brightness == Brightness.dark;
     
-    return Container(
-      padding: const EdgeInsets.all(30),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(25),
-        color: isDark ? theme.cardColor : Colors.white,
-        border: Border.all(color: goldColor.withOpacity(isFront ? 0.5 : 0.2), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: goldColor.withOpacity(0.1),
-            blurRadius: 15,
-            spreadRadius: 2,
-          )
-        ],
-      ),
-      child: Center(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(isFront ? "SANSKRIT" : "TRANSLATION", 
-                style: GoogleFonts.cinzel(color: goldColor, fontSize: 12, letterSpacing: 2, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 25),
-              Text(
-                isFront ? verse.sanskrit : verse.translation,
-                textAlign: TextAlign.center,
-                style: isFront 
-                    ? GoogleFonts.notoSansDevanagari(fontSize: 22, height: 1.6)
-                    : GoogleFonts.lora(fontSize: 18, height: 1.5, fontStyle: FontStyle.italic),
-              ),
-              if (!isFront) ...[
-                const Padding(padding: EdgeInsets.symmetric(vertical: 15), child: Divider()),
-                Text(verse.meaning, 
+    // MergeSemantics groups text elements into a single readable block for assistive technologies
+    return MergeSemantics(
+      child: Container(
+        padding: const EdgeInsets.all(30),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(25),
+          color: isDark ? theme.cardColor : Colors.white,
+          border: Border.all(color: goldColor.withOpacity(isFront ? 0.5 : 0.2), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: goldColor.withOpacity(0.1),
+              blurRadius: 15,
+              spreadRadius: 2,
+            )
+          ],
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  isFront ? "SANSKRIT VERSE" : "TRANSLATION AND MEANING", 
+                  style: GoogleFonts.cinzel(color: goldColor, fontSize: 12, letterSpacing: 2, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 25),
+                Text(
+                  isFront ? verse.sanskrit : verse.translation,
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: theme.hintColor, fontSize: 14, height: 1.4)),
-              ]
-            ],
+                  style: isFront 
+                      ? GoogleFonts.notoSansDevanagari(fontSize: 22, height: 1.6)
+                      : GoogleFonts.lora(fontSize: 18, height: 1.5, fontStyle: FontStyle.italic),
+                ),
+                if (!isFront) ...[
+                  const Padding(padding: EdgeInsets.symmetric(vertical: 15), child: Divider()),
+                  Text(
+                    verse.meaning, 
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: theme.hintColor, fontSize: 14, height: 1.4),
+                  ),
+                ]
+              ],
+            ),
           ),
         ),
       ),
@@ -209,11 +251,24 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Row(
         children: [
-          _navBtn(Icons.arrow_back_ios_new, () => _navigate(state, false), 
-              state.currentFlashcardIndex > 0, goldColor, theme, "Previous Card"),
+          _navBtn(
+            Icons.arrow_back_ios_new, 
+            () => _navigate(state, false), 
+            state.currentFlashcardIndex > 0, 
+            goldColor, 
+            theme, 
+            "Previous Card",
+          ),
           const SizedBox(width: 15),
-          _navBtn(Icons.arrow_forward_ios, () => _navigate(state, true), 
-              state.currentFlashcardIndex < _verses.length - 1, goldColor, theme, "Next Card", isPrimary: true),
+          _navBtn(
+            Icons.arrow_forward_ios, 
+            () => _navigate(state, true), 
+            state.currentFlashcardIndex < _verses.length - 1, 
+            goldColor, 
+            theme, 
+            "Next Card", 
+            isPrimary: true,
+          ),
         ],
       ),
     );
@@ -221,19 +276,28 @@ class _FlashcardsScreenState extends State<FlashcardsScreen>
 
   Widget _navBtn(IconData icon, VoidCallback? onTap, bool active, Color goldColor, ThemeData theme, String label, {bool isPrimary = false}) {
     return Expanded(
-      child: InkWell(
-        onTap: active ? onTap : null,
-        borderRadius: BorderRadius.circular(15),
-        child: Opacity(
-          opacity: active ? 1.0 : 0.2,
-          child: Container(
-            height: 60,
-            decoration: BoxDecoration(
-              color: isPrimary ? goldColor : Colors.transparent,
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: goldColor, width: 2),
+      child: Semantics(
+        label: label,
+        button: true,
+        enabled: active,
+        child: InkWell(
+          onTap: active ? onTap : null,
+          borderRadius: BorderRadius.circular(15),
+          child: Opacity(
+            opacity: active ? 1.0 : 0.2,
+            child: Container(
+              height: 60,
+              decoration: BoxDecoration(
+                color: isPrimary ? goldColor : Colors.transparent,
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: goldColor, width: 2),
+              ),
+              child: Icon(
+                icon, 
+                color: isPrimary ? Colors.black : goldColor,
+                semanticLabel: label,
+              ),
             ),
-            child: Icon(icon, color: isPrimary ? Colors.black : goldColor),
           ),
         ),
       ),
