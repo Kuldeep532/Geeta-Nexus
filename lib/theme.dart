@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// --- GLOBAL COLORS (The DNA) ---
+class AppBranding {
+  static const String logoPath = 'assets/images/Logo.png';
+  static const Color shyamBlue = Color(0xFF001A4D);
+}
+
 const Color kBg = Color(0xFF0D0A04);
 const Color kGold = Color(0xFFFFD700);
 const Color kGoldLight = Color(0xFFFFEC6E);
@@ -15,13 +19,10 @@ const Color kDivider = Color(0xFF3A2E00);
 const Color kError = Color(0xFFCF6679);
 const Color kSuccess = Color(0xFF4CAF50);
 
-// --- SEARCH TOPICS ---
 const List<String> kSpiritualTopics = [
   'Karma', 'Bhakti', 'Yoga', 'Gyan', 'Dharma', 
   'Meditation', 'Peace', 'Soul', 'Duty', 'Mind'
 ];
-
-// --- ADAPTIVE THEME BUILDERS ---
 
 ThemeData buildLightTheme() {
   const Color lBg = Color(0xFFFFF8E7);
@@ -36,21 +37,28 @@ ThemeData buildLightTheme() {
     brightness: Brightness.light,
     scaffoldBackgroundColor: lBg,
     primaryColor: kGoldDim,
-    dividerColor: lDivider, // Added for indicators
-    hintColor: lTextDim,     // Added for subtitles
+    dividerColor: lDivider, 
+    hintColor: lTextDim,     
     colorScheme: ColorScheme.light(
       primary: kGoldDim,
       secondary: kSaffron,
+      tertiary: const Color(0xFFD35400),
       surface: lSurface,
       error: kError,
       onPrimary: Colors.white,
+      onSecondary: Colors.white,
+      onTertiary: Colors.white,
       onSurface: lText,
+      primaryContainer: const Color(0xFFFFF3CD),
+      secondaryContainer: const Color(0xFFFFE0B2),
+      tertiaryContainer: const Color(0xFFFFCCBC),
+      surfaceContainer: lCard,
       outline: lDivider,
     ),
     textTheme: GoogleFonts.crimsonTextTextTheme(
       const TextTheme(
         displayLarge: TextStyle(color: kGoldDim, fontWeight: FontWeight.bold),
-        titleLarge: TextStyle(color: kGoldDim, fontWeight: FontWeight.bold), // Cinzel style support
+        titleLarge: TextStyle(color: kGoldDim, fontWeight: FontWeight.bold), 
         bodyLarge: TextStyle(color: lText),
         bodySmall: TextStyle(color: lTextDim),
       ),
@@ -95,15 +103,22 @@ ThemeData buildDarkTheme() {
     brightness: Brightness.dark,
     scaffoldBackgroundColor: kBg,
     primaryColor: kGold,
-    dividerColor: kDivider, // Error fix: Added for quiz/wisdom screens
-    hintColor: kTextDim,    // Error fix: Added for captions
+    dividerColor: kDivider, 
+    hintColor: kTextDim,    
     colorScheme: const ColorScheme.dark(
       primary: kGold,
       secondary: kSaffron,
+      tertiary: Color(0xFFE67E22),
       surface: kSurface,
       error: kError,
       onPrimary: kBg,
+      onSecondary: kBg,
+      onTertiary: Colors.black,
       onSurface: kText,
+      primaryContainer: Color(0xFF4A3E00),
+      secondaryContainer: Color(0xFF5D3A00),
+      tertiaryContainer: Color(0xFF4D2600),
+      surfaceContainer: kCard,
       outline: kDivider,
     ),
     textTheme: GoogleFonts.crimsonTextTextTheme(
