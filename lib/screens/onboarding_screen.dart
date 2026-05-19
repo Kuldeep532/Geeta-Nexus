@@ -10,21 +10,19 @@ import '../state/app_state.dart';
 import '../main.dart';
 import '../theme.dart';
 import 'privacy_policy_screen.dart';
-import 'terms_screen.dart'; // TermsAndConditionsScreen
+import 'terms_screen.dart';
 
 class _OnboardPageData {
-  final String emoji;
-  final String emojiLabel;
   final String title;
   final String subtitle;
   final String body;
+  final String semanticLabel;
 
   const _OnboardPageData({
-    required this.emoji,
-    required this.emojiLabel,
     required this.title,
     required this.subtitle,
     required this.body,
+    required this.semanticLabel,
   });
 }
 
@@ -36,6 +34,65 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
+  bool _isCheckingStatus = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _runAppRoutingLogic();
+  }
+
+  Future<void> _runAppRoutingLogic() async {
+    await Future.delayed(const Duration(seconds: 3));
+    final prefs = await SharedPreferences.getInstance();
+    final bool isCompleted = prefs.getBool('onboarding_completed') ?? false;
+
+    if (!mounted) return;
+
+    if (isCompleted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const MainShell()),
+        (route) => false,
+      );
+    } else {
+      setState(() {
+        _isCheckingStatus = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isCheckingStatus) {
+      return const Scaffold(
+        backgroundColor: AppBranding.shyamBlue,
+        body: Center(
+          child: Semantics(
+            label: 'Gita Nexus App Logo. Initializing application, please wait.',
+            image: true,
+            child: Image(
+              image: AssetImage(AppBranding.logoPath),
+              width: 160,
+              height: 160,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return const _OnboardingSlidersView();
+  }
+}
+
+class _OnboardingSlidersView extends StatefulWidget {
+  const _OnboardingSlidersView();
+
+  @override
+  State<_OnboardingSlidersView> createState() => _OnboardingSlidersViewState();
+}
+
+class _OnboardingSlidersViewState extends State<_OnboardingSlidersView> {
   final PageController _controller = PageController();
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
@@ -53,39 +110,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   static const List<_OnboardPageData> _pages = [
     _OnboardPageData(
-      emoji: '🕉️',
-      emojiLabel: 'Aum Symbol',
-      title: 'Geeta Nexus',
-      subtitle: 'The Song of God',
-      body: 'Discover the timeless wisdom of 700 divine verses that have guided seekers for ages.',
+      title: 'Gita Nexus',
+      subtitle: 'The Divine Eternal Song',
+      body: 'Welcome to an ever expanding ecosystem equipped with continuously evolving spiritual tools. Seamlessly access seven hundred absolute verses with comprehensive data analytical frameworks.',
+      semanticLabel: 'Page one. Welcome to Gita Nexus.',
     ),
     _OnboardPageData(
-      emoji: '📖',
-      emojiLabel: 'Open Book',
-      title: 'Read & Reflect',
-      subtitle: '18 Chapters of Wisdom',
-      body: 'Explore Sanskrit verses with clear meanings and transliterations for deeper understanding.',
+      title: 'Advanced Scriptural Analytics',
+      subtitle: 'Eighteen Chapters of Absolute Wisdom',
+      body: 'Perform systematic reading and textual reflection. Explore exact Sanskrit verses structured alongside profound academic commentaries, transliterations, and grammatical breakdowns.',
+      semanticLabel: 'Page two. Advanced Scriptural Analytics.',
     ),
     _OnboardPageData(
-      emoji: '🤖',
-      emojiLabel: 'Robot Icon',
-      title: 'Ask Krishna',
-      subtitle: 'Your Divine AI Guide',
-      body: 'Have spiritual conversations. Ask any question about dharma, karma, or life’s purpose.',
+      title: 'AI Spiritual Conversationalist',
+      subtitle: 'Context Aware Guidance Engine',
+      body: 'Engage with an intelligent platform trained to address spiritual inquiries. Seek structured perspectives on human duty, cosmic law, and existential core principles.',
+      semanticLabel: 'Page three. AI Spiritual Conversationalist.',
     ),
     _OnboardPageData(
-      emoji: '🧘',
-      emojiLabel: 'Meditation Position',
-      title: 'Practice Daily',
-      subtitle: 'Meditation & Japa',
-      body: 'Build your spiritual routine with meditation timers and an interactive Japa counter.',
+      title: 'Systematic Spiritual Routine',
+      subtitle: 'Integrated Meditation and Metrics',
+      body: 'Establish your standard daily practices. Utilize custom audio assistive meditation modules alongside an accurate, fully accessible interface metrics recorder.',
+      semanticLabel: 'Page four. Systematic Spiritual Routine.',
     ),
     _OnboardPageData(
-      emoji: '🙏',
-      emojiLabel: 'Greeting Hands',
-      title: 'Welcome Seeker',
-      subtitle: 'Personalize your journey',
-      body: 'Login to sync your progress or skip to continue as a guest.',
+      title: 'Personalized Exploration Profile',
+      subtitle: 'Synchronized Progress Framework',
+      body: 'Initialize your customized journey. Authenticate securely to automatically preserve your configuration data, configurations, and progress logs across platforms.',
+      semanticLabel: 'Page five. Personalized Exploration Profile.',
     ),
   ];
 
@@ -142,7 +194,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
       await _handlePermissions();
     } catch (e) {
-      _showErrorSnackBar("Google Sign-in failed (${e.toString()}). Please enter your name to continue.");
+      _showErrorSnackBar("Google Sign-in failed. Please enter your name to continue.");
       setState(() {
         _googleAttempted = true;
         _showNameField = true;
@@ -166,14 +218,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final name = _nameController.text.trim();
 
     if (name.isEmpty) {
-      setState(() => _nameError = "Kripya apna naam bhariye");
+      setState(() => _nameError = "Please enter your name");
       _nameFocus.requestFocus();
       return;
     }
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      // FIX: Removed extra comma from await, prefs
       await prefs.setBool('onboarding_completed', true);
 
       if (!mounted) return;
@@ -187,10 +238,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         (route) => false,
       );
     } catch (e) {
-      _showErrorSnackBar("Kuch galat hua. Kripya phir koshish karein.");
+      _showErrorSnackBar("An error occurred. Please try again.");
     }
   }
-
 
   Future<void> _continueWithEmail() async {
     if (!_acceptedPolicies) {
@@ -214,7 +264,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _showErrorSnackBar(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Semantics(
+          liveRegion: true,
+          child: Text(msg),
+        ),
+      ),
+    );
   }
 
   void _next() {
@@ -261,69 +318,113 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
-          Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: gold.withOpacity(0.1),
-              border: Border.all(color: gold, width: 2),
-            ),
-            child: Center(child: Text(page.emoji, style: const TextStyle(fontSize: 48))),
-          ),
-          const SizedBox(height: 40),
-          Text(page.title, textAlign: TextAlign.center, style: GoogleFonts.cinzel(color: gold, fontSize: 24, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          Text(page.subtitle, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
-          const SizedBox(height: 20),
-          Text(page.body, textAlign: TextAlign.center, style: TextStyle(color: theme.hintColor, height: 1.5)),
-          if (isLastPage) ...[
+      child: Semantics(
+        label: page.semanticLabel,
+        container: true,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
             const SizedBox(height: 40),
-            _buildPolicyConsent(theme),
-            const SizedBox(height: 12),
-            if (!_showNameField) _buildLoginButtons(gold) else _buildNameInput(gold),
-            if (_googleAttempted)
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Text(
-                  'You can continue by entering your name if Google sign-in is unavailable.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: theme.hintColor, fontSize: 12),
+            Semantics(
+              header: true,
+              headingLevel: 1,
+              child: Text(
+                page.title,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.cinzel(
+                  color: gold,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
                 ),
               ),
-            const SizedBox(height: 12),
-            if (_showEmailField) _buildEmailInput(kGold),
+            ),
+            const SizedBox(height: 16),
+            Semantics(
+              headingLevel: 2,
+              child: Text(
+                page.subtitle,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.25,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              page.body,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: theme.hintColor,
+                fontSize: 15,
+                height: 1.6,
+              ),
+            ),
+            if (isLastPage) ...[
+              const SizedBox(height: 48),
+              _buildPolicyConsent(theme),
+              const SizedBox(height: 24),
+              if (!_showNameField && !_showEmailField) 
+                _buildLoginButtons(gold) 
+              else if (_showNameField) 
+                _buildNameInput(gold)
+              else 
+                _buildEmailInput(gold),
+              if (_googleAttempted)
+                Padding(
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Text(
+                    'You can continue by entering your profile credentials if server sign in is currently unresponsive.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: theme.hintColor, fontSize: 13),
+                  ),
+                ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
 
   Widget _buildLoginButtons(Color gold) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        OutlinedButton.icon(
-          onPressed: (_isLoading || !_acceptedPolicies) ? null : _continueWithGoogle,
-          icon: _isLoading 
-            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
-            : const Icon(Icons.account_circle, color: kGold),
-          label: const Text("Continue with Google"),
-          style: OutlinedButton.styleFrom(
-            minimumSize: const Size(double.infinity, 50),
-            side: BorderSide(color: gold),
+        Semantics(
+          button: true,
+          label: 'Continue with Google Account Authentication',
+          child: OutlinedButton(
+            onPressed: (_isLoading || !_acceptedPolicies) ? null : _continueWithGoogle,
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: gold, width: 1.5),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            ),
+            child: _isLoading 
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
+              : const Text("Continue with Google", style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ),
-        const SizedBox(height: 16),
-        TextButton(
-          onPressed: !_acceptedPolicies ? null : () => setState(() => _showNameField = true),
-          child: Text("Skip Login & Continue as Guest", style: TextStyle(color: gold)),
+        const SizedBox(height: 14),
+        Semantics(
+          button: true,
+          label: 'Continue setup as Profile Guest',
+          child: TextButton(
+            onPressed: !_acceptedPolicies ? null : () => setState(() => _showNameField = true),
+            style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+            child: Text("Continue as Guest", style: TextStyle(color: gold, fontSize: 15, fontWeight: FontWeight.bold)),
+          ),
         ),
-        TextButton(
-          onPressed: !_acceptedPolicies ? null : () => setState(() => _showEmailField = true),
-          child: Text("Sign in with Email", style: TextStyle(color: gold)),
+        Semantics(
+          button: true,
+          label: 'Continue setup with Email Address Configuration',
+          child: TextButton(
+            onPressed: !_acceptedPolicies ? null : () => setState(() => _showEmailField = true),
+            style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+            child: Text("Continue with Email", style: TextStyle(color: gold, fontSize: 15, fontWeight: FontWeight.bold)),
+          ),
         ),
       ],
     );
@@ -331,27 +432,35 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildNameInput(Color gold) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextField(
-          controller: _nameController,
-          focusNode: _nameFocus,
-          textCapitalization: TextCapitalization.words,
-          decoration: InputDecoration(
-            hintText: "Apna naam likhiye",
-            errorText: _nameError,
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: gold)),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            prefixIcon: Icon(Icons.person, color: gold),
+        Semantics(
+          label: 'Enter your name text field input',
+          child: TextField(
+            controller: _nameController,
+            focusNode: _nameFocus,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _finishOnboarding(),
+            decoration: InputDecoration(
+              labelText: "Enter your name",
+              errorText: _nameError,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            ),
           ),
         ),
         const SizedBox(height: 24),
-        SizedBox(
-          width: double.infinity,
-          height: 50,
+        Semantics(
+          button: true,
+          label: 'Confirm name and initialize core application setup',
           child: ElevatedButton(
-            onPressed: !_acceptedPolicies ? null : _finishOnboarding,
-            style: ElevatedButton.styleFrom(backgroundColor: gold, foregroundColor: Colors.black),
-            child: const Text("FINISH SETUP"),
+            onPressed: _finishOnboarding,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: gold,
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            ),
+            child: const Text("Get Started", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
         ),
       ],
@@ -360,24 +469,34 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildEmailInput(Color gold) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: 10),
-        TextField(
-          controller: _emailController,
-          keyboardType: TextInputType.emailAddress,
-          decoration: InputDecoration(
-            hintText: "Enter email address",
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            prefixIcon: Icon(Icons.email, color: gold),
+        Semantics(
+          label: 'Enter email address text field input',
+          child: TextField(
+            controller: _emailController,
+            keyboardType: TextInputType.emailAddress,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _continueWithEmail(),
+            decoration: const InputDecoration(
+              labelText: "Enter your email address",
+              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            ),
           ),
         ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
+        const SizedBox(height: 24),
+        Semantics(
+          button: true,
+          label: 'Confirm email address and proceed with application configuration',
           child: ElevatedButton(
             onPressed: _continueWithEmail,
-            style: ElevatedButton.styleFrom(backgroundColor: gold, foregroundColor: Colors.black),
-            child: const Text('CONTINUE WITH EMAIL'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: gold,
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+            ),
+            child: const Text("Continue", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ),
         ),
       ],
@@ -386,37 +505,39 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _buildPolicyConsent(ThemeData theme) {
     return Semantics(
-      container: true,
-      label: 'Accept privacy policy and terms',
-      child: Column(
+      label: 'Terms consent verification checkbox status indicator',
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          CheckboxListTile(
+          Checkbox(
             value: _acceptedPolicies,
-            onChanged: (value) => setState(() => _acceptedPolicies = value ?? false),
-            controlAffinity: ListTileControlAffinity.leading,
-            contentPadding: EdgeInsets.zero,
-            title: const Text(
-              'I accept the Privacy Policy and Terms & Conditions',
-              style: TextStyle(fontSize: 13),
+            onChanged: (val) => setState(() => _acceptedPolicies = val ?? false),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                const Text("I accept the ", style: TextStyle(fontSize: 14)),
+                GestureDetector(
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen())),
+                  child: Semantics(
+                    link: true,
+                    label: 'Open and read privacy policy statement document',
+                    child: Text("Privacy Policy", style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 14)),
+                  ),
+                ),
+                const Text(" and ", style: TextStyle(fontSize: 14)),
+                GestureDetector(
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TermsAndConditionsScreen())),
+                  child: Semantics(
+                    link: true,
+                    label: 'Open and read terms and conditions regulatory document',
+                    child: Text("Terms & Conditions", style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 14)),
+                  ),
+                ),
+              ],
             ),
-          ),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 8,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen())),
-                child: const Text('View Privacy Policy'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsAndConditionsScreen())),
-                child: const Text('View Terms and Conditions'),
-              ),
-            ],
-          ),
-          Text(
-            'Required before continuing.',
-            style: TextStyle(color: theme.hintColor, fontSize: 12),
           ),
         ],
       ),
@@ -426,30 +547,33 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _buildBottomControls(Color gold, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.all(24),
-      child: Column(
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(_pages.length, (i) => AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              width: _page == i ? 24 : 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: _page == i ? gold : gold.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(4),
+          Semantics(
+            label: 'Onboarding step slider progress locator indicator. Current page index is ${_page + 1} of total five pages.',
+            child: Row(
+              children: List.generate(
+                _pages.length,
+                (index) => Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: _page == index ? 24 : 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4),
+                    color: _page == index ? gold : gold.withOpacity(0.3),
+                  ),
+                ),
               ),
-            )),
+            ),
           ),
-          const SizedBox(height: 32),
           if (_page < _pages.length - 1)
-            SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
+            Semantics(
+              button: true,
+              label: 'Navigate to next presentation slider view page info block',
+              child: IconButton(
                 onPressed: _next,
-                style: ElevatedButton.styleFrom(backgroundColor: gold, foregroundColor: Colors.black),
-                child: const Text("NEXT"),
+                icon: Icon(Icons.arrow_forward_ios, color: gold),
               ),
             ),
         ],
