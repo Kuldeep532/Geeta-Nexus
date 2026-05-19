@@ -1,3 +1,4 @@
+import 'dart:math' as math; // Required for generating random indexes safely
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,15 +9,11 @@ import '../state/app_state.dart';
 import '../data/gita_data.dart';
 import '../models/models.dart'; 
 
-// Purani aur nayi saari screens ka shudh import yahan hai:
 import 'search_screen.dart';
 import '../models/scripture_model.dart';
 import 'scripture_verse_detail_screen.dart';
-import 'random_verse_screen.dart';
-import 'wisdom_cards_screen.dart';
 import 'scripture_library_screen.dart';
 
-// Tumhari gusse wali missing screens jo ab sahi jagah par hain:
 import 'affirmations_screen.dart';
 import 'astrology_screen.dart';
 import 'chants_screen.dart';
@@ -27,6 +24,7 @@ import 'glossary_screen.dart';
 import 'journal_screen.dart';
 import 'meditation_screen.dart';
 import 'reading_plan_screen.dart';
+import 'wisdom_cards_screen.dart'; // Retained for Wisdom Cards if needed under another configuration
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -35,7 +33,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-importt _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> {
   Verse? _dailyVerse; 
   final FlutterTts _tts = FlutterTts();
 
@@ -51,7 +49,8 @@ importt _HomeScreenState extends State<HomeScreen> {
   void _loadDailyVerse() {
     final state = Provider.of<AppState>(context, listen: false);
     if (state.allVerses.isNotEmpty) {
-      final dayOfYear = DateTime.now().difference(DateTime(DateTime.now().year, 1, 1)).inDays;
+      final now = DateTime.now();
+      final dayOfYear = now.difference(DateTime(now.year, 1, 1)).inDays;
       setState(() {
         _dailyVerse = state.allVerses[dayOfYear % state.allVerses.length];
       });
@@ -93,6 +92,25 @@ importt _HomeScreenState extends State<HomeScreen> {
     return 'Good Evening';
   }
 
+  // Picks a completely random shlok from the dataset and pushes directly to detail view
+  void _navigateToRandomShlok(AppState state) {
+    if (state.allVerses.isNotEmpty) {
+      final random = math.Random();
+      final randomIndex = random.nextInt(state.allVerses.length);
+      final randomVerse = state.allVerses[randomIndex];
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ScriptureVerseDetailScreen(
+            allVerses: [ScriptureVerse.fromLocalVerse(randomVerse)],
+            initialIndex: 0,
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _tts.stop();
@@ -129,7 +147,7 @@ importt _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 24),
                   _buildSectionTitle('Quick Actions'),
                   const SizedBox(height: 12),
-                  _buildQuickActions(context, isDark), // Ab iske andar saari screens fit hain
+                  _buildQuickActions(context, isDark, state), 
                   const SizedBox(height: 100), 
                 ],
               ),
@@ -293,6 +311,18 @@ importt _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: GoogleFonts.cinzel(
+        color: kGold,
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.0,
+      ),
+    );
+  }
+
   Widget _buildLibraryCard(BuildContext context, bool isDark) {
     return Semantics(
       button: true,
@@ -302,105 +332,114 @@ importt _HomeScreenState extends State<HomeScreen> {
       child: InkWell(
         onTap: () => Navigator.push(
           context, 
-          MaterialPageRoute(builder: (_) => const ScriptureLibraryScreen())
+          MaterialPageRoute(builder: (_) => const ScriptureLibraryScreen()),
         ),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+          padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
-            color: kGold.withOpacity(0.12),
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: kGold, width: 1.5),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.auto_stories, color: kGold, size: 24),
-              const SizedBox(width: 12),
-              Text(
-                'SCRIPTURE LIBRARY', 
-                style: GoogleFonts.cinzel(
-                  color: kGold, 
-                  fontWeight: FontWeight.bold, 
-                  fontSize: 15,
-                  letterSpacing: 1.2
-                )
-              ),
+            color: isDark ? const Color(0xFF151515) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: kGold.withOpacity(0.25)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              )
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title) {
-    return Semantics(
-      header: true,
-      child: Text(
-        title.toUpperCase(), 
-        style: GoogleFonts.cinzel(fontSize: 15, fontWeight: FontWeight.bold, color: kGold, letterSpacing: 1.2)
-      ),
-    );
-  }
-
-  Widget _buildQuickActions(BuildContext context, bool isDark) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 2.2,
-      children: [
-        // Purani Actions Screens
-        _actionCard(context, 'Search', Icons.search, const SearchScreen(), isDark),
-        _actionCard(context, 'Random', Icons.casino, const RandomVerseScreen(), isDark),
-        _actionCard(context, 'Wisdom', Icons.auto_awesome, const WisdomCardsScreen(), isDark),
-        
-        // Tumhari saari nayi bhatki hui screens ab line se ekdum sahi jagah par hain:
-        _actionCard(context, 'Affirm', Icons.favorite, const AffirmationsScreen(), isDark),
-        _actionCard(context, 'Astrology', Icons.brightness_3, const AstrologyScreen(), isDark),
-        _actionCard(context, 'Chants', Icons.spatial_audio_off, const ChantsScreen(), isDark),
-        _actionCard(context, 'Bookmarks', Icons.bookmark, const BookmarksScreen(), isDark),
-        _actionCard(context, 'Breathing', Icons.air, const BreathingScreen(), isDark),
-        _actionCard(context, 'Voice Practice', Icons.mic, const GeetaVoicePracticeScreen(), isDark),
-        _actionCard(context, 'Glossary', Icons.g_translate, const GlossaryScreen(), isDark),
-        _actionCard(context, 'Journal', Icons.edit_note, const JournalScreen(), isDark),
-        _actionCard(context, 'Meditation', Icons.spa, const MeditationScreen(), isDark),
-        _actionCard(context, 'Reading Plan', Icons.calendar_month, const ReadingPlanScreen(), isDark),
-      ],
-    );
-  }
-
-  Widget _actionCard(BuildContext context, String title, IconData icon, Widget target, bool isDark) {
-    return Semantics(
-      button: true,
-      label: '$title Button',
-      excludeSemantics: true,
-      child: InkWell(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => target)),
-        child: Container(
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1A1500) : const Color(0xFFFFF9E5),
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: kGold.withOpacity(0.3)),
-          ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              ExcludeSemantics(child: Icon(icon, color: kGold, size: 20)),
-              const SizedBox(width: 10),
-              Flexible(
-                child: Text(
-                  title, 
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.cinzel(color: kGold, fontWeight: FontWeight.bold, fontSize: 12),
+              const Text('📚', style: TextStyle(fontSize: 32)),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Scripture Library',
+                      style: GoogleFonts.cinzel(fontSize: 16, fontWeight: FontWeight.bold, color: kGold),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Access Bhagavad Gita, Shiv Mahapuran, and other sacred texts.',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    ),
+                  ],
                 ),
               ),
+              const Icon(Icons.arrow_forward_ios, color: kGold, size: 16),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildQuickActions(BuildContext context, bool isDark, AppState state) {
+    // Verified 12 unique items setup. 'random_verse_screen' completely eliminated.
+    final List<Map<String, dynamic>> actions = [
+      {'icon': '🧘', 'title': 'Meditation', 'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MeditationScreen()))},
+      {'icon': '📿', 'title': 'Chants', 'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChantsScreen()))},
+      {'icon': '🌬️', 'title': 'Breathing', 'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BreathingScreen()))},
+      {'icon': '🗣️', 'title': 'Voice Practice', 'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GeetaVoicePracticeScreen()))},
+      {'icon': '✨', 'title': 'Affirmations', 'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AffirmationsScreen()))},
+      {'icon': '📅', 'title': 'Reading Plan', 'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReadingPlanScreen()))},
+      {'icon': '📓', 'title': 'Journal', 'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => const JournalScreen()))},
+      {'icon': '🔖', 'title': 'Bookmarks', 'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BookmarksScreen()))},
+      {'icon': '🌌', 'title': 'Astrology', 'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AstrologyScreen()))},
+      {'icon': '📖', 'title': 'Glossary', 'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GlossaryScreen()))},
+      {'icon': '🃏', 'title': 'Wisdom Cards', 'onTap': () => Navigator.push(context, MaterialPageRoute(builder: (_) => const WisdomCardsScreen()))},
+      {'icon': '🕉️', 'title': 'Random Shlok', 'onTap': () => _navigateToRandomShlok(state)},
+    ];
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: actions.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.95,
+      ),
+      itemBuilder: (context, index) {
+        final action = actions[index];
+        return Semantics(
+          button: true,
+          label: '${action['title']} feature',
+          hint: 'Double tap to open ${action['title']}',
+          excludeSemantics: true,
+          child: InkWell(
+            onTap: action['onTap'] as VoidCallback,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF151515) : Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: kGold.withOpacity(0.15)),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(action['icon'] as String, style: const TextStyle(fontSize: 24)),
+                  const SizedBox(height: 8),
+                  Text(
+                    action['title'] as String,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.cinzel(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
