@@ -1,7 +1,7 @@
 name: Geeta AI - Manual Build
 
 on:
-  workflow_dispatch: # Manual trigger ke liye
+  workflow_dispatch:
 
 jobs:
   build:
@@ -29,13 +29,11 @@ jobs:
 
       - name: Decode Release Keystore
         run: |
-          # Keystore ko 'android/app' ke andar rakhna zyada safe aur asaan hai
           mkdir -p android/app/signing
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/signing/my-release-key.jks
 
       - name: Create key.properties
         run: |
-          # Path ko fix kiya gaya hai taaki Gradle ise sahi se dhoond sake
           cat > android/key.properties <<EOF
           storeFile=../app/signing/my-release-key.jks
           storePassword=${{ secrets.KEYSTORE_PASSWORD }}
@@ -48,17 +46,13 @@ jobs:
           echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > android/app/google-services.json
 
       - name: Build APK with Dynamic Secrets Injection
-        # FIXED: Yahan bowler ab teeno balls ko ek sath spin karake compile pipeline ke andar pass karega!
         env:
           GEMINI_AI_API_KEY: ${{ secrets.GEMINI_AI_API_KEY }}
           ADMIN_EMAILS_DATA: ${{ secrets.ADMIN_LOGIN_EMAILS }}
           ADMIN_PASSWORD_DATA: ${{ secrets.ADMIN_LOGIN_PASSWORD }}
         run: |
           chmod +x android/gradlew
-          flutter build apk --release \
-            --dart-define=GEMINI_API_KEY="$GEMINI_AI_API_KEY" \
-            --dart-define=ADMIN_LOGIN_EMAILS="$ADMIN_EMAILS_DATA" \
-            --dart-define=ADMIN_LOGIN_PASSWORD="$ADMIN_PASSWORD_DATA"
+          flutter build apk --release --dart-define=GEMINI_API_KEY="$GEMINI_AI_API_KEY" --dart-define=ADMIN_LOGIN_EMAILS="$ADMIN_EMAILS_DATA" --dart-define=ADMIN_LOGIN_PASSWORD="$ADMIN_PASSWORD_DATA"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
