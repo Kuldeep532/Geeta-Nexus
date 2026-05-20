@@ -6,10 +6,12 @@ import 'package:provider/provider.dart';
 
 import '../state/app_state.dart';
 import '../models/models.dart';
-import '../theme.dart'; // ERROR FIX: Theme import added
+import '../models/scripture_model.dart';
+import '../theme.dart';
 
 class QuizScreen extends StatefulWidget {
-  const QuizScreen({super.key});
+  final dynamic currentVerse;
+  const QuizScreen({super.key, required this.currentVerse});
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -31,31 +33,48 @@ class _QuizScreenState extends State<QuizScreen> {
 
   void _generateQuestionsFromState() {
     if (!mounted) return;
-    final state = Provider.of<AppState>(context, listen: false);
-    final allVerses = state.allVerses;
+    final v = widget.currentVerse;
 
-    if (allVerses.isEmpty) return;
+    final translation = (v is ScriptureVerse) ? v.translations.values.first : v.translation;
+    final meaning = (v is ScriptureVerse) ? v.commentaries.values.first : v.meaning;
+    final chapter = (v is ScriptureVerse) ? v.section.sectionIndex : v.chapter;
+    final verseNum = (v is ScriptureVerse) ? v.verseIndex : v.verse;
 
-    final random = Random();
-    List<QuizQuestion> tempQuestions = [];
+    List<QuizQuestion> tempQuestions = [
+      QuizQuestion(
+        question: "What is the primary translation of Shlok $chapter.$verseNum?",
+        options: [translation, "A guide to ritualistic worship", "A historical war report", "A temporary worldly desire"],
+        correctIndex: 0,
+        explanation: "Correct! The translation is: $translation",
+      ),
+      QuizQuestion(
+        question: "What is the core spiritual essence of this verse?",
+        options: [meaning, "To renounce society entirely", "To seek only material success", "To perform actions without purpose"],
+        correctIndex: 0,
+        explanation: "Correct! The essence is: $meaning",
+      ),
+      QuizQuestion(
+        question: "How should one apply the wisdom of this verse in life?",
+        options: ["By performing duties with detachment", "By ignoring all responsibilities", "By seeking fame above duty", "By avoiding every action"],
+        correctIndex: 0,
+        explanation: "Correct! The teaching is: $meaning",
+      ),
+      QuizQuestion(
+        question: "Which virtue is emphasized in Shlok $chapter.$verseNum?",
+        options: ["Righteousness and duty", "Material accumulation", "Blind faith in rituals", "Avoiding conflict"],
+        correctIndex: 0,
+        explanation: "Correct! This verse emphasizes: $meaning",
+      ),
+      QuizQuestion(
+        question: "What is the final advice provided in this verse?",
+        options: ["To act with clarity and purpose", "To remain passive", "To focus solely on results", "To abandon all efforts"],
+        correctIndex: 0,
+        explanation: "Correct! It advises: $meaning",
+      ),
+    ];
 
-    for (int i = 0; i < 5; i++) {
-      final correctVerse = allVerses[random.nextInt(allVerses.length)];
-      List<String> options = [correctVerse.translation];
-
-      while (options.length < 4) {
-        String randomOption = allVerses[random.nextInt(allVerses.length)].translation;
-        if (!options.contains(randomOption)) options.add(randomOption);
-      }
-
-      options.shuffle();
-
-      tempQuestions.add(QuizQuestion(
-        question: "Verse ${correctVerse.chapter}.${correctVerse.verse} ka sahi anuvad (translation) kya hai?",
-        options: options,
-        correctIndex: options.indexOf(correctVerse.translation),
-        explanation: "Sahi jawab! Is shlok ka taatparya hai: ${correctVerse.meaning}",
-      ));
+    for (var q in tempQuestions) {
+      q.options.shuffle();
     }
 
     setState(() => _dynamicQuestions = tempQuestions);
@@ -64,15 +83,12 @@ class _QuizScreenState extends State<QuizScreen> {
   void _select(int index) {
     if (_answered) return;
     final isCorrect = index == _dynamicQuestions[_currentIndex].correctIndex;
-    
     setState(() {
       _selectedAnswer = index;
       _answered = true;
       if (isCorrect) _score++;
     });
-
     isCorrect ? HapticFeedback.lightImpact() : HapticFeedback.vibrate();
-    Provider.of<AppState>(context, listen: false).recordQuizAnswer(isCorrect);
   }
 
   void _next() {
@@ -90,53 +106,33 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text('Gita Quiz', style: GoogleFonts.cinzel(color: kGold, fontWeight: FontWeight.bold)),
-        leading: BackButton(color: kGold),
+        leading: BackButton(color: kGold, onPressed: () => Navigator.pop(context, _finished)),
       ),
-      body: _dynamicQuestions.isEmpty 
-          ? const Center(child: CircularProgressIndicator(color: kGold)) 
+      body: _dynamicQuestions.isEmpty
+          ? const Center(child: CircularProgressIndicator(color: kGold))
           : (_finished ? _buildResults(theme) : _buildQuestion(theme)),
     );
   }
 
   Widget _buildQuestion(ThemeData theme) {
     final current = _dynamicQuestions[_currentIndex];
-    final progress = (_currentIndex + 1) / _dynamicQuestions.length;
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-          LinearProgressIndicator(
-            value: progress, 
-            color: kGold, 
-            backgroundColor: kGold.withOpacity(0.1), 
-            minHeight: 8
-          ),
-          const SizedBox(height: 15),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('QUESTION ${_currentIndex + 1}/5', style: TextStyle(color: theme.hintColor, fontSize: 12)),
-              Text('SCORE: $_score', style: const TextStyle(color: kGold, fontWeight: FontWeight.bold)),
-            ],
-          ),
+          LinearProgressIndicator(value: (_currentIndex + 1) / 5, color: kGold, minHeight: 8),
           const SizedBox(height: 32),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: kGold.withOpacity(0.2)),
-            ),
-            child: Text(current.question, style: GoogleFonts.crimsonText(fontSize: 22, height: 1.4)),
+            decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(16)),
+            child: Text(current.question, style: GoogleFonts.crimsonText(fontSize: 20)),
           ),
           const SizedBox(height: 24),
           ...List.generate(current.options.length, (i) => _buildOption(i, current, theme)),
@@ -149,34 +145,16 @@ class _QuizScreenState extends State<QuizScreen> {
   Widget _buildOption(int index, QuizQuestion q, ThemeData theme) {
     bool isCorrect = index == q.correctIndex;
     bool isSelected = _selectedAnswer == index;
-    Color border = theme.dividerColor;
-    
-    if (_answered) {
-      if (isCorrect) border = Colors.green;
-      else if (isSelected) border = Colors.red;
-    } else if (isSelected) {
-      border = kGold;
-    }
+    Color border = _answered ? (isCorrect ? Colors.green : (isSelected ? Colors.red : theme.dividerColor)) : (isSelected ? kGold : theme.dividerColor);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: () => _select(index),
-        borderRadius: BorderRadius.circular(12),
         child: Container(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: border, width: 2),
-          ),
-          child: Row(
-            children: [
-              Text("${index + 1}.", style: const TextStyle(color: kGold, fontWeight: FontWeight.bold)),
-              const SizedBox(width: 12),
-              Expanded(child: Text(q.options[index], style: const TextStyle(fontSize: 16))),
-            ],
-          ),
+          decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: border, width: 2)),
+          child: Text(q.options[index], style: const TextStyle(fontSize: 16)),
         ),
       ),
     );
@@ -187,27 +165,13 @@ class _QuizScreenState extends State<QuizScreen> {
     return Container(
       margin: const EdgeInsets.only(top: 20),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: (isCorrect ? Colors.green : Colors.red).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
       child: Column(
         children: [
-          Text(isCorrect ? "Bilkul Sahi! ✨" : "Galat Jawab!", 
-              style: TextStyle(fontWeight: FontWeight.bold, color: isCorrect ? Colors.green : Colors.red, fontSize: 18)),
+          Text(isCorrect ? "Correct! ✨" : "Incorrect!", style: TextStyle(color: isCorrect ? Colors.green : Colors.red, fontSize: 18)),
           const SizedBox(height: 10),
-          Text(q.explanation, textAlign: TextAlign.center, style: const TextStyle(height: 1.5)),
+          Text(q.explanation, textAlign: TextAlign.center),
           const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: _next,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: kGold, 
-              foregroundColor: Colors.black, 
-              minimumSize: const Size(double.infinity, 50),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text("AGLA SAWAL", style: TextStyle(fontWeight: FontWeight.bold)),
-          )
+          ElevatedButton(onPressed: _next, child: const Text("NEXT QUESTION")),
         ],
       ),
     );
@@ -218,27 +182,9 @@ class _QuizScreenState extends State<QuizScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text('🙏', style: TextStyle(fontSize: 60)),
-          const SizedBox(height: 20),
-          Text('Quiz Samapt!', style: GoogleFonts.cinzel(fontSize: 28, color: kGold, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 10),
-          Text('Aapne 5 mein se $_score ank prapt kiye.', style: const TextStyle(fontSize: 18)),
-          const SizedBox(height: 40),
-          ElevatedButton.icon(
-            onPressed: () {
-              setState(() {
-                _finished = false;
-                _currentIndex = 0;
-                _score = 0;
-                _answered = false;
-                _selectedAnswer = null;
-              });
-              _generateQuestionsFromState();
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: kGold, foregroundColor: Colors.black),
-            icon: const Icon(Icons.refresh),
-            label: const Text('PHIR SE KHELIE'),
-          ),
+          Text('Quiz Finished!', style: GoogleFonts.cinzel(fontSize: 28, color: kGold)),
+          Text('Score: $_score/5'),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('BACK TO VERSE')),
         ],
       ),
     );
