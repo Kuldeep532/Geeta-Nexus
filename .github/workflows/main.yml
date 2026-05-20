@@ -48,10 +48,7 @@ jobs:
       - name: Build APK with Dynamic Secrets Injection
         run: |
           chmod +x android/gradlew
-          flutter build apk --release \
-          --dart-define=GEMINI_API_KEY="${{ secrets.GEMINI_AI_API_KEY }}" \
-          --dart-define=ADMIN_LOGIN_EMAILS="${{ secrets.ADMIN_LOGIN_EMAILS }}" \
-          --dart-define=ADMIN_LOGIN_PASSWORD="${{ secrets.ADMIN_LOGIN_PASSWORD }}"
+          flutter build apk --release --dart-define=GEMINI_AI_API_KEY="${{ secrets.GEMINI_AI_API_KEY }}" --dart-define=ADMIN_LOGIN_EMAILS="${{ secrets.ADMIN_LOGIN_EMAILS }}" --dart-define=ADMIN_LOGIN_PASSWORD='${{ secrets.ADMIN_LOGIN_PASSWORD }}'
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
