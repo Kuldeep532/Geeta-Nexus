@@ -52,7 +52,10 @@ jobs:
           ADMIN_PASSWORD_DATA: ${{ secrets.ADMIN_LOGIN_PASSWORD }}
         run: |
           chmod +x android/gradlew
-          flutter build apk --release --dart-define=GEMINI_API_KEY="$GEMINI_AI_API_KEY" --dart-define=ADMIN_LOGIN_EMAILS="$ADMIN_EMAILS_DATA" --dart-define=ADMIN_LOGIN_PASSWORD="$ADMIN_PASSWORD_DATA"
+          flutter build apk --release \
+            --dart-define=GEMINI_API_KEY="$GEMINI_AI_API_KEY" \
+            --dart-define=ADMIN_LOGIN_EMAILS="$ADMIN_EMAILS_DATA" \
+            --dart-define=ADMIN_LOGIN_PASSWORD="$ADMIN_PASSWORD_DATA"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
