@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -7,7 +9,7 @@ import '../state/app_state.dart';
 import '../theme.dart';
 import 'admin_dashboard_screen.dart';
 
-import ProfileScreen extends StatefulWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
@@ -16,199 +18,474 @@ import ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = false;
-  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
-  // Login Handle karne ka naya function
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
   Future<void> _handleLogin(BuildContext context) async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser != null) {
-        final state = Provider.of<AppState>(context, listen: false);
-        state.updateGoogleAccount(
-          name: googleUser.displayName ?? 'Seeker', 
-          email: googleUser.email
-        );
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Safaltapurvak login ho gaya!')),
-          );
-        }
+      final GoogleSignInAccount? googleUser =
+          await _googleSignIn.signIn();
+
+      if (googleUser == null) {
+        setState(() => _isLoading = false);
+        return;
       }
-    } catch (e) {
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final userCredential =
+          await _auth.signInWithCredential(credential);
+
+      final user = userCredential.user;
+
+      if (user == null) return;
+
+      bool isAdmin = false;
+      bool isSuperAdmin = false;
+
+      final adminDoc = await FirebaseFirestore.instance
+          .collection('admins')
+          .doc(user.email)
+          .get();
+
+      final superAdminDoc = await FirebaseFirestore.instance
+          .collection('superadmins')
+          .doc(user.email)
+          .get();
+
+      isAdmin = adminDoc.exists;
+      isSuperAdmin = superAdminDoc.exists;
+
+      final state =
+          Provider.of<AppState>(context, listen: false);
+
+      state.updateGoogleAccount(
+        name: user.displayName ?? 'Seeker',
+        email: user.email ?? '',
+      );
+
+      state.setAdmin(isAdmin);
+      state.setSuperAdmin(isSuperAdmin);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login nahi ho paya: $e')),
+          SnackBar(
+            content: Text(
+              'Welcome ${user.displayName}',
+            ),
+          ),
         );
       }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Login failed: $e'),
+        ),
+      );
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   Future<void> _handleLogout(BuildContext context) async {
-    setState(() => _isLoading = true);
-    try {
-      await _googleSignIn.signOut();
-      final state = Provider.of<AppState>(context, listen: false);
-      state.updateGoogleAccount(name: '', email: '');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Safaltapurvak logout ho gaya.')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    await _googleSignIn.signOut();
+    await _auth.signOut();
+
+    final state =
+        Provider.of<AppState>(context, listen: false);
+
+    state.updateGoogleAccount(
+      name: '',
+      email: '',
+    );
+
+    state.setAdmin(false);
+    state.setSuperAdmin(false);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Logged out successfully'),
+        ),
+      );
     }
   }
 
-  Future<void> _editNameDialog(BuildContext context, AppState state) async {
-    final ctrl = TextEditingController(text: state.userName.isEmpty ? 'Seeker' : state.userName);
-    final updated = await showDialog<String>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Edit Name'),
-        content: TextField(
-          controller: ctrl,
-          autofocus: true,
-          textInputAction: TextInputAction.done,
-          decoration: const InputDecoration(labelText: 'Display Name'),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, ctrl.text.trim()), child: const Text('Save')),
-        ],
-      ),
+  Future<void> _editNameDialog(
+    BuildContext context,
+    AppState state,
+  ) async {
+    final controller = TextEditingController(
+      text: state.userName.isEmpty
+          ? 'Seeker'
+          : state.userName,
     );
 
-    if (!mounted || updated == null || updated.isEmpty) return;
-    state.setUserName(updated);
+    final updatedName = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Edit Name'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            textInputAction: TextInputAction.done,
+            decoration: const InputDecoration(
+              labelText: 'Display Name',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(
+                  ctx,
+                  controller.text.trim(),
+                );
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (!mounted ||
+        updatedName == null ||
+        updatedName.isEmpty) {
+      return;
+    }
+
+    state.setUserName(updatedName);
+
     if (state.userEmail.isNotEmpty) {
-      state.updateGoogleAccount(name: updated, email: state.userEmail);
+      state.updateGoogleAccount(
+        name: updatedName,
+        email: state.userEmail,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
+
     final theme = Theme.of(context);
-    final accentColor = kGold;
-    final bool isSuperAdmin = state.isSuperAdmin;
+
     final bool isAdmin = state.isAdmin;
-    final bool isLoggedIn = state.userEmail.isNotEmpty;
+    final bool isSuperAdmin = state.isSuperAdmin;
+    final bool isLoggedIn =
+        state.userEmail.isNotEmpty;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor:
+          theme.scaffoldBackgroundColor,
+
       appBar: AppBar(
-        // FIXED: Title ko proper Semantic Heading banaya
+        elevation: 0,
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+
         title: Semantics(
           header: true,
-          label: 'Profile Hub Screen',
           child: Text(
-            'Profile Hub', 
-            style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, color: accentColor)
+            'Profile Hub',
+            style: GoogleFonts.cinzel(
+              color: kGold,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1,
+            ),
           ),
         ),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: Colors.transparent,
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-        children: [
-          _buildInfoCard(state, accentColor, theme, isSuperAdmin, isAdmin),
-          const SizedBox(height: 32),
-          
-          _buildSectionTitle('YOUR PROGRESS', accentColor),
-          _buildStatRow(Icons.bolt, 'Level', '${state.level}', accentColor),
-          _buildStatRow(Icons.local_fire_department, 'Streak', '${state.streak} Days', Colors.orange),
-          
-          if (isAdmin) ...[
-            const SizedBox(height: 32),
-            _buildSectionTitle('ADMIN CONTROLS', accentColor),
-            _buildAdminDashboardEntry(context, accentColor),
-          ],
-          const SizedBox(height: 32),
-          
-          // Dynamic Auth Button toggle
-          _buildAuthButton(context, isLoggedIn, accentColor),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildSectionTitle(String title, Color color) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      // FIXED: Headers ko real heading node banaya taaki screen reader user skip kar sakein
-      child: Semantics(
-        header: true,
-        label: '$title Section',
-        excludeSemantics: true,
-        child: Text(
-          title, 
-          style: GoogleFonts.cinzel(fontSize: 12, fontWeight: FontWeight.bold, color: color, letterSpacing: 1.2)
+      body: SafeArea(
+        child: FocusTraversalGroup(
+          child: ListView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 20,
+            ),
+
+            children: [
+              _buildProfileCard(
+                context,
+                state,
+                isAdmin,
+                isSuperAdmin,
+              ),
+
+              const SizedBox(height: 32),
+
+              _buildSectionTitle(
+                'Your Progress',
+              ),
+
+              _buildStatTile(
+                icon: Icons.bolt,
+                label: 'Level',
+                value: '${state.level}',
+              ),
+
+              const SizedBox(height: 14),
+
+              _buildStatTile(
+                icon:
+                    Icons.local_fire_department,
+                label: 'Streak',
+                value:
+                    '${state.streak} Days',
+              ),
+
+              if (isAdmin ||
+                  isSuperAdmin) ...[
+                const SizedBox(height: 32),
+
+                _buildSectionTitle(
+                  'Admin Controls',
+                ),
+
+                _buildAdminCard(context),
+              ],
+
+              const SizedBox(height: 40),
+
+              _buildAuthButton(
+                context,
+                isLoggedIn,
+              ),
+
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildInfoCard(AppState state, Color gold, ThemeData theme, bool isSuper, bool isAdmin) {
-    String roleLabel = 'SEEKER';
-    Color roleColor = Colors.grey;
-    if (isSuper) {
-      roleLabel = 'SUPER ADMIN';
-      roleColor = Colors.redAccent;
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(
+        bottom: 18,
+      ),
+      child: Semantics(
+        header: true,
+        child: Text(
+          title,
+          style: GoogleFonts.cinzel(
+            color: kGold,
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            letterSpacing: 1.2,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileCard(
+    BuildContext context,
+    AppState state,
+    bool isAdmin,
+    bool isSuperAdmin,
+  ) {
+    String role = 'SEEKER';
+
+    if (isSuperAdmin) {
+      role = 'SUPER ADMIN';
     } else if (isAdmin) {
-      roleLabel = 'ADMIN';
-      roleColor = gold;
+      role = 'ADMIN';
     }
 
-    final String nameToDisplay = state.userName.isEmpty ? 'Guest Seeker' : state.userName;
+    final String displayName =
+        state.userName.isEmpty
+            ? 'Guest Seeker'
+            : state.userName;
 
     return Semantics(
       container: true,
-      label: 'Profile Info Card. User Name: $nameToDisplay. Account Role: $roleLabel.',
-      excludeSemantics: true,
+      label:
+          'User profile card. Name $displayName. Role $role.',
       child: Container(
         padding: const EdgeInsets.all(24),
+
         decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: gold.withOpacity(0.2)),
+          color: Theme.of(context).cardColor,
+
+          borderRadius:
+              BorderRadius.circular(24),
+
+          border: Border.all(
+            color: kGold.withOpacity(0.15),
+          ),
+
+          boxShadow: [
+            BoxShadow(
+              blurRadius: 18,
+              spreadRadius: 1,
+              color: Colors.black.withOpacity(
+                0.18,
+              ),
+            ),
+          ],
         ),
+
         child: Column(
           children: [
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: gold.withOpacity(0.1),
-              child: Text(
-                state.userName.isNotEmpty ? state.userName[0].toUpperCase() : 'G', 
-                style: TextStyle(color: gold, fontSize: 30, fontWeight: FontWeight.bold)
+            Semantics(
+              image: true,
+              label:
+                  'Profile avatar for $displayName',
+              child: CircleAvatar(
+                radius: 42,
+                backgroundColor:
+                    kGold.withOpacity(0.12),
+
+                child: Text(
+                  displayName[0]
+                      .toUpperCase(),
+
+                  style: TextStyle(
+                    color: kGold,
+                    fontWeight:
+                        FontWeight.bold,
+                    fontSize: 30,
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 16),
-            Text(nameToDisplay, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
+
+            const SizedBox(height: 20),
+
+            Text(
+              displayName,
+              textAlign: TextAlign.center,
+
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                height: 1.4,
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 8,
+              ),
+
+              decoration: BoxDecoration(
+                borderRadius:
+                    BorderRadius.circular(30),
+
+                border: Border.all(
+                  color:
+                      kGold.withOpacity(0.3),
+                ),
+              ),
+
+              child: Semantics(
+                label: 'Account role $role',
+                child: Text(
+                  role,
+
+                  style:
+                      GoogleFonts.poppins(
+                    fontSize: 12,
+                    fontWeight:
+                        FontWeight.w700,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
             Semantics(
               button: true,
-              label: 'Edit Name Button',
-              hint: 'Double tap to change your profile name',
+              label: 'Edit profile name',
+              hint:
+                  'Double tap to change your display name',
+
               child: OutlinedButton.icon(
-                onPressed: () => _editNameDialog(context, state),
-                icon: const Icon(Icons.edit),
-                label: const Text('Edit name'),
+                onPressed: () {
+                  _editNameDialog(
+                    context,
+                    state,
+                  );
+                },
+
+                icon: ExcludeSemantics(
+                  child: Icon(
+                    Icons.edit,
+                    color: kGold,
+                  ),
+                ),
+
+                label: Text(
+                  'Edit Name',
+                  style:
+                      GoogleFonts.poppins(
+                    fontWeight:
+                        FontWeight.w600,
+                  ),
+                ),
+
+                style:
+                    OutlinedButton.styleFrom(
+                  minimumSize:
+                      const Size(
+                    double.infinity,
+                    56,
+                  ),
+
+                  padding:
+                      const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 16,
+                  ),
+
+                  shape:
+                      RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.circular(
+                      18,
+                    ),
+                  ),
+
+                  side: BorderSide(
+                    color:
+                        kGold.withOpacity(
+                      0.4,
+                    ),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              decoration: BoxDecoration(
-                color: roleColor.withOpacity(0.1), 
-                borderRadius: BorderRadius.circular(20), 
-                border: Border.all(color: roleColor.withOpacity(0.5))
-              ),
-              child: Text(roleLabel, style: TextStyle(color: roleColor, fontSize: 10, fontWeight: FontWeight.bold)),
             ),
           ],
         ),
@@ -216,71 +493,241 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildStatRow(IconData icon, String label, String value, Color color) {
+  Widget _buildStatTile({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
     return Semantics(
-      label: '$label state is $value',
-      excludeSemantics: true,
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: Row(
-          children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(width: 12),
-            Text(label, style: const TextStyle(fontSize: 15)),
-            const Spacer(),
-            Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-          ],
-        ),
-      ),
-    );
-  }
+      label: '$label value is $value',
 
-  Widget _buildAdminDashboardEntry(BuildContext context, Color color) {
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Semantics(
-        button: true,
-        label: 'Admin Controls Dashboard',
-        hint: 'Double tap to manage notifications and security settings',
-        excludeSemantics: true,
-        child: ListTile(
-          leading: Icon(Icons.admin_panel_settings, color: color),
-          title: const Text('Open admin dashboard'),
-          subtitle: const Text('Manage notifications, security, and lifestyle controls'),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 18,
+        ),
+
+        decoration: BoxDecoration(
+          borderRadius:
+              BorderRadius.circular(18),
+
+          border: Border.all(
+            color: kGold.withOpacity(0.1),
           ),
         ),
+
+        child: Row(
+          children: [
+            ExcludeSemantics(
+              child: Icon(
+                icon,
+                color: kGold,
+                size: 24,
+              ),
+            ),
+
+            const SizedBox(width: 16),
+
+            Expanded(
+              child: Text(
+                label,
+
+                style:
+                    GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight:
+                      FontWeight.w500,
+                  height: 1.5,
+                ),
+              ),
+            ),
+
+            Text(
+              value,
+
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                fontWeight:
+                    FontWeight.w700,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildAuthButton(BuildContext context, bool isLoggedIn, Color color) {
+  Widget _buildAdminCard(
+      BuildContext context) {
     return Semantics(
       button: true,
-      label: _isLoading 
-          ? (isLoggedIn ? 'Logging out process active' : 'Logging in process active')
-          : (isLoggedIn ? 'Logout Button' : 'Login with Google Button'),
-      excludeSemantics: true,
-      child: ElevatedButton.icon(
-        onPressed: _isLoading 
-            ? null 
-            : () => isLoggedIn ? _handleLogout(context) : _handleLogin(context),
-        icon: _isLoading 
-            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black)) 
-            : Icon(isLoggedIn ? Icons.logout : Icons.login),
-        label: Text(
-          _isLoading 
-              ? (isLoggedIn ? 'Logging out...' : 'Logging in...') 
-              : (isLoggedIn ? 'Logout' : 'Login with Google')
+      label: 'Open admin dashboard',
+      hint:
+          'Double tap to manage admin settings',
+
+      child: Card(
+        margin: EdgeInsets.zero,
+
+        shape: RoundedRectangleBorder(
+          borderRadius:
+              BorderRadius.circular(22),
         ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color, 
-          foregroundColor: Colors.black, 
-          minimumSize: const Size.fromHeight(48),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+
+        child: ListTile(
+          contentPadding:
+              const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 12,
+          ),
+
+          leading: ExcludeSemantics(
+            child: Icon(
+              Icons.admin_panel_settings,
+              color: kGold,
+            ),
+          ),
+
+          title: Text(
+            'Admin Dashboard',
+
+            style: GoogleFonts.poppins(
+              fontWeight:
+                  FontWeight.w600,
+              height: 1.4,
+            ),
+          ),
+
+          subtitle: Text(
+            'Manage notifications, security and controls',
+
+            style: GoogleFonts.poppins(
+              fontSize: 13,
+              height: 1.5,
+            ),
+          ),
+
+          trailing: const ExcludeSemantics(
+            child: Icon(
+              Icons.chevron_right,
+            ),
+          ),
+
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    const AdminDashboardScreen(),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAuthButton(
+    BuildContext context,
+    bool isLoggedIn,
+  ) {
+    return Semantics(
+      button: true,
+      enabled: !_isLoading,
+
+      label: isLoggedIn
+          ? 'Logout from account'
+          : 'Login using Google account',
+
+      hint: isLoggedIn
+          ? 'Double tap to logout'
+          : 'Double tap to sign in',
+
+      child: SizedBox(
+        width: double.infinity,
+        height: 58,
+
+        child: ElevatedButton.icon(
+          onPressed: _isLoading
+              ? null
+              : () {
+                  if (isLoggedIn) {
+                    _handleLogout(
+                      context,
+                    );
+                  } else {
+                    _handleLogin(
+                      context,
+                    );
+                  }
+                },
+
+          icon: _isLoading
+              ? Semantics(
+                  liveRegion: true,
+                  label:
+                      'Authentication loading',
+
+                  child:
+                      const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child:
+                        CircularProgressIndicator(
+                      strokeWidth: 2,
+                    ),
+                  ),
+                )
+              : ExcludeSemantics(
+                  child: Icon(
+                    isLoggedIn
+                        ? Icons.logout
+                        : Icons.login,
+                  ),
+                ),
+
+          label: Text(
+            _isLoading
+                ? 'Please wait...'
+                : isLoggedIn
+                    ? 'Logout'
+                    : 'Continue with Google',
+
+            style: GoogleFonts.poppins(
+              fontSize: 16,
+              fontWeight:
+                  FontWeight.w600,
+              height: 1.3,
+            ),
+          ),
+
+          style:
+              ElevatedButton.styleFrom(
+            backgroundColor: kGold,
+
+            foregroundColor: Colors.black,
+
+            elevation: 0,
+
+            minimumSize: const Size(
+              double.infinity,
+              58,
+            ),
+
+            padding:
+                const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 16,
+            ),
+
+            shape:
+                RoundedRectangleBorder(
+              borderRadius:
+                  BorderRadius.circular(
+                18,
+              ),
+            ),
+          ),
         ),
       ),
     );
