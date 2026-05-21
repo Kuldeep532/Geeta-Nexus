@@ -1,13 +1,14 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-// --- Saare Imports Wapas ---
+// --- Imports ---
 import '../theme.dart';
 import '../state/app_state.dart';
-import '../models/models.dart'; 
+import '../models/models.dart';
 import 'search_screen.dart';
 import '../models/scripture_model.dart';
 import 'scripture_verse_detail_screen.dart';
@@ -32,20 +33,330 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // Yahan aapke saare features ka logic rahega
-  // ... (Baaki code jismein aapne Navigation setup kiya tha)
-  
-  // Yaad rakhein: Navigation ke liye aap Navigator.push(context, MaterialPageRoute(builder: (_) => ScreenName())) use karte rahenge.
-  
+  final FlutterTts _flutterTts = FlutterTts();
+
+  final List<_FeatureItem> _features = [
+    _FeatureItem(
+      title: 'Scripture Library',
+      subtitle: 'Explore verses and teachings',
+      icon: Icons.menu_book_rounded,
+      screen: const ScriptureLibraryScreen(),
+    ),
+    _FeatureItem(
+      title: 'Meditation',
+      subtitle: 'Relax your mind with guided sessions',
+      icon: Icons.self_improvement_rounded,
+      screen: const MeditationScreen(),
+    ),
+    _FeatureItem(
+      title: 'Breathing Practice',
+      subtitle: 'Improve calmness and focus',
+      icon: Icons.air_rounded,
+      screen: const BreathingScreen(),
+    ),
+    _FeatureItem(
+      title: 'Affirmations',
+      subtitle: 'Daily positive affirmations',
+      icon: Icons.favorite_rounded,
+      screen: const AffirmationsScreen(),
+    ),
+    _FeatureItem(
+      title: 'Bookmarks',
+      subtitle: 'Quick access to saved content',
+      icon: Icons.bookmark_rounded,
+      screen: const BookmarksScreen(),
+    ),
+    _FeatureItem(
+      title: 'Reading Plan',
+      subtitle: 'Track your spiritual journey',
+      icon: Icons.checklist_rounded,
+      screen: const ReadingPlanScreen(),
+    ),
+    _FeatureItem(
+      title: 'Wisdom Cards',
+      subtitle: 'Get daily wisdom inspiration',
+      icon: Icons.style_rounded,
+      screen: const WisdomCardsScreen(),
+    ),
+    _FeatureItem(
+      title: 'Journal',
+      subtitle: 'Write your thoughts and reflections',
+      icon: Icons.edit_note_rounded,
+      screen: const JournalScreen(),
+    ),
+    _FeatureItem(
+      title: 'Glossary',
+      subtitle: 'Understand spiritual terms',
+      icon: Icons.translate_rounded,
+      screen: const GlossaryScreen(),
+    ),
+    _FeatureItem(
+      title: 'Astrology',
+      subtitle: 'Discover cosmic insights',
+      icon: Icons.auto_awesome_rounded,
+      screen: const AstrologyScreen(),
+    ),
+    _FeatureItem(
+      title: 'Chants',
+      subtitle: 'Listen and practice chants',
+      icon: Icons.music_note_rounded,
+      screen: const ChantsScreen(),
+    ),
+    _FeatureItem(
+      title: 'Voice Practice',
+      subtitle: 'Practice pronunciation and recitation',
+      icon: Icons.record_voice_over_rounded,
+      screen: const GeetaVoicePracticeScreen(),
+    ),
+  ];
+
+  @override
+  void dispose() {
+    _flutterTts.stop();
+    super.dispose();
+  }
+
+  Future<void> _speak(String text) async {
+    await _flutterTts.setLanguage('en-US');
+    await _flutterTts.setSpeechRate(0.45);
+    await _flutterTts.speak(text);
+  }
+
+  void _navigateTo(Widget screen) {
+    HapticFeedback.lightImpact();
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Yahan saare buttons aur cards hain jo alag-alag screens ko call karte hain
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          // Yahan aapke saare Screen Cards wapas aa jayenge
-        ],
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: SafeArea(
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverAppBar(
+              pinned: true,
+              expandedHeight: 120,
+              elevation: 0,
+              backgroundColor: theme.scaffoldBackgroundColor,
+              flexibleSpace: FlexibleSpaceBar(
+                titlePadding: const EdgeInsetsDirectional.only(
+                  start: 20,
+                  bottom: 16,
+                ),
+                title: Semantics(
+                  header: true,
+                  child: Text(
+                    'Spiritual Home',
+                    style: GoogleFonts.poppins(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: theme.colorScheme.onBackground,
+                    ),
+                  ),
+                ),
+              ),
+              actions: [
+                Semantics(
+                  button: true,
+                  label: 'Search spiritual content',
+                  child: IconButton(
+                    tooltip: 'Search',
+                    icon: const Icon(Icons.search_rounded),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SearchScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        'Daily Guidance',
+                        style: GoogleFonts.poppins(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Text(
+                      'Choose a spiritual practice to continue your journey.',
+                      style: GoogleFonts.poppins(
+                        fontSize: 14,
+                        height: 1.4,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _features.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 1.02,
+                      ),
+                      itemBuilder: (context, index) {
+                        final item = _features[index];
+
+                        return Semantics(
+                          button: true,
+                          label: item.title,
+                          hint: item.subtitle,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(18),
+                            onTap: () => _navigateTo(item.screen),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 220),
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(18),
+                                color: isDark
+                                    ? Colors.white.withOpacity(0.05)
+                                    : Colors.white,
+                                border: Border.all(
+                                  color:
+                                      theme.dividerColor.withOpacity(0.12),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                    color:
+                                        Colors.black.withOpacity(0.04),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      borderRadius:
+                                          BorderRadius.circular(14),
+                                      color: theme.colorScheme.primary
+                                          .withOpacity(0.10),
+                                    ),
+                                    child: Icon(
+                                      item.icon,
+                                      size: 24,
+                                      color:
+                                          theme.colorScheme.primary,
+                                    ),
+                                  ),
+
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.title,
+                                        maxLines: 2,
+                                        overflow:
+                                            TextOverflow.ellipsis,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 14,
+                                          fontWeight:
+                                              FontWeight.w600,
+                                        ),
+                                      ),
+
+                                      const SizedBox(height: 4),
+
+                                      Text(
+                                        item.subtitle,
+                                        maxLines: 2,
+                                        overflow:
+                                            TextOverflow.ellipsis,
+                                        style: GoogleFonts.poppins(
+                                          fontSize: 11.5,
+                                          color: theme.colorScheme
+                                              .onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: Semantics(
+                                      button: true,
+                                      label:
+                                          'Listen to ${item.title}',
+                                      child: IconButton(
+                                        tooltip:
+                                            'Speak ${item.title}',
+                                        icon: const Icon(
+                                          Icons.volume_up_rounded,
+                                          size: 20,
+                                        ),
+                                        onPressed: () {
+                                          _speak(item.title);
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+class _FeatureItem {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Widget screen;
+
+  const _FeatureItem({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.screen,
+  });
 }
