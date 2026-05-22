@@ -1,15 +1,22 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import 'package:http/http.dart' as http;
-import 'package:audioplayers/audioplayers.dart';
+
+import 'package:just_audio/just_audio.dart';
+import 'package:just_audio_background/just_audio_background.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:string_similarity/string_similarity.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
-import '../theme.dart'; 
+import '../theme.dart';
 import '../state/app_state.dart';
 
 const int kMalaBeads = 108;
@@ -22,267 +29,513 @@ class ChantsScreen extends StatefulWidget {
 }
 
 class _ChantsScreenState extends State<ChantsScreen> {
-  int _selectedMantraIndex = 0;
-  late Future<List<Map<String, String>>> _mantraFuture;
-  
-  final AudioPlayer _mantraPlayer = AudioPlayer();
-  final AudioPlayer _bgMusicPlayer = AudioPlayer();
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  final FlutterTts _tts = FlutterTts();
   final stt.SpeechToText _speech = stt.SpeechToText();
-  
-  bool _isBgMusicPlaying = false;
-  bool _isVoiceModeActive = false;
 
-  final String _shantiMusicUrl = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3";
+  bool _isVoiceMode = false;
+  bool _isPlaying = false;
+  bool _isLoading = true;
 
-  final List<Map<String, String>> _localMantras = const [
-    {
-      'name': 'Mahamantra',
-      'mantra': 'Hare Krishna Hare Krishna Krishna Krishna Hare Hare, Hare Rama Hare Rama Rama Rama Hare Hare',
-      'meaning': 'A prayer to the Divine Energy for universal peace and consciousness.',
-      'audio': 'https://www.learningu.org/wp-content/uploads/2023/05/Hare-Krishna-Maha-Mantra.mp3'
-    },
-  ];
+  int _selectedIndex = 0;
+
+  List<Map<String, dynamic>> _mantras = [];
 
   @override
   void initState() {
     super.initState();
-    _mantraFuture = _fetchOnlineMantras();
-    WakelockPlus.enable(); 
+    _initializeAudio();
+    _loadMantras();
+    WakelockPlus.enable();
   }
 
-  @override
-  void dispose() {
-    _mantraPlayer.dispose();
-    _bgMusicPlayer.dispose();
-    _speech.stop();
-    WakelockPlus.disable();
-    super.dispose();
+  Future<void> _initializeAudio() async {
+    await JustAudioBackground.init(
+      androidNotificationChannelId: 'chants.audio.channel',
+      androidNotificationChannelName: 'Chants Playback',
+      androidNotificationOngoing: true,
+    );
   }
 
-  Future<List<Map<String, String>>> _fetchOnlineMantras() async {
-    final url = Uri.parse('https://havyaka-rest-api-gaonkarbhai.vercel.app/api/v1/mantras?limit=100');
+  Future<void> _loadMantras() async {
     try {
-      final response = await http.get(url);
+      final connectivity = await Connectivity().checkConnectivity();
+
+      if (connectivity == ConnectivityResult.none) {
+        _loadOfflineMantras();
+        return;
+      }
+
+      final response = await http
+          .get(
+            Uri.parse(
+              'https://havyaka-rest-api-gaonkarbhai.vercel.app/api/v1/mantras?limit=500',
+            ),
+          )
+          .timeout(const Duration(seconds: 15));
+
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
+        final data = jsonDecode(response.body);
+
         final List<dynamic> list = data['mantras'];
-        return list.map((m) => {
-          'name': m['name']?.toString() ?? 'Unknown',
-          'mantra': m['shloka']?.toString() ?? '',
-          'meaning': (m['purpose'] ?? m['benefits'] ?? 'Sacred Chant').toString(),
-          'audio': 'https://www.learningu.org/wp-content/uploads/2023/05/Hare-Krishna-Maha-Mantra.mp3'
+
+        _mantras = list.map((m) {
+          return {
+            'name': m['name'] ?? 'Unknown',
+            'mantra': m['shloka'] ?? '',
+            'meaning': m['purpose'] ?? 'Sacred Mantra',
+            'audio': m['audio'] ??
+                'https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3',
+          };
         }).toList();
+      } else {
+        _loadOfflineMantras();
       }
     } catch (e) {
-      debugPrint("API Error: $e");
+      _loadOfflineMantras();
     }
-    return _localMantras;
+
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
-  void _toggleVoiceMode(AppState state, String mantraName) async {
-    if (!_isVoiceModeActive) {
+  void _loadOfflineMantras() {
+    _mantras = [
+      {
+        'name': 'Maha Mantra',
+        'mantra':
+            'Hare Krishna Hare Krishna Krishna Krishna Hare Hare Hare Rama Hare Rama Rama Rama Hare Hare',
+        'meaning': 'Prayer for divine consciousness',
+        'audio':
+            'https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3',
+      },
+    ];
+  }
+
+  Future<void> _playAudio() async {
+    try {
+      final mantra = _mantras[_selectedIndex];
+
+      await _audioPlayer.setAudioSource(
+        ConcatenatingAudioSource(
+          children: [
+            AudioSource.uri(Uri.parse(mantra['audio'])),
+          ],
+        ),
+      );
+
+      await _audioPlayer.setLoopMode(LoopMode.all);
+
+      await _audioPlayer.play();
+
+      setState(() {
+        _isPlaying = true;
+      });
+    } catch (e) {
+      _showError('Audio playback failed');
+    }
+  }
+
+  Future<void> _pauseAudio() async {
+    await _audioPlayer.pause();
+
+    setState(() {
+      _isPlaying = false;
+    });
+  }
+
+  Future<void> _speakMeaning() async {
+    final mantra = _mantras[_selectedIndex];
+
+    await _tts.speak(
+      mantra['meaning'] ?? 'No meaning available',
+    );
+  }
+
+  Future<void> _toggleVoiceMode(AppState state) async {
+    if (!_isVoiceMode) {
       bool available = await _speech.initialize();
-      if (available) {
-        setState(() => _isVoiceModeActive = true);
-        _speech.listen(
-          onResult: (result) {
-            String words = result.recognizedWords.toLowerCase();
-            if (words.contains(mantraName.split(' ')[0].toLowerCase())) {
-              _incrementChant(state);
-            }
-          }
-        );
-      }
-    } else {
-      setState(() => _isVoiceModeActive = false);
-      _speech.stop();
-    }
-  }
 
-  void _toggleBgMusic() async {
-    if (_isBgMusicPlaying) {
-      await _bgMusicPlayer.pause();
+      if (!available) {
+        _showError('Speech recognition unavailable');
+        return;
+      }
+
+      setState(() {
+        _isVoiceMode = true;
+      });
+
+      _speech.listen(
+        onResult: (result) {
+          final spoken = result.recognizedWords.toLowerCase();
+
+          final mantraName = _mantras[_selectedIndex]['name']
+              .toString()
+              .toLowerCase();
+
+          final similarity =
+              spoken.similarityTo(mantraName);
+
+          if (similarity > 0.4) {
+            _incrementChant(state);
+          }
+        },
+      );
     } else {
-      await _bgMusicPlayer.play(UrlSource(_shantiMusicUrl), volume: 0.3);
-      _bgMusicPlayer.setReleaseMode(ReleaseMode.loop);
+      await _speech.stop();
+
+      setState(() {
+        _isVoiceMode = false;
+      });
     }
-    setState(() => _isBgMusicPlaying = !_isBgMusicPlaying);
   }
 
   void _incrementChant(AppState state) {
     HapticFeedback.mediumImpact();
+
+    SystemSound.play(SystemSoundType.click);
+
     state.incrementJapa();
-    final count = state.japaCount % kMalaBeads;
-    if (count == 0 && state.japaCount > 0) {
+
+    if (state.japaCount % kMalaBeads == 0 &&
+        state.japaCount > 0) {
       HapticFeedback.heavyImpact();
-    } 
+
+      _tts.speak('One round completed');
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    _speech.stop();
+    _tts.stop();
+    WakelockPlus.disable();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final goldColor = kGold; 
     final appState = context.watch<AppState>();
-    final japa = appState.japaCount;
+
+    final gold = kGold;
+
+    final currentBead =
+        appState.japaCount % kMalaBeads;
+
+    final rounds =
+        appState.japaCount ~/ kMalaBeads;
+
+    if (_isLoading) {
+      return Scaffold(
+        body: Center(
+          child: Semantics(
+            label: 'Loading mantras',
+            child: const CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+
+    final mantra = _mantras[_selectedIndex];
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor:
+          Theme.of(context).scaffoldBackgroundColor,
+
       appBar: AppBar(
-        title: Text('Japa & Chants', style: GoogleFonts.cinzel(color: goldColor, fontWeight: FontWeight.bold)),
+        title: Text(
+          'Accessible Japa',
+          style: GoogleFonts.cinzel(),
+        ),
+
         actions: [
-          IconButton(
-            icon: Icon(_isBgMusicPlaying ? Icons.music_note : Icons.music_off, color: goldColor),
-            onPressed: _toggleBgMusic,
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () => appState.resetJapa(),
+          Semantics(
+            label: 'Reset counter',
+            button: true,
+            child: IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () {
+                appState.resetJapa();
+              },
+            ),
           ),
         ],
       ),
-      body: FutureBuilder<List<Map<String, String>>>(
-        future: _mantraFuture,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
-          final mantras = snapshot.data!;
-          final mantra = mantras[_selectedMantraIndex];
+      body: SafeArea(
+        child: FocusTraversalGroup(
+          child: CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.all(16),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate(
+                    [
+                      SizedBox(
+                        height: 60,
+                        child: ListView.builder(
+                          scrollDirection:
+                              Axis.horizontal,
+                          itemCount: _mantras.length,
+                          itemBuilder: (context, index) {
+                            final selected =
+                                _selectedIndex ==
+                                    index;
 
-          return SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  _buildSelector(mantras, theme, goldColor),
-                  const SizedBox(height: 20),
-                  _buildMantraCard(mantra, theme, goldColor),
-                  const SizedBox(height: 40),
-                  _buildCounterDisplay(japa, goldColor),
-                  const SizedBox(height: 24),
-                  _buildProgress(japa % kMalaBeads, goldColor, theme),
-                  const SizedBox(height: 40),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 70,
-                    child: ElevatedButton.icon(
-                      onPressed: () => _incrementChant(appState),
-                      icon: const Icon(Icons.add_circle_outline),
-                      label: const Text('MANUAL CHANT', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: goldColor,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.only(
+                                right: 8,
+                              ),
+                              child: Semantics(
+                                label:
+                                    _mantras[index]
+                                        ['name'],
+                                selected: selected,
+                                child: ChoiceChip(
+                                  label: Text(
+                                    _mantras[index]
+                                        ['name'],
+                                  ),
+                                  selected:
+                                      selected,
+                                  onSelected: (_) {
+                                    setState(() {
+                                      _selectedIndex =
+                                          index;
+                                    });
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ),
-                    ),
+
+                      const SizedBox(height: 20),
+
+                      Card(
+                        shape:
+                            RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(
+                            20,
+                          ),
+                          side: BorderSide(
+                            color: gold,
+                          ),
+                        ),
+                        child: Padding(
+                          padding:
+                              const EdgeInsets.all(
+                            20,
+                          ),
+                          child: Column(
+                            children: [
+                              Semantics(
+                                label:
+                                    'Current mantra',
+                                child: Text(
+                                  mantra['mantra'],
+                                  textAlign:
+                                      TextAlign
+                                          .center,
+                                  style:
+                                      GoogleFonts
+                                          .notoSansDevanagari(
+                                    fontSize: 24,
+                                    fontWeight:
+                                        FontWeight
+                                            .bold,
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(
+                                height: 20,
+                              ),
+
+                              Text(
+                                mantra['meaning'],
+                                textAlign:
+                                    TextAlign.center,
+                              ),
+
+                              const SizedBox(
+                                height: 20,
+                              ),
+
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment
+                                        .center,
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      _isPlaying
+                                          ? Icons
+                                              .pause
+                                          : Icons
+                                              .play_arrow,
+                                    ),
+                                    onPressed: () {
+                                      if (_isPlaying) {
+                                        _pauseAudio();
+                                      } else {
+                                        _playAudio();
+                                      }
+                                    },
+                                  ),
+
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.volume_up,
+                                    ),
+                                    onPressed:
+                                        _speakMeaning,
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      Semantics(
+                        label:
+                            'Current bead count',
+                        value:
+                            '$currentBead completed',
+                        child: Column(
+                          children: [
+                            Text(
+                              'Rounds: $rounds',
+                              style: TextStyle(
+                                fontSize: 22,
+                                color: gold,
+                                fontWeight:
+                                    FontWeight.bold,
+                              ),
+                            ),
+
+                            const SizedBox(
+                              height: 20,
+                            ),
+
+                            Container(
+                              width: 180,
+                              height: 180,
+                              decoration:
+                                  BoxDecoration(
+                                shape:
+                                    BoxShape.circle,
+                                border:
+                                    Border.all(
+                                  color: gold,
+                                  width: 5,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '$currentBead',
+                                  style:
+                                      const TextStyle(
+                                    fontSize: 50,
+                                    fontWeight:
+                                        FontWeight
+                                            .bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 30),
+
+                      Semantics(
+                        label:
+                            'Chant progress',
+                        value:
+                            '$currentBead out of $kMalaBeads',
+                        child:
+                            LinearProgressIndicator(
+                          value:
+                              currentBead /
+                                  kMalaBeads,
+                          minHeight: 12,
+                          color: gold,
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      Semantics(
+                        label:
+                            'Manual chant button',
+                        hint:
+                            'Tap to increase chant count',
+                        button: true,
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 70,
+                          child:
+                              ElevatedButton.icon(
+                            icon: const Icon(
+                              Icons.add,
+                            ),
+                            label: const Text(
+                              'CHANT',
+                            ),
+                            onPressed: () {
+                              _incrementChant(
+                                  appState);
+                            },
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 100),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
-          );
-        },
-      ),
-      floatingActionButton: FutureBuilder<List<Map<String, String>>>(
-        future: _mantraFuture,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return const SizedBox.shrink();
-          final mantras = snapshot.data!;
-          final mantra = mantras[_selectedMantraIndex];
-          return FloatingActionButton.extended(
-            onPressed: () => _toggleVoiceMode(appState, mantra['name']!),
-            label: Text(_isVoiceModeActive ? "LISTENING..." : "VOICE MODE"),
-            icon: Icon(_isVoiceModeActive ? Icons.mic : Icons.mic_none),
-            backgroundColor: _isVoiceModeActive ? Colors.redAccent : goldColor,
-          );
-        }
-      ),
-    );
-  }
-
-  Widget _buildSelector(List<Map<String, String>> mantras, ThemeData theme, Color gold) {
-    return SizedBox(
-      height: 50,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: mantras.length,
-        itemBuilder: (context, index) {
-          bool isSelected = _selectedMantraIndex == index;
-          return Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: ChoiceChip(
-              label: Text(mantras[index]['name']!),
-              selected: isSelected,
-              onSelected: (val) {
-                if (val) setState(() => _selectedMantraIndex = index);
-              },
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildMantraCard(Map<String, String> mantra, ThemeData theme, Color gold) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: gold.withOpacity(0.5)), // FIX: Changed 'border' to 'side'
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Text(
-              mantra['mantra']!,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.notoSansDevanagari(fontSize: 22, fontWeight: FontWeight.bold),
-            ),
-            const Divider(height: 30),
-            Text(
-              mantra['meaning']!,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontStyle: FontStyle.italic, color: theme.hintColor),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCounterDisplay(int japa, Color gold) {
-    int rounds = japa ~/ kMalaBeads;
-    int currentBead = japa % kMalaBeads;
-    return Column(
-      children: [
-        Text("ROUNDS: $rounds", style: TextStyle(fontSize: 18, color: gold, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 10),
-        Container(
-          width: 140,
-          height: 140,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: gold, width: 4),
-          ),
-          child: Center(
-            child: Text("$currentBead", style: const TextStyle(fontSize: 50, fontWeight: FontWeight.bold)),
+            ],
           ),
         ),
-      ],
-    );
-  }
+      ),
 
-  Widget _buildProgress(int currentBead, Color gold, ThemeData theme) {
-    return Column(
-      children: [
-        LinearProgressIndicator(
-          value: currentBead / kMalaBeads,
-          backgroundColor: theme.dividerColor,
-          color: gold,
-          minHeight: 10,
+      floatingActionButton:
+          FloatingActionButton.extended(
+        onPressed: () {
+          _toggleVoiceMode(appState);
+        },
+        label: Text(
+          _isVoiceMode
+              ? 'Listening'
+              : 'Voice Mode',
         ),
-        const SizedBox(height: 8),
-        Text("$currentBead / $kMalaBeads Beads"),
-      ],
+        icon: Icon(
+          _isVoiceMode
+              ? Icons.mic
+              : Icons.mic_none,
+        ),
+      ),
     );
   }
 }
