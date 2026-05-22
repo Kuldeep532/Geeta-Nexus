@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
-import '../state/app_state.dart';
 import '../models/models.dart';
-import '../theme.dart'; 
+import '../state/app_state.dart';
+import '../theme.dart';
 
 class JournalScreen extends StatefulWidget {
   const JournalScreen({super.key});
@@ -16,31 +16,54 @@ class JournalScreen extends StatefulWidget {
 }
 
 class _JournalScreenState extends State<JournalScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _contentController = TextEditingController();
-  final _searchController = TextEditingController();
-  
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  final TextEditingController _contentController =
+      TextEditingController();
+
+  final TextEditingController _searchController =
+      TextEditingController();
+
+  final FocusNode _contentFocusNode = FocusNode();
+
   bool _showForm = false;
   bool _isSearching = false;
+
   String _selectedMood = '😌';
-  late String _currentPrompt;
   String _searchQuery = '';
 
-  static const _moods = [
-    {'emoji': '😌', 'label': 'Calm'},
-    {'emoji': '🙏', 'label': 'Grateful'},
-    {'emoji': '😊', 'label': 'Happy'},
-    {'emoji': '✨', 'label': 'Inspired'},
-    {'emoji': '🤔', 'label': 'Reflective'},
+  late String _currentPrompt;
+
+  static const List<Map<String, String>> _moods = [
+    {
+      'emoji': '😌',
+      'label': 'Calm',
+    },
+    {
+      'emoji': '🙏',
+      'label': 'Grateful',
+    },
+    {
+      'emoji': '😊',
+      'label': 'Happy',
+    },
+    {
+      'emoji': '✨',
+      'label': 'Inspired',
+    },
+    {
+      'emoji': '🤔',
+      'label': 'Reflective',
+    },
   ];
 
-  static const _prompts = [
-    'What teaching from the Gita resonated with me today?',
-    'Where did I act with detachment today?',
-    'How did I practice equanimity today?',
-    'What am I grateful for in this moment?',
-    'Where can I bring more dharma into my life?',
-    'How did I see the Divine in others today?',
+  static const List<String> _prompts = [
+    'What teaching resonated with me today?',
+    'What am I grateful for today?',
+    'How did I grow emotionally today?',
+    'What brought me peace today?',
+    'What challenged me today?',
+    'How can I improve tomorrow?',
   ];
 
   @override
@@ -49,230 +72,231 @@ class _JournalScreenState extends State<JournalScreen> {
     _refreshPrompt();
   }
 
-  void _refreshPrompt() {
-    setState(() {
-      _currentPrompt = (List.from(_prompts)..shuffle()).first;
-    });
-  }
-
   @override
   void dispose() {
     _contentController.dispose();
     _searchController.dispose();
+    _contentFocusNode.dispose();
     super.dispose();
   }
 
-  void _submit(AppState state) {
-    if (_formKey.currentState!.validate()) {
-      HapticFeedback.mediumImpact();
-      
-      final cleanContent = _contentController.text.trim();
+  void _refreshPrompt() {
+    final shuffled = [..._prompts]..shuffle();
 
-      // FIX: AppState ke naye simplified method ko call kiya
-      state.addJournalEntry(
-        content: cleanContent,
-        mood: _selectedMood,
-      );
+    setState(() {
+      _currentPrompt = shuffled.first;
+    });
+  }
 
-      _contentController.clear();
-      setState(() => _showForm = false);
-      FocusManager.instance.primaryFocus?.unfocus();
+  void _toggleSearch() {
+    HapticFeedback.selectionClick();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Reflection saved.'), behavior: SnackBarBehavior.floating),
+    setState(() {
+      _isSearching = !_isSearching;
+
+      if (!_isSearching) {
+        _searchQuery = '';
+        _searchController.clear();
+      }
+    });
+  }
+
+  void _toggleForm() {
+    HapticFeedback.lightImpact();
+
+    setState(() {
+      _showForm = !_showForm;
+    });
+
+    if (_showForm) {
+      Future.delayed(
+        const Duration(milliseconds: 250),
+        () => _contentFocusNode.requestFocus(),
       );
     }
+  }
+
+  void _submit(AppState state) {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final content = _contentController.text.trim();
+
+    if (content.isEmpty) {
+      return;
+    }
+
+    HapticFeedback.mediumImpact();
+
+    state.addJournalEntry(
+      content: content,
+      mood: _selectedMood,
+    );
+
+    _contentController.clear();
+
+    FocusScope.of(context).unfocus();
+
+    setState(() {
+      _showForm = false;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Reflection saved successfully'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<bool?> _confirmDelete() {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete Reflection'),
+          content: const Text(
+            'Are you sure you want to permanently delete this reflection?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, false);
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, true);
+              },
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
     final state = context.watch<AppState>();
-    
-    final entries = state.journalEntries.where((e) => 
-      e.content.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: _isSearching 
-          ? TextField(
-              controller: _searchController,
-              autofocus: true,
-              style: const TextStyle(color: kGold),
-              decoration: const InputDecoration(hintText: "Search thoughts...", border: InputBorder.none),
-              onChanged: (v) => setState(() => _searchQuery = v),
-            )
-          : Text('Spiritual Journal', style: GoogleFonts.cinzel(color: kGold, fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(
-            icon: Icon(_isSearching ? Icons.close : Icons.search, color: kGold),
-            onPressed: () => setState(() {
-              _isSearching = !_isSearching;
-              if (!_isSearching) _searchQuery = '';
-            }),
-          ),
-          IconButton(
-            icon: Icon(_showForm ? Icons.expand_less : Icons.add_comment, color: kGold),
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              setState(() => _showForm = !_showForm);
-            },
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          if (_showForm) _buildForm(state, theme),
-          Expanded(
-            child: entries.isEmpty 
-              ? _buildEmptyState() 
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: entries.length,
-                  itemBuilder: (ctx, i) => _buildEntryCard(entries[i], state, theme),
+    final entries = state.journalEntries.where(
+      (entry) {
+        final query = _searchQuery.toLowerCase();
+
+        return entry.content.toLowerCase().contains(query) ||
+            entry.mood.toLowerCase().contains(query);
+      },
+    ).toList();
+
+    return FocusTraversalGroup(
+      policy: OrderedTraversalPolicy(),
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: AppBar(
+          centerTitle: true,
+          title: _isSearching
+              ? Semantics(
+                  textField: true,
+                  label: 'Search reflections',
+                  child: TextField(
+                    controller: _searchController,
+                    autofocus: true,
+                    textInputAction: TextInputAction.search,
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                    decoration: const InputDecoration(
+                      hintText: 'Search reflections...',
+                      border: InputBorder.none,
+                    ),
+                  ),
+                )
+              : Text(
+                  'Journal',
+                  style: GoogleFonts.cinzel(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildForm(AppState state, ThemeData theme) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        border: Border(bottom: BorderSide(color: theme.dividerColor)),
-      ),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(child: Text(_currentPrompt, style: GoogleFonts.lato(fontStyle: FontStyle.italic, color: kGold.withOpacity(0.8)))),
-                IconButton(icon: const Icon(Icons.refresh, size: 20), onPressed: _refreshPrompt),
-              ],
-            ),
-            const SizedBox(height: 15),
-            TextFormField(
-              controller: _contentController,
-              maxLines: 4,
-              style: TextStyle(color: theme.textTheme.bodyLarge?.color),
-              validator: (val) => val == null || val.trim().isEmpty ? "Kripya apne vichar likhein" : null,
-              decoration: InputDecoration(
-                hintText: "Dhyan se likhna shuru karein...",
-                fillColor: theme.brightness == Brightness.dark ? Colors.white10 : Colors.black12,
-                filled: true,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          actions: [
+            Semantics(
+              button: true,
+              label: _isSearching
+                  ? 'Close search'
+                  : 'Open search',
+              child: IconButton(
+                tooltip: _isSearching
+                    ? 'Close Search'
+                    : 'Search',
+                icon: Icon(
+                  _isSearching
+                      ? Icons.close
+                      : Icons.search,
+                ),
+                onPressed: _toggleSearch,
               ),
             ),
-            const SizedBox(height: 15),
-            _buildMoodSelector(theme),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => _submit(state),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kGold,
-                foregroundColor: Colors.black,
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            Semantics(
+              button: true,
+              label: _showForm
+                  ? 'Close journal form'
+                  : 'Create journal entry',
+              child: IconButton(
+                tooltip: _showForm
+                    ? 'Close Form'
+                    : 'New Entry',
+                icon: Icon(
+                  _showForm
+                      ? Icons.expand_less
+                      : Icons.add_comment_outlined,
+                ),
+                onPressed: _toggleForm,
               ),
-              child: const Text("SAVE TO SOUL", style: TextStyle(fontWeight: FontWeight.bold)),
-            )
+            ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildMoodSelector(ThemeData theme) {
-    return Wrap(
-      spacing: 12,
-      children: _moods.map((m) {
-        final emoji = m['emoji']!;
-        final label = m['label']!;
-        final isSelected = _selectedMood == emoji;
-
-        return Semantics(
-          container: true,
-          button: true,
-          selected: isSelected,
-          label: 'Mood: $label',
-          hint: isSelected ? 'Selected' : 'Double tap to select',
-          child: ExcludeSemantics(
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: () {
-                HapticFeedback.selectionClick();
-                setState(() => _selectedMood = emoji);
-              },
-              child: Tooltip(
-                message: 'Mood: $label',
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isSelected ? kGold.withOpacity(0.2) : theme.dividerColor.withOpacity(0.1),
-                    border: Border.all(color: isSelected ? kGold : Colors.transparent),
-                  ),
-                  child: Text(emoji, style: const TextStyle(fontSize: 24)),
+        body: SafeArea(
+          child: Column(
+            children: [
+              AnimatedCrossFade(
+                firstChild: const SizedBox.shrink(),
+                secondChild: _buildForm(
+                  state,
+                  theme,
+                ),
+                crossFadeState: _showForm
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
+                duration: const Duration(
+                  milliseconds: 250,
                 ),
               ),
-            ),
-          ),
-        );
-      }).toList(),
-    );
-  }
+              Expanded(
+                child: entries.isEmpty
+                    ? _buildEmptyState(theme)
+                    : ListView.separated(
+                        padding:
+                            const EdgeInsets.all(16),
+                        itemCount: entries.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final entry = entries[index];
 
-  Widget _buildEntryCard(JournalEntry entry, AppState state, ThemeData theme) {
-    return Dismissible(
-      key: ValueKey(entry.id),
-      direction: DismissDirection.endToStart,
-      confirmDismiss: (direction) async {
-        return await showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text("Delete Reflection?"),
-            content: const Text("Kya aap ise hamesha ke liye mita dena chahte hain?"),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Nahin")),
-              TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Haan, Delete", style: TextStyle(color: Colors.red))),
-            ],
-          ),
-        );
-      },
-      onDismissed: (_) => state.deleteJournalEntry(entry.id),
-      background: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(12)),
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        child: const Icon(Icons.delete_sweep, color: Colors.white, size: 30),
-      ),
-      child: Card(
-        color: theme.cardColor,
-        elevation: 1,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(entry.mood, style: const TextStyle(fontSize: 26)),
-                  Text(DateFormat('d MMM, hh:mm a').format(entry.date), 
-                    style: TextStyle(fontSize: 12, color: theme.hintColor)),
-                ],
+                          return _buildEntryCard(
+                            entry,
+                            state,
+                            theme,
+                          );
+                        },
+                      ),
               ),
-              const Divider(height: 25),
-              Text(entry.content, 
-                style: GoogleFonts.lora(fontSize: 16, height: 1.5)),
             ],
           ),
         ),
@@ -280,22 +304,340 @@ class _JournalScreenState extends State<JournalScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildForm(
+    AppState state,
+    ThemeData theme,
+  ) {
+    return Material(
+      elevation: 1,
+      color: theme.cardColor,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Semantics(
+                      label:
+                          'Writing prompt: $_currentPrompt',
+                      child: Text(
+                        _currentPrompt,
+                        style: GoogleFonts.lato(
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Semantics(
+                    button: true,
+                    label: 'Refresh prompt',
+                    child: IconButton(
+                      tooltip: 'Refresh Prompt',
+                      onPressed: _refreshPrompt,
+                      icon: const Icon(
+                        Icons.refresh,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Semantics(
+                textField: true,
+                multiline: true,
+                label: 'Journal content input',
+                hint:
+                    'Write your thoughts and reflections',
+                child: TextFormField(
+                  controller: _contentController,
+                  focusNode: _contentFocusNode,
+                  keyboardType:
+                      TextInputType.multiline,
+                  textInputAction:
+                      TextInputAction.newline,
+                  minLines: 5,
+                  maxLines: 8,
+                  maxLength: 1200,
+                  autofillHints: const [
+                    AutofillHints.nickname,
+                  ],
+                  validator: (value) {
+                    if (value == null ||
+                        value.trim().isEmpty) {
+                      return 'Please write something';
+                    }
+
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    hintText:
+                        'Start writing your reflection...',
+                    border: OutlineInputBorder(
+                      borderRadius:
+                          BorderRadius.circular(16),
+                    ),
+                    alignLabelWithHint: true,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              _buildMoodSelector(theme),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: Semantics(
+                  button: true,
+                  label: 'Save reflection',
+                  hint:
+                      'Double tap to save journal entry',
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      _submit(state);
+                    },
+                    icon: const Icon(Icons.save),
+                    label: const Text(
+                      'SAVE REFLECTION',
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMoodSelector(
+    ThemeData theme,
+  ) {
+    return Semantics(
+      container: true,
+      label: 'Mood selection',
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        children: _moods.map(
+          (mood) {
+            final emoji = mood['emoji']!;
+            final label = mood['label']!;
+
+            final isSelected =
+                _selectedMood == emoji;
+
+            return Semantics(
+              button: true,
+              selected: isSelected,
+              label: '$label mood',
+              hint: isSelected
+                  ? 'Currently selected'
+                  : 'Double tap to select',
+              child: Tooltip(
+                message: label,
+                child: InkWell(
+                  borderRadius:
+                      BorderRadius.circular(100),
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+
+                    setState(() {
+                      _selectedMood = emoji;
+                    });
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(
+                      milliseconds: 200,
+                    ),
+                    width: 56,
+                    height: 56,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        width: isSelected ? 2 : 1,
+                      ),
+                    ),
+                    child: Text(
+                      emoji,
+                      style:
+                          const TextStyle(fontSize: 26),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ).toList(),
+      ),
+    );
+  }
+
+  Widget _buildEntryCard(
+    JournalEntry entry,
+    AppState state,
+    ThemeData theme,
+  ) {
+    final formattedDate =
+        DateFormat(
+      'd MMM yyyy • hh:mm a',
+    ).format(entry.date);
+
+    return Semantics(
+      container: true,
+      label:
+          'Journal entry from $formattedDate',
+      child: Dismissible(
+        key: ValueKey(entry.id),
+        direction:
+            DismissDirection.endToStart,
+        confirmDismiss: (_) async {
+          return await _confirmDelete();
+        },
+        onDismissed: (_) {
+          state.deleteJournalEntry(entry.id);
+
+          ScaffoldMessenger.of(context)
+              .showSnackBar(
+            const SnackBar(
+              content:
+                  Text('Reflection deleted'),
+            ),
+          );
+        },
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding:
+              const EdgeInsets.only(right: 24),
+          margin:
+              const EdgeInsets.symmetric(
+            vertical: 2,
+          ),
+          decoration: BoxDecoration(
+            borderRadius:
+                BorderRadius.circular(18),
+          ),
+          child: const Icon(
+            Icons.delete_outline,
+            size: 32,
+          ),
+        ),
+        child: Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius:
+                BorderRadius.circular(18),
+          ),
+          child: Padding(
+            padding:
+                const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Semantics(
+                      label:
+                          'Mood ${entry.mood}',
+                      child: Text(
+                        entry.mood,
+                        style:
+                            const TextStyle(
+                          fontSize: 28,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Flexible(
+                      child: Text(
+                        formattedDate,
+                        textAlign:
+                            TextAlign.end,
+                        style: theme
+                            .textTheme
+                            .bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Divider(
+                  height: 1,
+                  color: theme.dividerColor,
+                ),
+                const SizedBox(height: 14),
+                SelectableText(
+                  entry.content,
+                  style: GoogleFonts.lora(
+                    fontSize: 16,
+                    height: 1.7,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(
+    ThemeData theme,
+  ) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.auto_stories, size: 80, color: kGold.withOpacity(0.3)),
-          const SizedBox(height: 16),
-          Text(
-            "Your spiritual journey is waiting...",
-            style: GoogleFonts.cinzel(color: kGold, fontSize: 16),
+      child: Padding(
+        padding:
+            const EdgeInsets.symmetric(
+          horizontal: 24,
+        ),
+        child: Semantics(
+          container: true,
+          label:
+              'No journal entries available',
+          child: Column(
+            mainAxisAlignment:
+                MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.menu_book_rounded,
+                size: 88,
+                color: theme.iconTheme.color
+                    ?.withOpacity(0.4),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'No Reflections Yet',
+                style: theme
+                    .textTheme
+                    .headlineSmall,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Start your first journal reflection and capture your thoughts.',
+                style:
+                    theme.textTheme.bodyMedium,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 28),
+              FilledButton.icon(
+                onPressed: _toggleForm,
+                icon: const Icon(Icons.edit),
+                label:
+                    const Text('Create Entry'),
+              ),
+            ],
           ),
-          Text(
-            "Aj ka anubhav likhein.",
-            style: TextStyle(color: Colors.grey[500]),
-          ),
-        ],
+        ),
       ),
     );
   }
