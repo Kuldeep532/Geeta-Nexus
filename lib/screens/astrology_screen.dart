@@ -1,389 +1,1187 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:india_states_cities/india_states_cities.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../theme.dart';
-
-class LocalAstrologyData {
-  final String name;
-  final String place;
-  final DateTime dob;
-  final TimeOfDay tob;
-  final String zodiacSign;
-  final String insights;
-
-  LocalAstrologyData({
-    required this.name,
-    required this.place,
-    required this.dob,
-    required this.tob,
-    required this.zodiacSign,
-    required this.insights,
-  });
-}
 
 class AstrologyScreen extends StatefulWidget {
   const AstrologyScreen({super.key});
 
   @override
-  State<AstrologyScreen> createState() => _AstrologyScreenState();
+  State<AstrologyScreen> createState() =>
+      _AstrologyScreenState();
 }
 
-class _AstrologyScreenState extends State<AstrologyScreen> {
-  final _nameController = TextEditingController();
-  final _birthPlaceController = TextEditingController();
+class _AstrologyScreenState
+    extends State<AstrologyScreen> {
+
+  final TextEditingController _nameController =
+      TextEditingController();
+
+  final FocusNode _nameFocusNode =
+      FocusNode();
+
   DateTime? _dob;
+
   TimeOfDay? _tob;
+
+  String? _selectedState;
+
+  String? _selectedCity;
+
   String? _result;
-  bool _isLoading = false;
+
+  bool _profileAdded = false;
+
+  bool _isGenerating = false;
+
+  List<String> _states = [];
+
+  List<String> _cities = [];
 
   @override
   void initState() {
     super.initState();
-    _loadAllStoredData();
+
+    _states =
+        IndiaStates.getStates();
+
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+
+    final prefs =
+        await SharedPreferences.getInstance();
+
+    _nameController.text =
+        prefs.getString('name') ?? '';
+
+    _selectedState =
+        prefs.getString('state');
+
+    _selectedCity =
+        prefs.getString('city');
+
+    final dob =
+        prefs.getString('dob');
+
+    if (dob != null) {
+      _dob = DateTime.tryParse(
+        dob,
+      );
+    }
+
+    final hour =
+        prefs.getInt('hour');
+
+    final minute =
+        prefs.getInt('minute');
+
+    if (hour != null &&
+        minute != null) {
+
+      _tob = TimeOfDay(
+        hour: hour,
+        minute: minute,
+      );
+    }
+
+    if (_selectedState != null) {
+
+      _cities =
+          IndiaStates.getCities(
+        _selectedState!,
+      );
+    }
+
+    setState(() {
+
+      _profileAdded =
+          _nameController.text
+              .trim()
+              .isNotEmpty;
+    });
+  }
+
+  Future<void> _saveProfile() async {
+
+    final prefs =
+        await SharedPreferences.getInstance();
+
+    await prefs.setString(
+      'name',
+      _nameController.text.trim(),
+    );
+
+    await prefs.setString(
+      'state',
+      _selectedState!,
+    );
+
+    await prefs.setString(
+      'city',
+      _selectedCity!,
+    );
+
+    await prefs.setString(
+      'dob',
+      _dob!.toIso8601String(),
+    );
+
+    await prefs.setInt(
+      'hour',
+      _tob!.hour,
+    );
+
+    await prefs.setInt(
+      'minute',
+      _tob!.minute,
+    );
+
+    setState(() {
+      _profileAdded = true;
+    });
+  }
+
+  bool get _canGenerate {
+
+    return _nameController.text
+            .trim()
+            .isNotEmpty &&
+        _selectedState != null &&
+        _selectedCity != null &&
+        _dob != null &&
+        _tob != null;
+  }
+
+  String _calculateZodiac(
+    DateTime date,
+  ) {
+
+    final month = date.month;
+    final day = date.day;
+
+    if ((month == 3 && day >= 21) ||
+        (month == 4 && day <= 19)) {
+      return 'Aries';
+    }
+
+    if ((month == 4 && day >= 20) ||
+        (month == 5 && day <= 20)) {
+      return 'Taurus';
+    }
+
+    if ((month == 5 && day >= 21) ||
+        (month == 6 && day <= 20)) {
+      return 'Gemini';
+    }
+
+    if ((month == 6 && day >= 21) ||
+        (month == 7 && day <= 22)) {
+      return 'Cancer';
+    }
+
+    if ((month == 7 && day >= 23) ||
+        (month == 8 && day <= 22)) {
+      return 'Leo';
+    }
+
+    if ((month == 8 && day >= 23) ||
+        (month == 9 && day <= 22)) {
+      return 'Virgo';
+    }
+
+    if ((month == 9 && day >= 23) ||
+        (month == 10 && day <= 22)) {
+      return 'Libra';
+    }
+
+    if ((month == 10 && day >= 23) ||
+        (month == 11 && day <= 21)) {
+      return 'Scorpio';
+    }
+
+    if ((month == 11 && day >= 22) ||
+        (month == 12 && day <= 21)) {
+      return 'Sagittarius';
+    }
+
+    if ((month == 12 && day >= 22) ||
+        (month == 1 && day <= 19)) {
+      return 'Capricorn';
+    }
+
+    if ((month == 1 && day >= 20) ||
+        (month == 2 && day <= 18)) {
+      return 'Aquarius';
+    }
+
+    return 'Pisces';
+  }
+
+  Future<void> _generateKundli() async {
+
+    if (!_canGenerate ||
+        _isGenerating) {
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+
+    setState(() {
+      _isGenerating = true;
+    });
+
+    HapticFeedback.lightImpact();
+
+    await Future.delayed(
+      const Duration(
+        milliseconds: 500,
+      ),
+    );
+
+    final zodiac =
+        _calculateZodiac(
+      _dob!,
+    );
+
+    final generatedResult = '''
+Kundli Summary
+
+Name
+${_nameController.text.trim()}
+
+State
+$_selectedState
+
+City
+$_selectedCity
+
+Date of Birth
+${_dob!.day}/${_dob!.month}/${_dob!.year}
+
+Birth Time
+${_tob!.format(context)}
+
+Zodiac Sign
+$zodiac
+
+Daily Guidance
+
+• Stay positive
+• Focus on self growth
+• Avoid unnecessary stress
+• Good opportunities may arrive soon
+''';
+
+    setState(() {
+
+      _result =
+          generatedResult;
+
+      _isGenerating = false;
+    });
+
+    SemanticsService.announce(
+      'Kundli generated successfully',
+      TextDirection.ltr,
+    );
+  }
+
+  Future<void> _openProfileSheet() async {
+
+    await showModalBottomSheet(
+
+      context: context,
+
+      isScrollControlled: true,
+
+      useSafeArea: true,
+
+      backgroundColor:
+          Theme.of(context)
+              .colorScheme
+              .surface,
+
+      shape:
+          const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(
+          top:
+              Radius.circular(
+            28,
+          ),
+        ),
+      ),
+
+      builder: (context) {
+
+        return StatefulBuilder(
+
+          builder: (
+            context,
+            setBottomState,
+          ) {
+
+            return Padding(
+
+              padding:
+                  EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom:
+                    MediaQuery.of(
+                          context,
+                        )
+                        .viewInsets
+                        .bottom +
+                    20,
+              ),
+
+              child:
+                  SingleChildScrollView(
+
+                physics:
+                    const BouncingScrollPhysics(),
+
+                child: Column(
+
+                  mainAxisSize:
+                      MainAxisSize.min,
+
+                  crossAxisAlignment:
+                      CrossAxisAlignment
+                          .start,
+
+                  children: [
+
+                    Center(
+                      child: Container(
+                        width: 56,
+                        height: 5,
+
+                        decoration:
+                            BoxDecoration(
+                          color:
+                              Theme.of(
+                            context,
+                          ).dividerColor,
+
+                          borderRadius:
+                              BorderRadius.circular(
+                            20,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(
+                      height: 24,
+                    ),
+
+                    Semantics(
+
+                      header: true,
+
+                      child: Text(
+
+                        _profileAdded
+                            ? 'Edit Profile'
+                            : 'Add Profile',
+
+                        style:
+                            Theme.of(
+                          context,
+                        )
+                                .textTheme
+                                .headlineSmall,
+                      ),
+                    ),
+
+                    const SizedBox(
+                      height: 24,
+                    ),
+
+                    Semantics(
+
+                      label:
+                          'Enter your full name',
+
+                      textField: true,
+
+                      child: TextField(
+
+                        controller:
+                            _nameController,
+
+                        focusNode:
+                            _nameFocusNode,
+
+                        textCapitalization:
+                            TextCapitalization
+                                .words,
+
+                        decoration:
+                            InputDecoration(
+                          labelText:
+                              'Full Name',
+
+                          hintText:
+                              'Enter your full name',
+
+                          prefixIcon:
+                              const Icon(
+                            Icons.person_outline,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(
+                      height: 16,
+                    ),
+
+                    _selectionTile(
+
+                      context: context,
+
+                      title:
+                          _selectedState ??
+                              'Select State',
+
+                      icon:
+                          Icons.map_outlined,
+
+                      semanticLabel:
+                          'Select state',
+
+                      onTap: () async {
+
+                        final state =
+                            await _showSelectionSheet(
+                          context:
+                              context,
+
+                          title:
+                              'Select State',
+
+                          items:
+                              _states,
+                        );
+
+                        if (state != null) {
+
+                          setBottomState(() {
+
+                            _selectedState =
+                                state;
+
+                            _selectedCity =
+                                null;
+
+                            _cities =
+                                IndiaStates
+                                    .getCities(
+                              state,
+                            );
+                          });
+                        }
+                      },
+                    ),
+
+                    const SizedBox(
+                      height: 16,
+                    ),
+
+                    _selectionTile(
+
+                      context: context,
+
+                      title:
+                          _selectedCity ??
+                              'Select City',
+
+                      icon:
+                          Icons.location_city_outlined,
+
+                      semanticLabel:
+                          'Select city',
+
+                      onTap: () async {
+
+                        if (_selectedState ==
+                            null) {
+
+                          SemanticsService
+                              .announce(
+                            'Please select state first',
+                            TextDirection.ltr,
+                          );
+
+                          return;
+                        }
+
+                        final city =
+                            await _showSelectionSheet(
+                          context:
+                              context,
+
+                          title:
+                              'Select City',
+
+                          items:
+                              _cities,
+                        );
+
+                        if (city != null) {
+
+                          setBottomState(() {
+                            _selectedCity =
+                                city;
+                          });
+                        }
+                      },
+                    ),
+
+                    const SizedBox(
+                      height: 16,
+                    ),
+
+                    _selectionTile(
+
+                      context: context,
+
+                      title:
+                          _dob == null
+                              ? 'Select Birth Date'
+                              : '${_dob!.day}/${_dob!.month}/${_dob!.year}',
+
+                      icon:
+                          Icons.calendar_today_outlined,
+
+                      semanticLabel:
+                          'Select birth date',
+
+                      onTap: () async {
+
+                        final picked =
+                            await showDatePicker(
+                          context:
+                              context,
+
+                          firstDate:
+                              DateTime(
+                            1950,
+                          ),
+
+                          lastDate:
+                              DateTime.now(),
+
+                          initialDate:
+                              _dob ??
+                                  DateTime(
+                                    2000,
+                                  ),
+                        );
+
+                        if (picked != null) {
+
+                          setBottomState(() {
+                            _dob = picked;
+                          });
+                        }
+                      },
+                    ),
+
+                    const SizedBox(
+                      height: 16,
+                    ),
+
+                    _selectionTile(
+
+                      context: context,
+
+                      title:
+                          _tob == null
+                              ? 'Select Birth Time'
+                              : _tob!.format(
+                                  context,
+                                ),
+
+                      icon:
+                          Icons.access_time_outlined,
+
+                      semanticLabel:
+                          'Select birth time',
+
+                      onTap: () async {
+
+                        final picked =
+                            await showTimePicker(
+                          context:
+                              context,
+
+                          initialTime:
+                              _tob ??
+                                  const TimeOfDay(
+                                    hour: 6,
+                                    minute: 0,
+                                  ),
+                        );
+
+                        if (picked != null) {
+
+                          setBottomState(() {
+                            _tob = picked;
+                          });
+                        }
+                      },
+                    ),
+
+                    const SizedBox(
+                      height: 28,
+                    ),
+
+                    SizedBox(
+
+                      width:
+                          double.infinity,
+
+                      height: 56,
+
+                      child:
+                          FilledButton(
+
+                        onPressed: () async {
+
+                          if (!_canGenerate) {
+
+                            SemanticsService
+                                .announce(
+                              'Please complete all profile fields',
+                              TextDirection.ltr,
+                            );
+
+                            return;
+                          }
+
+                          await _saveProfile();
+
+                          if (!mounted) {
+                            return;
+                          }
+
+                          Navigator.pop(
+                            context,
+                          );
+
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(
+
+                            SnackBar(
+
+                              behavior:
+                                  SnackBarBehavior
+                                      .floating,
+
+                              content: Text(
+
+                                _profileAdded
+                                    ? 'Profile updated successfully'
+                                    : 'Profile added successfully',
+                              ),
+                            ),
+                          );
+                        },
+
+                        child: Text(
+
+                          _profileAdded
+                              ? 'Update Profile'
+                              : 'Save Profile',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<String?> _showSelectionSheet({
+
+    required BuildContext context,
+
+    required String title,
+
+    required List<String> items,
+  }) async {
+
+    return showModalBottomSheet<String>(
+
+      context: context,
+
+      useSafeArea: true,
+
+      backgroundColor:
+          Theme.of(context)
+              .colorScheme
+              .surface,
+
+      shape:
+          const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(
+          top:
+              Radius.circular(
+            28,
+          ),
+        ),
+      ),
+
+      builder: (context) {
+
+        return Column(
+
+          children: [
+
+            const SizedBox(
+              height: 16,
+            ),
+
+            Container(
+              width: 56,
+              height: 5,
+
+              decoration:
+                  BoxDecoration(
+                color:
+                    Theme.of(
+                  context,
+                ).dividerColor,
+
+                borderRadius:
+                    BorderRadius.circular(
+                  20,
+                ),
+              ),
+            ),
+
+            const SizedBox(
+              height: 20,
+            ),
+
+            Semantics(
+
+              header: true,
+
+              child: Text(
+
+                title,
+
+                style:
+                    Theme.of(context)
+                        .textTheme
+                        .titleLarge,
+              ),
+            ),
+
+            const SizedBox(
+              height: 16,
+            ),
+
+            Expanded(
+
+              child:
+                  ListView.builder(
+
+                physics:
+                    const BouncingScrollPhysics(),
+
+                itemCount:
+                    items.length,
+
+                itemBuilder:
+                    (context, index) {
+
+                  final item =
+                      items[index];
+
+                  return Semantics(
+
+                    button: true,
+
+                    label: item,
+
+                    child: ListTile(
+
+                      title: Text(
+                        item,
+                      ),
+
+                      onTap: () {
+
+                        HapticFeedback
+                            .selectionClick();
+
+                        Navigator.pop(
+                          context,
+                          item,
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _selectionTile({
+
+    required BuildContext context,
+
+    required String title,
+
+    required IconData icon,
+
+    required String semanticLabel,
+
+    required VoidCallback onTap,
+  }) {
+
+    return Semantics(
+
+      button: true,
+
+      label:
+          semanticLabel,
+
+      child: InkWell(
+
+        borderRadius:
+            BorderRadius.circular(
+          20,
+        ),
+
+        onTap: onTap,
+
+        child: Ink(
+
+          padding:
+              const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 18,
+          ),
+
+          decoration:
+              BoxDecoration(
+
+            color:
+                Theme.of(context)
+                    .colorScheme
+                    .surfaceContainerHighest,
+
+            borderRadius:
+                BorderRadius.circular(
+              20,
+            ),
+          ),
+
+          child: Row(
+
+            children: [
+
+              Icon(icon),
+
+              const SizedBox(
+                width: 14,
+              ),
+
+              Expanded(
+                child: Text(
+                  title,
+                ),
+              ),
+
+              const Icon(
+                Icons.keyboard_arrow_down,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   void dispose() {
+
     _nameController.dispose();
-    _birthPlaceController.dispose();
+
+    _nameFocusNode.dispose();
+
     super.dispose();
-  }
-
-  Future<void> _loadAllStoredData() async {
-    setState(() => _isLoading = true);
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final savedName = prefs.getString('standalone_astro_name') ?? '';
-      final savedPlace = prefs.getString('standalone_astro_place') ?? '';
-      final savedDobStr = prefs.getString('standalone_astro_dob');
-      final savedTobHour = prefs.getInt('standalone_astro_tob_hour');
-      final savedTobMin = prefs.getInt('standalone_astro_tob_min');
-
-      if (mounted) {
-        setState(() {
-          _nameController.text = savedName;
-          _birthPlaceController.text = savedPlace;
-          if (savedDobStr != null) {
-            _dob = DateTime.tryParse(savedDobStr);
-          }
-          if (savedTobHour != null && savedTobMin != null) {
-            _tob = TimeOfDay(hour: savedTobHour, minute: savedTobMin);
-          }
-        });
-      }
-    } catch (e) {
-      debugPrint('Storage loading error: $e');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _saveCurrentData() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('standalone_astro_name', _nameController.text.trim());
-      await prefs.setString('standalone_astro_place', _birthPlaceController.text.trim());
-      if (_dob != null) {
-        await prefs.setString('standalone_astro_dob', _dob!.toIso8601String());
-      }
-      if (_tob != null) {
-        await prefs.setInt('standalone_astro_tob_hour', _tob!.hour);
-        await prefs.setInt('standalone_astro_tob_min', _tob!.minute);
-      }
-    } catch (e) {
-      debugPrint('Storage saving error: $e');
-    }
-  }
-
-  String _calculateInternalZodiac(DateTime d) {
-    final month = d.month;
-    final day = d.day;
-    if ((month == 3 && day >= 21) || (month == 4 && day <= 19)) return 'Aries (Mesh)';
-    if ((month == 4 && day >= 20) || (month == 5 && day <= 20)) return 'Taurus (Vrishabh)';
-    if ((month == 5 && day >= 21) || (month == 6 && day <= 20)) return 'Gemini (Mithun)';
-    if ((month == 6 && day >= 21) || (month == 7 && day <= 22)) return 'Cancer (Kark)';
-    if ((month == 7 && day >= 23) || (month == 8 && day <= 22)) return 'Leo (Simha)';
-    if ((month == 8 && day >= 23) || (month == 9 && day <= 22)) return 'Virgo (Kanya)';
-    if ((month == 9 && day >= 23) || (month == 10 && day <= 22)) return 'Libra (Tula)';
-    if ((month == 10 && day >= 23) || (month == 11 && day <= 21)) return 'Scorpio (Vrishchik)';
-    if ((month == 11 && day >= 22) || (month == 12 && day <= 21)) return 'Sagittarius (Dhanu)';
-    if ((month == 12 && day >= 22) || (month == 1 && day <= 19)) return 'Capricorn (Makar)';
-    if ((month == 1 && day >= 20) || (month == 2 && day <= 18)) return 'Aquarius (Kumbh)';
-    return 'Pisces (Meen)';
-  }
-
-  String _getInternalInsight(String sign) {
-    final dayOfWeek = DateTime.now().weekday;
-    final planetaryRulers = {
-      1: 'Moon (Chandra) - Focus on peace and emotional balance.',
-      2: 'Mars (Mangal) - High energy; good for physical discipline.',
-      3: 'Mercury (Budh) - Excellent for learning and communication.',
-      4: 'Jupiter (Guru) - Ideal for spiritual study and wisdom.',
-      5: 'Venus (Shukra) - Harmony, creativity, and refinement.',
-      6: 'Saturn (Shani) - Focus on patience and karmic duties.',
-      7: 'Sun (Surya) - Vitality, leadership, and soul-cleansing.',
-    };
-
-    return 'Planetary Ruler: ${planetaryRulers[dayOfWeek] ?? "Balanced"}\n'
-        'Insight: Your $sign energy suggests a period of internal grounding.';
-  }
-
-  void _processSelfSustainedInsights() {
-    HapticFeedback.mediumImpact();
-    if (_dob == null || _tob == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select both Birth Date and Time')),
-      );
-      return;
-    }
-
-    final sign = _calculateInternalZodiac(_dob!);
-    final name = _nameController.text.trim().isEmpty ? 'Seeker' : _nameController.text.trim();
-    final city = _birthPlaceController.text.trim().isEmpty ? 'Unknown' : _birthPlaceController.text.trim();
-
-    final localData = LocalAstrologyData(
-      name: name,
-      place: city,
-      dob: _dob!,
-      tob: _tob!,
-      zodiacSign: sign,
-      insights: _getInternalInsight(sign),
-    );
-
-    _saveCurrentData();
-
-    setState(() {
-      _result = 'Kundli Summary for ${localData.name}\n'
-          '----------------------------------\n'
-          'Birth: ${localData.dob.day}/${localData.dob.month}/${localData.dob.year} at ${localData.tob.format(context)}\n'
-          'Place: ${localData.place}\n'
-          'Zodiac: ${localData.zodiacSign}\n\n'
-          '${localData.insights}\n\n'
-          'Daily Guidelines:\n'
-          '• Diet: Pure Satvik food for mental clarity.\n'
-          '• Practice: Prioritize meditation during Brahma Muhurta or evening.\n'
-          '• Focus: Maintain silence (Mauna) for 10 minutes today.';
-    });
-  }
-
-  Future<void> _pickDob() async {
-    final picked = await showDatePicker(
-      context: context,
-      helpText: 'Select your date of birth',
-      firstDate: DateTime(1940),
-      lastDate: DateTime.now(),
-      initialDate: _dob ?? DateTime(2000, 1, 1),
-      builder: (context, child) => _buildPickerTheme(child!),
-    );
-    if (picked != null) setState(() => _dob = picked);
-  }
-
-  Future<void> _pickTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      helpText: 'Select your time of birth',
-      initialTime: _tob ?? const TimeOfDay(hour: 6, minute: 0),
-      builder: (context, child) => _buildPickerTheme(child!),
-    );
-    if (picked != null) setState(() => _tob = picked);
-  }
-
-  Widget _buildPickerTheme(Widget child) {
-    return Theme(
-      data: Theme.of(context).copyWith(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: kGold,
-          primary: kGold,
-          onPrimary: Colors.black,
-          surface: Theme.of(context).cardColor,
-        ),
-      ),
-      child: child,
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+
+    final theme =
+        Theme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+
       appBar: AppBar(
-        title: Semantics(
-          header: true,
-          label: 'Astrology and Spiritual Insights Page',
-          child: Text(
-            'ASTROLOGY & INSIGHTS', 
-            style: GoogleFonts.cinzel(color: kGold, fontWeight: FontWeight.bold, letterSpacing: 1.5)
-          ),
+
+        title: const Text(
+          'Astrology',
         ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
+
+        actions: [
+
+          Semantics(
+
+            button: true,
+
+            label:
+                _profileAdded
+                    ? 'Edit profile'
+                    : 'Add profile',
+
+            child: IconButton(
+
+              onPressed:
+                  _openProfileSheet,
+
+              icon: Icon(
+
+                _profileAdded
+                    ? Icons.edit_outlined
+                    : Icons.person_add_alt_1_outlined,
+              ),
+            ),
+          ),
+        ],
       ),
-      body: SafeArea(
-        child: _isLoading 
-          ? const Center(child: CircularProgressIndicator(color: kGold))
-          : ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-              children: [
-                Text(
-                  "Know your celestial alignment and daily spiritual focus.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: theme.hintColor, fontSize: 14),
-                ),
-                const SizedBox(height: 30),
-                
-                _buildInputFields(theme),
-                const SizedBox(height: 25),
-                
-                _buildDateTimeButtons(theme),
-                const SizedBox(height: 40),
-                
-                Semantics(
-                  button: true,
-                  label: 'Generate Insights Button',
-                  hint: 'Double tap to calculate zodiac sign and save your details locally',
-                  excludeSemantics: true,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: kGold,
-                      foregroundColor: Colors.black,
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 4,
+
+      body:
+          SafeArea(
+
+        child:
+            SingleChildScrollView(
+
+          physics:
+              const BouncingScrollPhysics(),
+
+          padding:
+              const EdgeInsets.all(
+            20,
+          ),
+
+          child: Column(
+
+            children: [
+
+              Semantics(
+
+                container: true,
+
+                label:
+                    'Profile information card',
+
+                child: Card(
+
+                  elevation: 0,
+
+                  child: Padding(
+
+                    padding:
+                        const EdgeInsets.all(
+                      20,
                     ),
-                    onPressed: _processSelfSustainedInsights,
-                    child: const Text('GENERATE INSIGHTS', 
-                      style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.bold)),
+
+                    child: Row(
+
+                      children: [
+
+                        CircleAvatar(
+
+                          radius: 28,
+
+                          child: Text(
+
+                            _nameController
+                                    .text
+                                    .isEmpty
+                                ? 'A'
+                                : _nameController
+                                    .text[0]
+                                    .toUpperCase(),
+                          ),
+                        ),
+
+                        const SizedBox(
+                          width: 16,
+                        ),
+
+                        Expanded(
+
+                          child: Column(
+
+                            crossAxisAlignment:
+                                CrossAxisAlignment
+                                    .start,
+
+                            children: [
+
+                              Text(
+
+                                _profileAdded
+                                    ? _nameController
+                                        .text
+                                    : 'No Profile Added',
+
+                                style:
+                                    theme
+                                        .textTheme
+                                        .titleMedium,
+                              ),
+
+                              const SizedBox(
+                                height: 4,
+                              ),
+
+                              Text(
+
+                                _profileAdded
+                                    ? 'Profile ready'
+                                    : 'Please add your profile',
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        FilledButton(
+
+                          onPressed:
+                              _openProfileSheet,
+
+                          child: Text(
+
+                            _profileAdded
+                                ? 'Edit'
+                                : 'Add',
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                
-                if (_result != null) ...[
-                  const SizedBox(height: 40),
-                  _buildResultDisplay(theme),
-                  const SizedBox(height: 40),
-                ],
-              ],
-            ),
-      ),
-    );
-  }
+              ),
 
-  Widget _buildInputFields(ThemeData theme) {
-    return Column(
-      children: [
-        TextField(
-          controller: _nameController,
-          style: TextStyle(color: theme.textTheme.bodyLarge?.color),
-          textInputAction: TextInputAction.next,
-          decoration: InputDecoration(
-            labelText: 'Full Name',
-            labelStyle: TextStyle(color: kGold.withOpacity(0.8)),
-            prefixIcon: const Icon(Icons.person_outline, color: kGold),
-            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: theme.dividerColor)),
-            focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: kGold, width: 2)),
-          ),
-        ),
-        const SizedBox(height: 20),
-        TextField(
-          controller: _birthPlaceController,
-          style: TextStyle(color: theme.textTheme.bodyLarge?.color),
-          textInputAction: TextInputAction.done,
-          decoration: InputDecoration(
-            labelText: 'City of Birth',
-            labelStyle: TextStyle(color: kGold.withOpacity(0.8)),
-            prefixIcon: const Icon(Icons.location_city, color: kGold),
-            enabledBorder: OutlineInputBorder(borderSide: BorderSide(color: theme.dividerColor)),
-            focusedBorder: const OutlineInputBorder(borderSide: BorderSide(color: kGold, width: 2)),
-          ),
-        ),
-      ],
-    );
-  }
+              const SizedBox(
+                height: 28,
+              ),
 
-  Widget _buildDateTimeButtons(ThemeData theme) {
-    final String dateLabel = _dob == null ? 'Not Selected' : '${_dob!.day}/${_dob!.month}/${_dob!.year}';
-    final String timeLabel = _tob == null ? 'Not Selected' : _tob!.format(context);
+              Semantics(
 
-    return Row(
-      children: [
-        Expanded(
-          child: Semantics(
-            button: true,
-            label: 'Birth Date Selector. Current value: $dateLabel',
-            hint: 'Double tap to open calendar dialog',
-            excludeSemantics: true,
-            child: OutlinedButton.icon(
-              onPressed: _pickDob,
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: _dob == null ? theme.dividerColor : kGold),
-                padding: const EdgeInsets.symmetric(vertical: 15),
-              ),
-              icon: const Icon(Icons.calendar_month, color: kGold, size: 20),
-              label: Text(
-                _dob == null ? 'Select Date' : dateLabel,
-                style: TextStyle(color: theme.textTheme.bodyMedium?.color),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Semantics(
-            button: true,
-            label: 'Birth Time Selector. Current value: $timeLabel',
-            hint: 'Double tap to open time picker dialog',
-            excludeSemantics: true,
-            child: OutlinedButton.icon(
-              onPressed: _pickTime,
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: _tob == null ? theme.dividerColor : kGold),
-                padding: const EdgeInsets.symmetric(vertical: 15),
-              ),
-              icon: const Icon(Icons.history_toggle_off, color: kGold, size: 20),
-              label: Text(
-                _tob == null ? 'Select Time' : timeLabel,
-                style: TextStyle(color: theme.textTheme.bodyMedium?.color),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+                button: true,
 
-  Widget _buildResultDisplay(ThemeData theme) {
-    return Semantics(
-      liveRegion: true,
-      label: "Astrology Output Box",
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: kGold.withOpacity(0.3), width: 1),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, spreadRadius: 2)
-          ],
-        ),
-        child: Column(
-          children: [
-            const Icon(Icons.auto_awesome, color: kGold, size: 30),
-            const SizedBox(height: 15),
-            SelectableText(
-              _result!,
-              textAlign: TextAlign.left,
-              style: GoogleFonts.merriweather(
-                fontSize: 15,
-                color: theme.textTheme.bodyLarge?.color,
-                height: 1.5,
+                enabled:
+                    _canGenerate,
+
+                label:
+                    'Generate Kundli',
+
+                child: SizedBox(
+
+                  width:
+                      double.infinity,
+
+                  height: 56,
+
+                  child:
+                      FilledButton(
+
+                    onPressed:
+                        _canGenerate
+                            ? _generateKundli
+                            : null,
+
+                    child:
+                        _isGenerating
+
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+
+                                child:
+                                    CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+
+                            : const Text(
+                                'Generate Kundli',
+                              ),
+                  ),
+                ),
               ),
-            ),
-          ],
+
+              const SizedBox(
+                height: 28,
+              ),
+
+              if (_result != null)
+
+                Semantics(
+
+                  liveRegion: true,
+
+                  label:
+                      'Generated kundli result',
+
+                  child: Card(
+
+                    elevation: 0,
+
+                    child: Padding(
+
+                      padding:
+                          const EdgeInsets.all(
+                        20,
+                      ),
+
+                      child: SelectableText(
+
+                        _result!,
+
+                        style:
+                            theme
+                                .textTheme
+                                .bodyLarge
+                                ?.copyWith(
+                          height: 1.7,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
