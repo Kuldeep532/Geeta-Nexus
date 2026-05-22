@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../theme.dart';
-import '../state/app_state.dart';
+
 import '../models/scripture_model.dart';
+import '../state/app_state.dart';
+import '../theme.dart';
 import 'scripture_verse_detail_screen.dart';
 
 class BookmarksScreen extends StatelessWidget {
@@ -12,115 +14,286 @@ class BookmarksScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         centerTitle: true,
-        leading: BackButton(color: kGold),
-        title: Text(
-          'Saved Verses', 
-          style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, fontSize: 18, color: kGold)
+        leading: Semantics(
+          button: true,
+          label: 'Go back',
+          hint: 'Returns to previous screen',
+          child: BackButton(color: kGold),
+        ),
+        title: Semantics(
+          header: true,
+          child: Text(
+            'Saved Verses',
+            style: GoogleFonts.cinzel(
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+              color: kGold,
+            ),
+          ),
         ),
       ),
-      body: Consumer<AppState>(
-        builder: (context, state, child) {
-          final bookmarkedList = state.bookmarkedVerses;
+      body: SafeArea(
+        child: Consumer<AppState>(
+          builder: (context, state, child) {
+            final bookmarkedList = state.bookmarkedVerses;
 
-          if (bookmarkedList.isEmpty) {
+            if (bookmarkedList.isEmpty) {
+              return Semantics(
+                liveRegion: true,
+                label: 'No saved verses found',
+                child: _buildEmptyState(theme),
+              );
+            }
+
             return Semantics(
+              container: true,
               liveRegion: true,
-              child: _buildEmptyState(theme),
+              explicitChildNodes: true,
+              label:
+                  'Bookmarks list containing ${bookmarkedList.length} saved verses. '
+                  'Swipe left to remove a bookmark.',
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+                itemCount: bookmarkedList.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 16),
+                itemBuilder: (ctx, i) {
+                  return _buildDismissibleCard(
+                    context,
+                    bookmarkedList[i],
+                    i,
+                    bookmarkedList.length,
+                  );
+                },
+              ),
             );
-          }
+          },
+        ),
+      ),
+    );
+  }
 
-          return Semantics(
-            liveRegion: true,
-            label: 'List of ${bookmarkedList.length} saved verses. Swipe left to delete.',
-            child: ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 100),
-              itemCount: bookmarkedList.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 16),
-              itemBuilder: (ctx, i) => _buildDismissibleCard(context, bookmarkedList[i]),
+  Widget _buildDismissibleCard(
+    BuildContext context,
+    ScriptureVerse verse,
+    int index,
+    int total,
+  ) {
+    final appState = Provider.of<AppState>(context, listen: false);
+
+    final versePreview = verse.originalText
+        .replaceAll('\n', ' ')
+        .trim();
+
+    final shortPreview = versePreview.length > 80
+        ? '${versePreview.substring(0, 80)}...'
+        : versePreview;
+
+    return MergeSemantics(
+      child: Semantics(
+        container: true,
+        button: true,
+        enabled: true,
+        label:
+            'Saved verse ${verse.verseIndex}. '
+            'Item ${index + 1} of $total. '
+            '$shortPreview',
+        hint:
+            'Double tap to open verse details. Swipe left to remove bookmark.',
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ScriptureVerseDetailScreen(
+                allVerses: [verse],
+                initialIndex: 0,
+              ),
             ),
           );
         },
-      ),
-    );
-  }
+        child: Dismissible(
+          key: ValueKey('bookmark_${verse.verseIndex}'),
+          direction: DismissDirection.endToStart,
+          background: _buildDismissBackground(),
+          confirmDismiss: (direction) async {
+            return await showDialog<bool>(
+                  context: context,
+                  builder: (dialogContext) {
+                    return AlertDialog(
+                      title: const Text('Remove Bookmark'),
+                      content: Text(
+                        'Are you sure you want to remove verse ${verse.verseIndex} from bookmarks?',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () =>
+                              Navigator.of(dialogContext).pop(false),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () =>
+                              Navigator.of(dialogContext).pop(true),
+                          child: const Text('Remove'),
+                        ),
+                      ],
+                    );
+                  },
+                ) ??
+                false;
+          },
+          onDismissed: (_) {
+            appState.toggleBookmark(verse);
 
-  Widget _buildDismissibleCard(BuildContext context, ScriptureVerse verse) {
-    final appState = Provider.of<AppState>(context, listen: false);
+            HapticFeedback.mediumImpact();
 
-    return Dismissible(
-      key: ValueKey('bookmark_${verse.verseIndex}'),
-      direction: DismissDirection.endToStart,
-      background: _buildDismissBackground(),
-      onDismissed: (direction) {
-        appState.toggleBookmark(verse);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Removed verse ${verse.verseIndex} from bookmarks'),
-            action: SnackBarAction(
-              label: 'UNDO',
-              onPressed: () => appState.toggleBookmark(verse),
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                behavior: SnackBarBehavior.floating,
+                content: Text(
+                  'Verse ${verse.verseIndex} removed from bookmarks',
+                  semanticsLabel:
+                      'Verse ${verse.verseIndex} removed from bookmarks',
+                ),
+                action: SnackBarAction(
+                  label: 'UNDO',
+                  onPressed: () {
+                    appState.toggleBookmark(verse);
+                  },
+                ),
+              ),
+            );
+          },
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ScriptureVerseDetailScreen(
+                      allVerses: [verse],
+                      initialIndex: 0,
+                    ),
+                  ),
+                );
+              },
+              child: _verseCard(context, verse),
             ),
           ),
-        );
-      },
-      child: Semantics(
-        button: true,
-        label: 'Verse ${verse.verseIndex}. ${verse.originalText.substring(0, 20)}. Double tap to open details.',
-        child: InkWell(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => ScriptureVerseDetailScreen(allVerses: [verse], initialIndex: 0)),
-          ),
-          child: _verseCard(verse),
         ),
       ),
     );
   }
 
-  Widget _verseCard(ScriptureVerse verse) {
+  Widget _verseCard(BuildContext context, ScriptureVerse verse) {
+    final theme = Theme.of(context);
+
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: kCard.withOpacity(0.6),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: kGold.withOpacity(0.1)),
+        border: Border.all(
+          color: kGold.withOpacity(0.15),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('VERSE ${verse.verseIndex}', style: GoogleFonts.cinzel(color: kGold, fontSize: 10, fontWeight: FontWeight.bold)),
+          Semantics(
+            header: true,
+            child: Text(
+              'VERSE ${verse.verseIndex}',
+              style: GoogleFonts.cinzel(
+                color: kGold,
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+              ),
+            ),
+          ),
           const SizedBox(height: 12),
-          Text(verse.originalText.replaceAll('\n', ' '), maxLines: 2, overflow: TextOverflow.ellipsis),
+          ExcludeSemantics(
+            child: Text(
+              verse.originalText.replaceAll('\n', ' '),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                height: 1.5,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildDismissBackground() {
-    return Container(
-      decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.8), borderRadius: BorderRadius.circular(16)),
-      alignment: Alignment.centerRight,
-      padding: const EdgeInsets.only(right: 20),
-      child: const Icon(Icons.delete, color: Colors.white, semanticLabel: 'Delete Bookmark'),
+    return Semantics(
+      label: 'Delete bookmark',
+      hint: 'Release to remove this saved verse',
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.redAccent.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 24),
+        child: const Icon(
+          Icons.delete_outline_rounded,
+          color: Colors.white,
+          size: 28,
+        ),
+      ),
     );
   }
 
   Widget _buildEmptyState(ThemeData theme) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.bookmark_border, size: 60, color: kGold.withOpacity(0.3)),
-          const SizedBox(height: 16),
-          Text('No Saved Verses', style: TextStyle(color: kGold.withOpacity(0.5))),
-        ],
+      child: Semantics(
+        container: true,
+        label:
+            'No saved verses available. Bookmark verses to see them here.',
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ExcludeSemantics(
+              child: Icon(
+                Icons.bookmark_border_rounded,
+                size: 64,
+                color: kGold.withOpacity(0.35),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'No Saved Verses',
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: kGold.withOpacity(0.7),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                'Bookmark your favorite verses to access them quickly later.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
