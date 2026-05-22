@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 1.5.0+1
 
 environment:
-  sdk: '>=3.3.0 <4.0.0' # SDK ko thoda upgrade kiya hai taaki naye packages compatible rahein
+  sdk: '>=3.3.0 <4.0.0'
 
 dependencies:
   flutter:
@@ -16,7 +16,7 @@ dependencies:
   # --- Firebase Core, Firestore, Auth & Messaging (Fully Synced Stable Versions) ---
   firebase_core: ^3.1.1
   cloud_firestore: ^5.0.1
-  firebase_auth: ^5.1.1          # <-- Missing package yahan add kar diya hai
+  firebase_auth: ^5.1.1          
   firebase_messaging: ^15.0.1
   flutter_local_notifications: ^17.2.1
 
@@ -35,7 +35,7 @@ dependencies:
   dynamic_color: ^1.6.9
 
   # --- Data & Utilities ---
-  intl: ^0.19.0
+  intl: ^0.20.2 # Upgraded to match flutter_localizations requirement from the SDK
   uuid: ^4.3.3
   collection: ^1.18.0
   dartz: ^0.10.1
@@ -64,7 +64,7 @@ dependencies:
   image_picker: ^1.1.2
   audioplayers: ^6.0.0
   just_audio: ^0.9.38
-  just_audio_background: ^0.0.1-beta.17  # <-- Fixed: Changed from non-existent ^0.0.5 to a valid pub.dev release
+  just_audio_background: ^0.0.1-beta.17  
   audio_video_progress_bar: ^2.0.3
   speech_to_text: ^6.6.1
   flutter_tts: ^4.1.0
@@ -76,7 +76,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
-  build_runner: ^2.4.9        # Version conflict theek kiya gaya hai
+  build_runner: ^2.4.9        
   flutter_launcher_icons: ^0.13.1
 
 # --- LAUNCHER ICON ENGINE CONFIG ---
@@ -84,7 +84,7 @@ flutter_launcher_icons:
   android: "launcher_icon"
   ios: true
   image_path: "assets/images/Logo.png"
-  adaptive_icon_background: "#001a4d" # Divine Shyam Blue
+  adaptive_icon_background: "#001a4d" 
   adaptive_icon_foreground: "assets/images/Logo.png"
 
 flutter:
