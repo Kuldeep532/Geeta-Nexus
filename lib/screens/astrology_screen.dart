@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -5,6 +7,83 @@ import 'package:india_states_cities/india_states_cities.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../theme.dart';
+
+class AstrologyProfile {
+
+  final String name;
+
+  final String state;
+
+  final String city;
+
+  final DateTime dob;
+
+  final TimeOfDay tob;
+
+  final String zodiac;
+
+  const AstrologyProfile({
+
+    required this.name,
+
+    required this.state,
+
+    required this.city,
+
+    required this.dob,
+
+    required this.tob,
+
+    required this.zodiac,
+  });
+
+  Map<String, dynamic> toMap() {
+
+    return {
+
+      'name': name,
+
+      'state': state,
+
+      'city': city,
+
+      'dob': dob.toIso8601String(),
+
+      'hour': tob.hour,
+
+      'minute': tob.minute,
+
+      'zodiac': zodiac,
+    };
+  }
+
+  factory AstrologyProfile.fromMap(
+    Map<String, dynamic> map,
+  ) {
+
+    return AstrologyProfile(
+
+      name: map['name'] ?? '',
+
+      state: map['state'] ?? '',
+
+      city: map['city'] ?? '',
+
+      dob: DateTime.parse(
+        map['dob'],
+      ),
+
+      tob: TimeOfDay(
+
+        hour: map['hour'],
+
+        minute: map['minute'],
+      ),
+
+      zodiac: map['zodiac'] ?? '',
+    );
+  }
+}
 
 class AstrologyScreen extends StatefulWidget {
   const AstrologyScreen({super.key});
@@ -23,6 +102,12 @@ class _AstrologyScreenState
   final FocusNode _nameFocusNode =
       FocusNode();
 
+  final ValueNotifier<bool>
+      _isGeneratingNotifier =
+      ValueNotifier(false);
+
+  AstrologyProfile? _profile;
+
   DateTime? _dob;
 
   TimeOfDay? _tob;
@@ -31,15 +116,25 @@ class _AstrologyScreenState
 
   String? _selectedCity;
 
-  String? _result;
-
-  bool _profileAdded = false;
-
-  bool _isGenerating = false;
-
   List<String> _states = [];
 
   List<String> _cities = [];
+
+  final List<String>
+      _dailyGuidance = [
+
+    'Stay calm and focused',
+
+    'Good opportunities may arrive today',
+
+    'Take care of your emotional energy',
+
+    'Avoid unnecessary stress',
+
+    'Positive communication will help today',
+
+    'Focus on self growth and balance',
+  ];
 
   @override
   void initState() {
@@ -51,102 +146,7 @@ class _AstrologyScreenState
     _loadProfile();
   }
 
-  Future<void> _loadProfile() async {
-
-    final prefs =
-        await SharedPreferences.getInstance();
-
-    _nameController.text =
-        prefs.getString('name') ?? '';
-
-    _selectedState =
-        prefs.getString('state');
-
-    _selectedCity =
-        prefs.getString('city');
-
-    final dob =
-        prefs.getString('dob');
-
-    if (dob != null) {
-      _dob = DateTime.tryParse(
-        dob,
-      );
-    }
-
-    final hour =
-        prefs.getInt('hour');
-
-    final minute =
-        prefs.getInt('minute');
-
-    if (hour != null &&
-        minute != null) {
-
-      _tob = TimeOfDay(
-        hour: hour,
-        minute: minute,
-      );
-    }
-
-    if (_selectedState != null) {
-
-      _cities =
-          IndiaStates.getCities(
-        _selectedState!,
-      );
-    }
-
-    setState(() {
-
-      _profileAdded =
-          _nameController.text
-              .trim()
-              .isNotEmpty;
-    });
-  }
-
-  Future<void> _saveProfile() async {
-
-    final prefs =
-        await SharedPreferences.getInstance();
-
-    await prefs.setString(
-      'name',
-      _nameController.text.trim(),
-    );
-
-    await prefs.setString(
-      'state',
-      _selectedState!,
-    );
-
-    await prefs.setString(
-      'city',
-      _selectedCity!,
-    );
-
-    await prefs.setString(
-      'dob',
-      _dob!.toIso8601String(),
-    );
-
-    await prefs.setInt(
-      'hour',
-      _tob!.hour,
-    );
-
-    await prefs.setInt(
-      'minute',
-      _tob!.minute,
-    );
-
-    setState(() {
-      _profileAdded = true;
-    });
-  }
-
-  bool get _canGenerate {
+  bool get _isProfileComplete {
 
     return _nameController.text
             .trim()
@@ -155,6 +155,96 @@ class _AstrologyScreenState
         _selectedCity != null &&
         _dob != null &&
         _tob != null;
+  }
+
+  Future<void> _loadProfile() async {
+
+    final prefs =
+        await SharedPreferences.getInstance();
+
+    final raw =
+        prefs.getString(
+      'astrology_profile',
+    );
+
+    if (raw == null) {
+      return;
+    }
+
+    final profile =
+        AstrologyProfile.fromMap(
+      jsonDecode(raw),
+    );
+
+    _profile = profile;
+
+    _nameController.text =
+        profile.name;
+
+    _selectedState =
+        profile.state;
+
+    _selectedCity =
+        profile.city;
+
+    _dob = profile.dob;
+
+    _tob = profile.tob;
+
+    _cities =
+        IndiaStates.getCities(
+      profile.state,
+    );
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> _saveProfile() async {
+
+    final prefs =
+        await SharedPreferences.getInstance();
+
+    final zodiac =
+        _calculateZodiac(
+      _dob!,
+    );
+
+    final profile =
+        AstrologyProfile(
+
+      name:
+          _nameController.text
+              .trim(),
+
+      state:
+          _selectedState!,
+
+      city:
+          _selectedCity!,
+
+      dob: _dob!,
+
+      tob: _tob!,
+
+      zodiac: zodiac,
+    );
+
+    await prefs.setString(
+
+      'astrology_profile',
+
+      jsonEncode(
+        profile.toMap(),
+      ),
+    );
+
+    _profile = profile;
+
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   String _calculateZodiac(
@@ -222,18 +312,33 @@ class _AstrologyScreenState
     return 'Pisces';
   }
 
+  String _dailyMessage() {
+
+    final weekday =
+        DateTime.now().weekday;
+
+    return _dailyGuidance[
+      weekday %
+          _dailyGuidance.length
+    ];
+  }
+
   Future<void> _generateKundli() async {
 
-    if (!_canGenerate ||
-        _isGenerating) {
+    if (!_isProfileComplete) {
+
+      SemanticsService.announce(
+        'Please complete your profile first',
+        TextDirection.ltr,
+      );
+
       return;
     }
 
     FocusScope.of(context).unfocus();
 
-    setState(() {
-      _isGenerating = true;
-    });
+    _isGeneratingNotifier.value =
+        true;
 
     HapticFeedback.lightImpact();
 
@@ -243,52 +348,17 @@ class _AstrologyScreenState
       ),
     );
 
-    final zodiac =
-        _calculateZodiac(
-      _dob!,
-    );
-
-    final generatedResult = '''
-Kundli Summary
-
-Name
-${_nameController.text.trim()}
-
-State
-$_selectedState
-
-City
-$_selectedCity
-
-Date of Birth
-${_dob!.day}/${_dob!.month}/${_dob!.year}
-
-Birth Time
-${_tob!.format(context)}
-
-Zodiac Sign
-$zodiac
-
-Daily Guidance
-
-• Stay positive
-• Focus on self growth
-• Avoid unnecessary stress
-• Good opportunities may arrive soon
-''';
-
-    setState(() {
-
-      _result =
-          generatedResult;
-
-      _isGenerating = false;
-    });
+    _isGeneratingNotifier.value =
+        false;
 
     SemanticsService.announce(
       'Kundli generated successfully',
       TextDirection.ltr,
     );
+
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   Future<void> _openProfileSheet() async {
@@ -297,25 +367,11 @@ Daily Guidance
 
       context: context,
 
-      isScrollControlled: true,
-
       useSafeArea: true,
 
-      backgroundColor:
-          Theme.of(context)
-              .colorScheme
-              .surface,
+      isScrollControlled: true,
 
-      shape:
-          const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(
-          top:
-              Radius.circular(
-            28,
-          ),
-        ),
-      ),
+      showDragHandle: true,
 
       builder: (context) {
 
@@ -325,865 +381,3 @@ Daily Guidance
             context,
             setBottomState,
           ) {
-
-            return Padding(
-
-              padding:
-                  EdgeInsets.only(
-                left: 20,
-                right: 20,
-                top: 20,
-                bottom:
-                    MediaQuery.of(
-                          context,
-                        )
-                        .viewInsets
-                        .bottom +
-                    20,
-              ),
-
-              child:
-                  SingleChildScrollView(
-
-                physics:
-                    const BouncingScrollPhysics(),
-
-                child: Column(
-
-                  mainAxisSize:
-                      MainAxisSize.min,
-
-                  crossAxisAlignment:
-                      CrossAxisAlignment
-                          .start,
-
-                  children: [
-
-                    Center(
-                      child: Container(
-                        width: 56,
-                        height: 5,
-
-                        decoration:
-                            BoxDecoration(
-                          color:
-                              Theme.of(
-                            context,
-                          ).dividerColor,
-
-                          borderRadius:
-                              BorderRadius.circular(
-                            20,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 24,
-                    ),
-
-                    Semantics(
-
-                      header: true,
-
-                      child: Text(
-
-                        _profileAdded
-                            ? 'Edit Profile'
-                            : 'Add Profile',
-
-                        style:
-                            Theme.of(
-                          context,
-                        )
-                                .textTheme
-                                .headlineSmall,
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 24,
-                    ),
-
-                    Semantics(
-
-                      label:
-                          'Enter your full name',
-
-                      textField: true,
-
-                      child: TextField(
-
-                        controller:
-                            _nameController,
-
-                        focusNode:
-                            _nameFocusNode,
-
-                        textCapitalization:
-                            TextCapitalization
-                                .words,
-
-                        decoration:
-                            InputDecoration(
-                          labelText:
-                              'Full Name',
-
-                          hintText:
-                              'Enter your full name',
-
-                          prefixIcon:
-                              const Icon(
-                            Icons.person_outline,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(
-                      height: 16,
-                    ),
-
-                    _selectionTile(
-
-                      context: context,
-
-                      title:
-                          _selectedState ??
-                              'Select State',
-
-                      icon:
-                          Icons.map_outlined,
-
-                      semanticLabel:
-                          'Select state',
-
-                      onTap: () async {
-
-                        final state =
-                            await _showSelectionSheet(
-                          context:
-                              context,
-
-                          title:
-                              'Select State',
-
-                          items:
-                              _states,
-                        );
-
-                        if (state != null) {
-
-                          setBottomState(() {
-
-                            _selectedState =
-                                state;
-
-                            _selectedCity =
-                                null;
-
-                            _cities =
-                                IndiaStates
-                                    .getCities(
-                              state,
-                            );
-                          });
-                        }
-                      },
-                    ),
-
-                    const SizedBox(
-                      height: 16,
-                    ),
-
-                    _selectionTile(
-
-                      context: context,
-
-                      title:
-                          _selectedCity ??
-                              'Select City',
-
-                      icon:
-                          Icons.location_city_outlined,
-
-                      semanticLabel:
-                          'Select city',
-
-                      onTap: () async {
-
-                        if (_selectedState ==
-                            null) {
-
-                          SemanticsService
-                              .announce(
-                            'Please select state first',
-                            TextDirection.ltr,
-                          );
-
-                          return;
-                        }
-
-                        final city =
-                            await _showSelectionSheet(
-                          context:
-                              context,
-
-                          title:
-                              'Select City',
-
-                          items:
-                              _cities,
-                        );
-
-                        if (city != null) {
-
-                          setBottomState(() {
-                            _selectedCity =
-                                city;
-                          });
-                        }
-                      },
-                    ),
-
-                    const SizedBox(
-                      height: 16,
-                    ),
-
-                    _selectionTile(
-
-                      context: context,
-
-                      title:
-                          _dob == null
-                              ? 'Select Birth Date'
-                              : '${_dob!.day}/${_dob!.month}/${_dob!.year}',
-
-                      icon:
-                          Icons.calendar_today_outlined,
-
-                      semanticLabel:
-                          'Select birth date',
-
-                      onTap: () async {
-
-                        final picked =
-                            await showDatePicker(
-                          context:
-                              context,
-
-                          firstDate:
-                              DateTime(
-                            1950,
-                          ),
-
-                          lastDate:
-                              DateTime.now(),
-
-                          initialDate:
-                              _dob ??
-                                  DateTime(
-                                    2000,
-                                  ),
-                        );
-
-                        if (picked != null) {
-
-                          setBottomState(() {
-                            _dob = picked;
-                          });
-                        }
-                      },
-                    ),
-
-                    const SizedBox(
-                      height: 16,
-                    ),
-
-                    _selectionTile(
-
-                      context: context,
-
-                      title:
-                          _tob == null
-                              ? 'Select Birth Time'
-                              : _tob!.format(
-                                  context,
-                                ),
-
-                      icon:
-                          Icons.access_time_outlined,
-
-                      semanticLabel:
-                          'Select birth time',
-
-                      onTap: () async {
-
-                        final picked =
-                            await showTimePicker(
-                          context:
-                              context,
-
-                          initialTime:
-                              _tob ??
-                                  const TimeOfDay(
-                                    hour: 6,
-                                    minute: 0,
-                                  ),
-                        );
-
-                        if (picked != null) {
-
-                          setBottomState(() {
-                            _tob = picked;
-                          });
-                        }
-                      },
-                    ),
-
-                    const SizedBox(
-                      height: 28,
-                    ),
-
-                    SizedBox(
-
-                      width:
-                          double.infinity,
-
-                      height: 56,
-
-                      child:
-                          FilledButton(
-
-                        onPressed: () async {
-
-                          if (!_canGenerate) {
-
-                            SemanticsService
-                                .announce(
-                              'Please complete all profile fields',
-                              TextDirection.ltr,
-                            );
-
-                            return;
-                          }
-
-                          await _saveProfile();
-
-                          if (!mounted) {
-                            return;
-                          }
-
-                          Navigator.pop(
-                            context,
-                          );
-
-                          ScaffoldMessenger.of(
-                            context,
-                          ).showSnackBar(
-
-                            SnackBar(
-
-                              behavior:
-                                  SnackBarBehavior
-                                      .floating,
-
-                              content: Text(
-
-                                _profileAdded
-                                    ? 'Profile updated successfully'
-                                    : 'Profile added successfully',
-                              ),
-                            ),
-                          );
-                        },
-
-                        child: Text(
-
-                          _profileAdded
-                              ? 'Update Profile'
-                              : 'Save Profile',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Future<String?> _showSelectionSheet({
-
-    required BuildContext context,
-
-    required String title,
-
-    required List<String> items,
-  }) async {
-
-    return showModalBottomSheet<String>(
-
-      context: context,
-
-      useSafeArea: true,
-
-      backgroundColor:
-          Theme.of(context)
-              .colorScheme
-              .surface,
-
-      shape:
-          const RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.vertical(
-          top:
-              Radius.circular(
-            28,
-          ),
-        ),
-      ),
-
-      builder: (context) {
-
-        return Column(
-
-          children: [
-
-            const SizedBox(
-              height: 16,
-            ),
-
-            Container(
-              width: 56,
-              height: 5,
-
-              decoration:
-                  BoxDecoration(
-                color:
-                    Theme.of(
-                  context,
-                ).dividerColor,
-
-                borderRadius:
-                    BorderRadius.circular(
-                  20,
-                ),
-              ),
-            ),
-
-            const SizedBox(
-              height: 20,
-            ),
-
-            Semantics(
-
-              header: true,
-
-              child: Text(
-
-                title,
-
-                style:
-                    Theme.of(context)
-                        .textTheme
-                        .titleLarge,
-              ),
-            ),
-
-            const SizedBox(
-              height: 16,
-            ),
-
-            Expanded(
-
-              child:
-                  ListView.builder(
-
-                physics:
-                    const BouncingScrollPhysics(),
-
-                itemCount:
-                    items.length,
-
-                itemBuilder:
-                    (context, index) {
-
-                  final item =
-                      items[index];
-
-                  return Semantics(
-
-                    button: true,
-
-                    label: item,
-
-                    child: ListTile(
-
-                      title: Text(
-                        item,
-                      ),
-
-                      onTap: () {
-
-                        HapticFeedback
-                            .selectionClick();
-
-                        Navigator.pop(
-                          context,
-                          item,
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _selectionTile({
-
-    required BuildContext context,
-
-    required String title,
-
-    required IconData icon,
-
-    required String semanticLabel,
-
-    required VoidCallback onTap,
-  }) {
-
-    return Semantics(
-
-      button: true,
-
-      label:
-          semanticLabel,
-
-      child: InkWell(
-
-        borderRadius:
-            BorderRadius.circular(
-          20,
-        ),
-
-        onTap: onTap,
-
-        child: Ink(
-
-          padding:
-              const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 18,
-          ),
-
-          decoration:
-              BoxDecoration(
-
-            color:
-                Theme.of(context)
-                    .colorScheme
-                    .surfaceContainerHighest,
-
-            borderRadius:
-                BorderRadius.circular(
-              20,
-            ),
-          ),
-
-          child: Row(
-
-            children: [
-
-              Icon(icon),
-
-              const SizedBox(
-                width: 14,
-              ),
-
-              Expanded(
-                child: Text(
-                  title,
-                ),
-              ),
-
-              const Icon(
-                Icons.keyboard_arrow_down,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-
-    _nameController.dispose();
-
-    _nameFocusNode.dispose();
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-
-    final theme =
-        Theme.of(context);
-
-    return Scaffold(
-
-      appBar: AppBar(
-
-        title: const Text(
-          'Astrology',
-        ),
-
-        actions: [
-
-          Semantics(
-
-            button: true,
-
-            label:
-                _profileAdded
-                    ? 'Edit profile'
-                    : 'Add profile',
-
-            child: IconButton(
-
-              onPressed:
-                  _openProfileSheet,
-
-              icon: Icon(
-
-                _profileAdded
-                    ? Icons.edit_outlined
-                    : Icons.person_add_alt_1_outlined,
-              ),
-            ),
-          ),
-        ],
-      ),
-
-      body:
-          SafeArea(
-
-        child:
-            SingleChildScrollView(
-
-          physics:
-              const BouncingScrollPhysics(),
-
-          padding:
-              const EdgeInsets.all(
-            20,
-          ),
-
-          child: Column(
-
-            children: [
-
-              Semantics(
-
-                container: true,
-
-                label:
-                    'Profile information card',
-
-                child: Card(
-
-                  elevation: 0,
-
-                  child: Padding(
-
-                    padding:
-                        const EdgeInsets.all(
-                      20,
-                    ),
-
-                    child: Row(
-
-                      children: [
-
-                        CircleAvatar(
-
-                          radius: 28,
-
-                          child: Text(
-
-                            _nameController
-                                    .text
-                                    .isEmpty
-                                ? 'A'
-                                : _nameController
-                                    .text[0]
-                                    .toUpperCase(),
-                          ),
-                        ),
-
-                        const SizedBox(
-                          width: 16,
-                        ),
-
-                        Expanded(
-
-                          child: Column(
-
-                            crossAxisAlignment:
-                                CrossAxisAlignment
-                                    .start,
-
-                            children: [
-
-                              Text(
-
-                                _profileAdded
-                                    ? _nameController
-                                        .text
-                                    : 'No Profile Added',
-
-                                style:
-                                    theme
-                                        .textTheme
-                                        .titleMedium,
-                              ),
-
-                              const SizedBox(
-                                height: 4,
-                              ),
-
-                              Text(
-
-                                _profileAdded
-                                    ? 'Profile ready'
-                                    : 'Please add your profile',
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        FilledButton(
-
-                          onPressed:
-                              _openProfileSheet,
-
-                          child: Text(
-
-                            _profileAdded
-                                ? 'Edit'
-                                : 'Add',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(
-                height: 28,
-              ),
-
-              Semantics(
-
-                button: true,
-
-                enabled:
-                    _canGenerate,
-
-                label:
-                    'Generate Kundli',
-
-                child: SizedBox(
-
-                  width:
-                      double.infinity,
-
-                  height: 56,
-
-                  child:
-                      FilledButton(
-
-                    onPressed:
-                        _canGenerate
-                            ? _generateKundli
-                            : null,
-
-                    child:
-                        _isGenerating
-
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-
-                                child:
-                                    CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-
-                            : const Text(
-                                'Generate Kundli',
-                              ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(
-                height: 28,
-              ),
-
-              if (_result != null)
-
-                Semantics(
-
-                  liveRegion: true,
-
-                  label:
-                      'Generated kundli result',
-
-                  child: Card(
-
-                    elevation: 0,
-
-                    child: Padding(
-
-                      padding:
-                          const EdgeInsets.all(
-                        20,
-                      ),
-
-                      child: SelectableText(
-
-                        _result!,
-
-                        style:
-                            theme
-                                .textTheme
-                                .bodyLarge
-                                ?.copyWith(
-                          height: 1.7,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
