@@ -354,60 +354,31 @@ class _VoiceSupportScreenState extends State<VoiceSupportScreen>
               const Spacer(),
 
               // ── Action Button ────────────────────────────────────────────
-              Semantics(
-                button: true,
-                enabled: !busy,
-                label: _aiReply.isEmpty ? 'Start Voice Call' : 'Speak Again',
-                hint: busy ? 'Please wait' : 'Double tap to start speaking',
-                child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 200),
-                  opacity: busy ? 0.5 : 1.0,
-                  child: GestureDetector(
-                    onTap: busy ? null : _startVoiceCall,
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: busy
-                              ? [Colors.grey.shade600, Colors.grey.shade500]
-                              : [kGold, kSaffron],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: busy
-                            ? []
-                            : [
-                                BoxShadow(
-                                  blurRadius: 18,
-                                  color: kGold.withOpacity(0.35),
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            _aiReply.isEmpty
-                                ? Icons.phone_rounded
-                                : Icons.mic_rounded,
-                            color: Colors.black87,
-                            size: 22,
-                          ),
-                          const SizedBox(width: 10),
-                          Text(
-                            _aiReply.isEmpty ? 'Start Voice Call' : 'Speak Again',
-                            style: GoogleFonts.poppins(
-                              fontWeight: FontWeight.w700,
-                              fontSize: 16,
-                              color: Colors.black87,
-                            ),
-                          ),
-                        ],
-                      ),
+              SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton.icon(
+                  onPressed: busy ? null : _startVoiceCall,
+                  icon: Icon(
+                    _aiReply.isEmpty ? Icons.phone_rounded : Icons.mic_rounded,
+                    size: 22,
+                  ),
+                  label: Text(
+                    _aiReply.isEmpty ? 'Start Voice Call' : 'Speak Again',
+                    style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
                     ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: busy ? Colors.grey : kGold,
+                    foregroundColor: Colors.black87,
+                    disabledBackgroundColor: Colors.grey.shade600,
+                    disabledForegroundColor: Colors.white54,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    elevation: busy ? 0 : 4,
                   ),
                 ),
               ),

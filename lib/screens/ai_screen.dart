@@ -369,27 +369,22 @@ class _AiScreenState extends State<AiScreen> {
             ),
 
             if (_aiSpeaking)
-              AnimatedContainer(
-                duration:
-                    disableAnimations
+              Semantics(
+                liveRegion: true,
+                label: 'AI is speaking',
+                child: ExcludeSemantics(
+                  child: AnimatedContainer(
+                    duration: disableAnimations
                         ? Duration.zero
-                        : const Duration(
-                            milliseconds: 400,
-                          ),
-                margin:
-                    const EdgeInsets.symmetric(
-                  vertical: 10,
-                ),
-                height: 45,
-                width: 140,
-                decoration: BoxDecoration(
-                  color: kGold.withOpacity(0.25),
-                  borderRadius:
-                      BorderRadius.circular(30),
-                ),
-                child: const Center(
-                  child: Text(
-                    "AI Speaking...",
+                        : const Duration(milliseconds: 400),
+                    margin: const EdgeInsets.symmetric(vertical: 10),
+                    height: 45,
+                    width: 140,
+                    decoration: BoxDecoration(
+                      color: kGold.withOpacity(0.25),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: const Center(child: Text('AI Speaking…')),
                   ),
                 ),
               ),
@@ -402,31 +397,32 @@ class _AiScreenState extends State<AiScreen> {
   }
 
   Widget _buildSuggestionChips() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 8,
-      ),
-      child: Row(
-        children:
-            _suggestions.map((suggestion) {
-          return Padding(
-            padding:
-                const EdgeInsets.only(right: 8),
-            child: ActionChip(
-              label: Text(suggestion),
-              onPressed: () {
-                _controller.text = suggestion;
-
-                SemanticsService.announce(
-                  "Suggestion selected",
-                  TextDirection.ltr,
-                );
-              },
-            ),
-          );
-        }).toList(),
+    return Semantics(
+      label: 'Quick suggestions',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: _suggestions.map((suggestion) {
+            return Semantics(
+              button: true,
+              label: 'Suggestion: $suggestion. Double tap to use.',
+              child: ExcludeSemantics(
+                child: ActionChip(
+                  label: Text(suggestion),
+                  onPressed: () {
+                    _controller.text = suggestion;
+                    SemanticsService.announce(
+                      'Suggestion selected: $suggestion',
+                      TextDirection.ltr,
+                    );
+                  },
+                ),
+              ),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -435,66 +431,39 @@ class _AiScreenState extends State<AiScreen> {
     _Message msg,
     bool isDark,
   ) {
-    return FocusableActionDetector(
-      child: Semantics(
-        label:
-            msg.isUser
-                ? 'Your message'
-                : 'AI message',
-        readOnly: true,
+    final speakerLabel = msg.isUser ? 'You said' : 'AI replied';
+    return Semantics(
+      label: '$speakerLabel: ${msg.text}',
+      hint: 'Double tap to hear aloud. Long press to copy.',
+      button: true,
+      child: ExcludeSemantics(
         child: Align(
-          alignment:
-              msg.isUser
-                  ? Alignment.centerRight
-                  : Alignment.centerLeft,
+          alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
           child: GestureDetector(
             onTap: () => _speak(msg.text),
             onLongPress: () async {
-              await Clipboard.setData(
-                ClipboardData(text: msg.text),
-              );
-
-              SemanticsService.announce(
-                "Message copied",
-                TextDirection.ltr,
-              );
+              await Clipboard.setData(ClipboardData(text: msg.text));
+              SemanticsService.announce('Message copied', TextDirection.ltr);
             },
             child: Container(
-              margin:
-                  const EdgeInsets.symmetric(
-                vertical: 6,
-              ),
+              margin: const EdgeInsets.symmetric(vertical: 6),
               padding: const EdgeInsets.all(14),
               constraints: BoxConstraints(
-                maxWidth:
-                    MediaQuery.of(context)
-                            .size
-                            .width *
-                        0.85,
+                maxWidth: MediaQuery.of(context).size.width * 0.85,
               ),
               decoration: BoxDecoration(
-                color:
-                    msg.isUser
-                        ? kGold
-                        : (isDark
-                            ? Colors.grey[900]
-                            : Colors.grey[200]),
-                borderRadius:
-                    BorderRadius.circular(18),
+                color: msg.isUser
+                    ? kGold
+                    : (isDark ? Colors.grey[900] : Colors.grey[200]),
+                borderRadius: BorderRadius.circular(18),
               ),
               child: Text(
                 msg.text,
-                textScaler:
-                    MediaQuery.textScalerOf(
-                  context,
-                ),
+                textScaler: MediaQuery.textScalerOf(context),
                 style: TextStyle(
-                  color:
-                      msg.isUser
-                          ? Colors.black
-                          : (isDark
-                              ? Colors.white
-                              : Colors.black87),
+                  color: msg.isUser
+                      ? Colors.black
+                      : (isDark ? Colors.white : Colors.black87),
                   height: 1.5,
                   fontSize: 16,
                 ),
@@ -626,62 +595,45 @@ class _AiScreenState extends State<AiScreen> {
 
   Widget _buildPersonaSelector() {
     return Semantics(
-      container: true,
       label: 'Choose AI persona',
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding:
-            const EdgeInsets.symmetric(
-          vertical: 8,
-          horizontal: 8,
-        ),
-        child: Row(
-          children:
-              Persona.values.map((p) {
-            return Padding(
-              padding:
-                  const EdgeInsets.symmetric(
-                horizontal: 4,
-              ),
-              child: ChoiceChip(
-                selected: _persona == p,
-                label:
-                    Text(_personaNames[p]!),
-                selectedColor: kGold,
-                onSelected: (selected) async {
-                  if (!selected) return;
-
-                  await Vibration.vibrate(
-                    duration: 60,
-                  );
-
-                  setState(() {
-                    _persona = p;
-
-                    _messages
-                      ..clear()
-                      ..add(
-                        _Message(
-                          text:
-                              p ==
-                                      Persona
-                                          .krishna
-                                  ? 'Namaste, dear seeker. I am Krishna.'
-                                  : p ==
-                                          Persona
-                                              .radha
-                                      ? 'Welcome dear soul. I am Radha.'
-                                      : 'Greetings! I am your Gita Guide.',
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 4,
+          children: Persona.values.map((p) {
+            final isSelected = _persona == p;
+            return Semantics(
+              button: true,
+              selected: isSelected,
+              label: '${_personaNames[p]}. ${isSelected ? "Currently selected." : "Double tap to select."}',
+              child: ExcludeSemantics(
+                child: ChoiceChip(
+                  selected: isSelected,
+                  label: Text(_personaNames[p]!),
+                  selectedColor: kGold,
+                  onSelected: (selected) async {
+                    if (!selected) return;
+                    await Vibration.vibrate(duration: 60);
+                    setState(() {
+                      _persona = p;
+                      _messages
+                        ..clear()
+                        ..add(_Message(
+                          text: p == Persona.krishna
+                              ? 'Namaste, dear seeker. I am Krishna.'
+                              : p == Persona.radha
+                                  ? 'Welcome dear soul. I am Radha.'
+                                  : 'Greetings! I am your Gita Guide.',
                           isUser: false,
-                        ),
-                      );
-                  });
-
-                  SemanticsService.announce(
-                    '${_personaNames[p]} selected',
-                    TextDirection.ltr,
-                  );
-                },
+                        ));
+                    });
+                    SemanticsService.announce(
+                      '${_personaNames[p]} selected',
+                      TextDirection.ltr,
+                    );
+                  },
+                ),
               ),
             );
           }).toList(),

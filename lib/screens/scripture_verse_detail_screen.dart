@@ -275,10 +275,12 @@ class _ScriptureVerseDetailScreenState
       appBar: AppBar(
         elevation: 0,
         centerTitle: true,
-        title: Text(
-          verseTitle,
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
+        title: Semantics(
+          header: true,
+          namesRoute: true,
+          child: Text(
+            verseTitle,
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
           ),
         ),
         actions: [
@@ -399,28 +401,34 @@ class _ScriptureVerseDetailScreenState
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // TOP LABEL
-
-                  Row(
-                    children: [
-                      Icon(
-                        hasAudio
-                            ? Icons.multitrack_audio
-                            : Icons.record_voice_over,
-                        color: kGold,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          hasAudio
-                              ? "Audio narration available"
-                              : "Text to speech mode",
-                          style: GoogleFonts.poppins(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
+                  Semantics(
+                    label: hasAudio
+                        ? 'Audio narration available'
+                        : 'Text to speech mode',
+                    child: ExcludeSemantics(
+                      child: Row(
+                        children: [
+                          Icon(
+                            hasAudio
+                                ? Icons.multitrack_audio
+                                : Icons.record_voice_over,
+                            color: kGold,
                           ),
-                        ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              hasAudio
+                                  ? 'Audio narration available'
+                                  : 'Text to speech mode',
+                              style: GoogleFonts.poppins(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
 
                   const SizedBox(height: 18),
@@ -433,108 +441,110 @@ class _ScriptureVerseDetailScreenState
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       // PREVIOUS
-
                       _buildControlButton(
                         icon: Icons.skip_previous_rounded,
-                        onTap:
-                            _currentIndex > 0 ? _previousVerse : null,
+                        label: 'Previous verse',
+                        onTap: _currentIndex > 0 ? _previousVerse : null,
+                        enabled: _currentIndex > 0,
                       ),
 
-                      // AUDIO BUTTONS ONLY WHEN AUDIO EXISTS
-
-                      if (hasAudio) ...[
+                      // REWIND (audio only)
+                      if (hasAudio)
                         _buildControlButton(
                           icon: Icons.replay_10_rounded,
+                          label: 'Rewind 10 seconds',
                           onTap: () async {
                             final position =
                                 await _audioPlayer.getCurrentPosition();
-
                             if (position != null) {
-                              final newPosition =
-                                  position - const Duration(seconds: 10);
-
                               await _audioPlayer.seek(
-                                newPosition,
-                              );
+                                  position - const Duration(seconds: 10));
                             }
                           },
+                          enabled: true,
                         ),
-                      ],
 
                       // PLAY / PAUSE
-
-                      Container(
-                        height: 72,
-                        width: 72,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: kGold,
-                          boxShadow: [
-                            BoxShadow(
-                              blurRadius: 10,
-                              color: kGold.withOpacity(0.4),
+                      Semantics(
+                        button: true,
+                        label: _isPlaying
+                            ? 'Stop playback'
+                            : (hasAudio
+                                ? 'Play audio narration'
+                                : 'Read shlok aloud'),
+                        hint: 'Double tap to ${_isPlaying ? "stop" : "play"}',
+                        child: ExcludeSemantics(
+                          child: Container(
+                            height: 72,
+                            width: 72,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: kGold,
+                              boxShadow: [
+                                BoxShadow(
+                                  blurRadius: 10,
+                                  color: kGold.withOpacity(0.4),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: IconButton(
-                          onPressed: _handlePlayPause,
-                          icon: Icon(
-                            _isPlaying
-                                ? Icons.stop_rounded
-                                : Icons.play_arrow_rounded,
-                            size: 38,
-                            color: Colors.black,
+                            child: IconButton(
+                              onPressed: _handlePlayPause,
+                              icon: Icon(
+                                _isPlaying
+                                    ? Icons.stop_rounded
+                                    : Icons.play_arrow_rounded,
+                                size: 38,
+                                color: Colors.black,
+                              ),
+                            ),
                           ),
                         ),
                       ),
 
-                      // AUDIO BUTTONS ONLY WHEN AUDIO EXISTS
-
-                      if (hasAudio) ...[
+                      // FORWARD (audio only)
+                      if (hasAudio)
                         _buildControlButton(
                           icon: Icons.forward_10_rounded,
+                          label: 'Forward 10 seconds',
                           onTap: () async {
                             final position =
                                 await _audioPlayer.getCurrentPosition();
-
                             if (position != null) {
-                              final newPosition =
-                                  position + const Duration(seconds: 10);
-
                               await _audioPlayer.seek(
-                                newPosition,
-                              );
+                                  position + const Duration(seconds: 10));
                             }
                           },
+                          enabled: true,
                         ),
-                      ],
 
                       // NEXT
-
                       _buildControlButton(
                         icon: Icons.skip_next_rounded,
-                        onTap: _currentIndex <
-                                widget.allVerses.length - 1
+                        label: 'Next verse',
+                        onTap: _currentIndex < widget.allVerses.length - 1
                             ? _nextVerse
                             : null,
+                        enabled: _currentIndex < widget.allVerses.length - 1,
                       ),
                     ],
                   ),
 
-                  // STATUS TEXT
-
+                  // STATUS TEXT — liveRegion so screen reader announces changes
                   if (_showControls) ...[
                     const SizedBox(height: 16),
-
-                    Text(
-                      _isPlaying
-                          ? (hasAudio
-                              ? "Playing audio..."
-                              : "Reading shlok...")
-                          : "Playback stopped",
-                      style: GoogleFonts.poppins(
-                        fontSize: 13,
-                        color: Colors.grey,
+                    Semantics(
+                      liveRegion: true,
+                      label: _isPlaying
+                          ? (hasAudio ? 'Playing audio' : 'Reading shlok')
+                          : 'Playback stopped',
+                      child: ExcludeSemantics(
+                        child: Text(
+                          _isPlaying
+                              ? (hasAudio ? 'Playing audio…' : 'Reading shlok…')
+                              : 'Playback stopped',
+                          style: GoogleFonts.poppins(
+                              fontSize: 13, color: Colors.grey),
+                        ),
                       ),
                     ),
                   ],
@@ -553,23 +563,33 @@ class _ScriptureVerseDetailScreenState
 
   Widget _buildControlButton({
     required IconData icon,
+    required String label,
     required VoidCallback? onTap,
+    required bool enabled,
   }) {
-    return Container(
-      height: 54,
-      width: 54,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: onTap == null
-            ? Colors.grey.withOpacity(0.15)
-            : kGold.withOpacity(0.12),
-      ),
-      child: IconButton(
-        onPressed: onTap,
-        icon: Icon(
-          icon,
-          size: 28,
-          color: onTap == null ? Colors.grey : kGold,
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: label,
+      hint: enabled ? 'Double tap to activate' : 'Not available',
+      child: ExcludeSemantics(
+        child: Container(
+          height: 54,
+          width: 54,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: enabled
+                ? kGold.withOpacity(0.12)
+                : Colors.grey.withOpacity(0.15),
+          ),
+          child: IconButton(
+            onPressed: onTap,
+            icon: Icon(
+              icon,
+              size: 28,
+              color: enabled ? kGold : Colors.grey,
+            ),
+          ),
         ),
       ),
     );
