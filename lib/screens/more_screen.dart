@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
@@ -21,7 +23,7 @@ class MoreScreen extends StatefulWidget {
 }
 
 class _MoreScreenState extends State<MoreScreen> {
-  String _version = 'Loading...';
+  String _version = '';
 
   @override
   void initState() {
@@ -31,148 +33,94 @@ class _MoreScreenState extends State<MoreScreen> {
 
   Future<void> _loadVersion() async {
     try {
-      final packageInfo = await PackageInfo.fromPlatform();
-
+      final info = await PackageInfo.fromPlatform();
       if (!mounted) return;
-
-      setState(() {
-        _version =
-            'Version ${packageInfo.version} (${packageInfo.buildNumber})';
-      });
+      setState(() =>
+          _version = 'Version ${info.version} (${info.buildNumber})');
     } catch (_) {
-      if (!mounted) return;
-
-      setState(() {
-        _version = 'Version unavailable';
-      });
+      if (mounted) setState(() => _version = 'Version unavailable');
     }
   }
 
-  void _openThemeSelector(
-    BuildContext context,
-    AppState appState,
-  ) {
+  void _open(Widget screen) {
+    HapticFeedback.lightImpact();
+    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+  }
+
+  void _openThemeDialog(AppState appState) {
     showModalBottomSheet(
       context: context,
       useSafeArea: true,
-      isScrollControlled: false,
-      backgroundColor:
-          Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(28),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Semantics(
+              header: true,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  'Choose Theme',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700, fontSize: 16),
+                ),
+              ),
+            ),
+            _themeButton(
+              label: 'Use System Theme',
+              icon: Icons.brightness_auto_rounded,
+              onTap: () {
+                appState.updateTheme(ThemeMode.system);
+                Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: 8),
+            _themeButton(
+              label: 'Light Theme',
+              icon: Icons.light_mode_rounded,
+              onTap: () {
+                appState.updateTheme(ThemeMode.light);
+                Navigator.pop(context);
+              },
+            ),
+            const SizedBox(height: 8),
+            _themeButton(
+              label: 'Dark Theme',
+              icon: Icons.dark_mode_rounded,
+              onTap: () {
+                appState.updateTheme(ThemeMode.dark);
+                Navigator.pop(context);
+              },
+            ),
+          ],
         ),
       ),
-      builder: (_) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(
-            18,
-            18,
-            18,
-            28,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _themeTile(
-                context,
-                title: 'Use System Theme',
-                icon: Icons.brightness_auto_rounded,
-                onTap: () {
-                  appState.updateTheme(
-                    ThemeMode.system,
-                  );
-
-                  Navigator.pop(context);
-                },
-              ),
-              _themeTile(
-                context,
-                title: 'Light Theme',
-                icon: Icons.light_mode_rounded,
-                onTap: () {
-                  appState.updateTheme(
-                    ThemeMode.light,
-                  );
-
-                  Navigator.pop(context);
-                },
-              ),
-              _themeTile(
-                context,
-                title: 'Dark Theme',
-                icon: Icons.dark_mode_rounded,
-                onTap: () {
-                  appState.updateTheme(
-                    ThemeMode.dark,
-                  );
-
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 
-  Widget _themeTile(
-    BuildContext context, {
-    required String title,
+  Widget _themeButton({
+    required String label,
     required IconData icon,
     required VoidCallback onTap,
   }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Semantics(
-        container: true,
-        button: true,
-        enabled: true,
-        label: title,
-        hint: 'Double tap to apply theme',
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: BorderRadius.circular(18),
-            child: Ink(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 16,
-              ),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(
-                  18,
-                ),
-                border: Border.all(
-                  color: kGold.withOpacity(0.14),
-                ),
-              ),
-              child: Row(
-                children: [
-                  ExcludeSemantics(
-                    child: Icon(
-                      icon,
-                      color: kGold,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: ExcludeSemantics(
-                      child: Text(
-                        title,
-                        style: GoogleFonts.lato(
-                          fontWeight:
-                              FontWeight.w700,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+    return Semantics(
+      button: true,
+      label: label,
+      hint: 'Double tap to apply',
+      child: ExcludeSemantics(
+        child: ListTile(
+          onTap: onTap,
+          leading: Icon(icon),
+          title: Text(label, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+            side: BorderSide(color: kGold.withOpacity(0.2)),
           ),
         ),
       ),
@@ -183,576 +131,231 @@ class _MoreScreenState extends State<MoreScreen> {
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDark =
-        theme.brightness == Brightness.dark;
 
-    final List<_MenuItem> items = [
-      _MenuItem(
-        title: 'Profile',
-        subtitle:
-            'Manage your profile and preferences',
-        icon: Icons.person_outline_rounded,
-        screen: const ProfileScreen(),
-      ),
-      _MenuItem(
-        title: 'About',
-        subtitle:
-            'Learn more about this application',
-        icon: Icons.info_outline_rounded,
-        screen: const AboutUsScreen(),
-      ),
-      _MenuItem(
-        title: 'Privacy Policy',
-        subtitle:
-            'Read privacy and security information',
-        icon: Icons.privacy_tip_outlined,
-        screen: const PrivacyPolicyScreen(),
-      ),
-      _MenuItem(
-        title: 'Terms & Conditions',
-        subtitle:
-            'View terms and conditions of use',
-        icon: Icons.description_outlined,
-        screen:
-            const TermsAndConditionsScreen(),
-      ),
-      _MenuItem(
-        title: 'Contact',
-        subtitle:
-            'Get support and contact details',
-        icon: Icons.mail_outline_rounded,
-        screen: const ContactUsScreen(),
-      ),
-    ];
+    final userName = appState.userName.trim().isEmpty
+        ? 'Guest User'
+        : appState.userName.trim();
+    final userEmail = appState.userEmail.trim().isEmpty
+        ? 'Tap to update profile'
+        : appState.userEmail.trim();
 
     return Scaffold(
-      backgroundColor: colorScheme.background,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         elevation: 0,
-        centerTitle: true,
+        backgroundColor: theme.scaffoldBackgroundColor,
         automaticallyImplyLeading: false,
-        backgroundColor:
-            colorScheme.background,
-        surfaceTintColor: Colors.transparent,
         title: Semantics(
           header: true,
           namesRoute: true,
-          child: ExcludeSemantics(
-            child: Text(
-              'Explore',
-              style: GoogleFonts.cinzel(
-                color: kGold,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-                letterSpacing: 1.3,
-              ),
+          child: Text(
+            'Explore',
+            style: GoogleFonts.cinzel(
+              color: kGold,
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              letterSpacing: 1.3,
             ),
           ),
         ),
         actions: [
-          Padding(
-            padding:
-                const EdgeInsets.only(right: 8),
-            child: Semantics(
-              button: true,
-              enabled: true,
-              label: 'Theme settings',
-              hint:
-                  'Double tap to change application theme',
-              child: IconButton(
-                tooltip: 'Theme Settings',
-                splashRadius: 24,
-                onPressed: () {
-                  _openThemeSelector(
-                    context,
-                    appState,
-                  );
-                },
-                icon: const Icon(
-                  Icons.palette_outlined,
-                  color: kGold,
-                ),
-              ),
+          Semantics(
+            button: true,
+            label: 'Change app theme',
+            hint: 'Double tap to choose light, dark, or system theme',
+            child: IconButton(
+              tooltip: 'Theme Settings',
+              icon: const Icon(Icons.palette_outlined, color: kGold),
+              onPressed: () => _openThemeDialog(appState),
             ),
           ),
         ],
       ),
-      body: SafeArea(
-        child: CustomScrollView(
-          physics:
-              const BouncingScrollPhysics(),
-          slivers: [
-            SliverPadding(
-              padding:
-                  const EdgeInsets.all(18),
-              sliver: SliverList(
-                delegate:
-                    SliverChildListDelegate(
-                  [
-                    _buildProfileCard(
-                      context,
-                      appState,
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    _buildCustomerSupportButton(context),
-
-                    const SizedBox(height: 20),
-
-                    const _SectionHeader(
-                      title: 'Support & Information',
-                    ),
-
-                    const SizedBox(height: 8),
-                  ],
+      body: ListView(
+        padding: const EdgeInsets.only(bottom: 32),
+        children: [
+          // ── Profile tile ──────────────────────────────────────────────
+          const SizedBox(height: 8),
+          Semantics(
+            button: true,
+            label: 'Profile. $userName. $userEmail. Double tap to edit profile.',
+            child: ExcludeSemantics(
+              child: ListTile(
+                onTap: () => _open(const ProfileScreen()),
+                leading: CircleAvatar(
+                  radius: 24,
+                  backgroundColor: kGold,
+                  child: const Icon(Icons.person_rounded,
+                      color: Colors.black, size: 26),
                 ),
-              ),
-            ),
-
-            SliverPadding(
-              padding:
-                  const EdgeInsets.symmetric(
-                horizontal: 18,
-              ),
-              sliver: SliverGrid(
-                delegate:
-                    SliverChildBuilderDelegate(
-                  (context, index) {
-                    return _buildMenuCard(
-                      context,
-                      items[index],
-                    );
-                  },
-                  childCount: items.length,
+                title: Text(
+                  userName,
+                  style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w700, fontSize: 16),
                 ),
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 14,
-                  crossAxisSpacing: 14,
-                  childAspectRatio: 0.94,
+                subtitle: Text(
+                  userEmail,
+                  style: GoogleFonts.poppins(fontSize: 13),
                 ),
-              ),
-            ),
-
-            SliverToBoxAdapter(
-              child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(
-                  vertical: 34,
-                ),
-                child: Semantics(
-                  label: _version,
-                  readOnly: true,
-                  child: Center(
-                    child: ExcludeSemantics(
-                      child: Text(
-                        _version,
-                        style:
-                            GoogleFonts.lato(
-                          fontSize: 13,
-                          color: isDark
-                              ? Colors
-                                  .white60
-                              : Colors
-                                  .black54,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCustomerSupportButton(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Semantics(
-      button: true,
-      label: 'Customer Support — Voice call with Aira',
-      hint: 'Double tap to open the customer support panel',
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => const VoiceSupportScreen(),
-            ),
-          ),
-          borderRadius: BorderRadius.circular(20),
-          child: Ink(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isDark
-                    ? [kGold.withOpacity(0.18), kSaffron.withOpacity(0.10)]
-                    : [kGold.withOpacity(0.20), kSaffron.withOpacity(0.12)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: kGold.withOpacity(0.42), width: 1.4),
-              boxShadow: [
-                BoxShadow(
-                  blurRadius: 14,
-                  offset: const Offset(0, 4),
-                  color: kGold.withOpacity(0.12),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [kGold, kSaffron],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.support_agent_rounded,
-                    color: Colors.black87,
-                    size: 26,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Customer Support',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 15,
-                          color: isDark ? kGoldLight : kGoldDim,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Start a voice call with Aira, your AI companion',
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: isDark ? kTextDim : Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.chevron_right_rounded, color: kGold),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProfileCard(
-    BuildContext context,
-    AppState appState,
-  ) {
-    final theme = Theme.of(context);
-
-    final userName =
-        appState.userName.trim().isEmpty
-            ? 'Guest User'
-            : appState.userName.trim();
-
-    final userEmail =
-        appState.userEmail.trim().isEmpty
-            ? 'Welcome to your account'
-            : appState.userEmail.trim();
-
-    return RepaintBoundary(
-      child: Semantics(
-        container: true,
-        button: true,
-        enabled: true,
-        label:
-            'Profile section. User name $userName. Email $userEmail',
-        hint:
-            'Double tap to open profile screen',
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              if (!mounted) return;
-
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      const ProfileScreen(),
-                ),
-              );
-            },
-            borderRadius:
-                BorderRadius.circular(28),
-            child: Ink(
-              padding: const EdgeInsets.all(
-                20,
-              ),
-              decoration: BoxDecoration(
-                color: theme.cardColor,
-                borderRadius:
-                    BorderRadius.circular(28),
-                border: Border.all(
-                  color:
-                      kGold.withOpacity(0.15),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    blurRadius: 14,
-                    spreadRadius: 0,
-                    offset:
-                        const Offset(0, 5),
-                    color: Colors.black
-                        .withOpacity(
-                      theme.brightness ==
-                              Brightness.dark
-                          ? 0.16
-                          : 0.04,
-                    ),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  ExcludeSemantics(
-                    child: Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: kGold,
-                        borderRadius:
-                            BorderRadius
-                                .circular(
-                          20,
-                        ),
-                      ),
-                      alignment:
-                          Alignment.center,
-                      child: const Icon(
-                        Icons.person_rounded,
-                        color: Colors.black,
-                        size: 34,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(width: 18),
-
-                  Expanded(
-                    child:
-                        ExcludeSemantics(
-                      child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment
-                                .start,
-                        children: [
-                          Text(
-                            userName,
-                            maxLines: 1,
-                            overflow:
-                                TextOverflow
-                                    .ellipsis,
-                            style:
-                                GoogleFonts
-                                    .lato(
-                              fontWeight:
-                                  FontWeight
-                                      .bold,
-                              fontSize:
-                                  18,
-                            ),
-                          ),
-                          const SizedBox(
-                            height: 6,
-                          ),
-                          Text(
-                            userEmail,
-                            maxLines: 2,
-                            overflow:
-                                TextOverflow
-                                    .ellipsis,
-                            style: theme
-                                .textTheme
-                                .bodySmall,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const ExcludeSemantics(
-                    child: Icon(
-                      Icons
-                          .arrow_forward_ios_rounded,
-                      color: kGold,
-                      size: 18,
-                    ),
-                  ),
-                ],
+                trailing: const Icon(Icons.chevron_right_rounded),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
 
-  Widget _buildMenuCard(
-    BuildContext context,
-    _MenuItem item,
-  ) {
-    final theme = Theme.of(context);
+          const Divider(indent: 16, endIndent: 16),
 
-    return RepaintBoundary(
-      child: Semantics(
-        container: true,
-        button: true,
-        enabled: true,
-        label: item.title,
-        hint: item.subtitle,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius:
-                BorderRadius.circular(26),
-            onTap: () {
-              if (!mounted) return;
-
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      item.screen,
+          // ── Customer Support tile ─────────────────────────────────────
+          Semantics(
+            button: true,
+            label: 'Customer Support. Start a voice call with Aira, your AI companion.',
+            hint: 'Double tap to open',
+            child: ExcludeSemantics(
+              child: ListTile(
+                onTap: () => _open(const VoiceSupportScreen()),
+                leading: const Icon(Icons.support_agent_rounded,
+                    color: kGold, size: 26),
+                title: Text(
+                  'Customer Support',
+                  style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600, fontSize: 15),
                 ),
-              );
-            },
-            child: Ink(
-              padding: const EdgeInsets.all(
-                18,
-              ),
-              decoration: BoxDecoration(
-                color: theme.cardColor,
-                borderRadius:
-                    BorderRadius.circular(26),
-                border: Border.all(
-                  color: theme
-                      .dividerColor
-                      .withOpacity(0.08),
+                subtitle: Text(
+                  'Voice call with Aira, your AI companion',
+                  style: GoogleFonts.poppins(fontSize: 12),
                 ),
-              ),
-              child: Column(
-                mainAxisAlignment:
-                    MainAxisAlignment.center,
-                children: [
-                  ExcludeSemantics(
-                    child: Container(
-                      width: 58,
-                      height: 58,
-                      decoration:
-                          BoxDecoration(
-                        color: kGold
-                            .withOpacity(
-                          0.10,
-                        ),
-                        borderRadius:
-                            BorderRadius
-                                .circular(
-                          18,
-                        ),
-                      ),
-                      alignment:
-                          Alignment.center,
-                      child: Icon(
-                        item.icon,
-                        size: 28,
-                        color: kGold,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  ExcludeSemantics(
-                    child: Text(
-                      item.title,
-                      textAlign:
-                          TextAlign.center,
-                      maxLines: 2,
-                      overflow:
-                          TextOverflow
-                              .ellipsis,
-                      style:
-                          GoogleFonts.lato(
-                        fontWeight:
-                            FontWeight.w700,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ),
-                ],
+                trailing: const Icon(Icons.chevron_right_rounded),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               ),
             ),
           ),
-        ),
+
+          const SizedBox(height: 4),
+          const Divider(indent: 16, endIndent: 16),
+
+          // ── Section header ────────────────────────────────────────────
+          Semantics(
+            header: true,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: Text(
+                'SUPPORT & INFORMATION',
+                style: GoogleFonts.cinzel(
+                  color: kGold,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                  fontSize: 13,
+                ),
+              ),
+            ),
+          ),
+
+          // ── Menu items ────────────────────────────────────────────────
+          _MenuTile(
+            label: 'Profile. Manage your profile and preferences.',
+            title: 'Profile',
+            subtitle: 'Manage your profile and preferences',
+            icon: Icons.person_outline_rounded,
+            onTap: () => _open(const ProfileScreen()),
+          ),
+          _MenuTile(
+            label: 'About. Learn more about this application.',
+            title: 'About',
+            subtitle: 'Learn more about this application',
+            icon: Icons.info_outline_rounded,
+            onTap: () => _open(const AboutUsScreen()),
+          ),
+          _MenuTile(
+            label: 'Privacy Policy. Read privacy and security information.',
+            title: 'Privacy Policy',
+            subtitle: 'Read privacy and security information',
+            icon: Icons.privacy_tip_outlined,
+            onTap: () => _open(const PrivacyPolicyScreen()),
+          ),
+          _MenuTile(
+            label: 'Terms and Conditions. View terms of use.',
+            title: 'Terms & Conditions',
+            subtitle: 'View terms and conditions of use',
+            icon: Icons.description_outlined,
+            onTap: () => _open(const TermsAndConditionsScreen()),
+          ),
+          _MenuTile(
+            label: 'Contact. Get support and contact details.',
+            title: 'Contact',
+            subtitle: 'Get support and contact details',
+            icon: Icons.mail_outline_rounded,
+            onTap: () => _open(const ContactUsScreen()),
+          ),
+
+          // ── Version ───────────────────────────────────────────────────
+          if (_version.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 28),
+              child: Semantics(
+                label: _version,
+                readOnly: true,
+                child: ExcludeSemantics(
+                  child: Text(
+                    _version,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.lato(
+                      fontSize: 13,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
 }
 
-class _SectionHeader
-    extends StatelessWidget {
-  final String title;
+// ─── Single menu list tile ───────────────────────────────────────────────────
 
-  const _SectionHeader({
+class _MenuTile extends StatelessWidget {
+  final String label;
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _MenuTile({
+    required this.label,
     required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      header: true,
+      button: true,
+      label: label,
+      hint: 'Double tap to open',
       child: ExcludeSemantics(
-        child: Text(
-          title.toUpperCase(),
-          style: GoogleFonts.cinzel(
-            color: kGold,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.3,
-            fontSize: 15,
+        child: ListTile(
+          onTap: onTap,
+          leading: Icon(icon, size: 24),
+          title: Text(
+            title,
+            style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600, fontSize: 15),
           ),
+          subtitle: Text(
+            subtitle,
+            style: GoogleFonts.poppins(fontSize: 12),
+          ),
+          trailing: const Icon(Icons.chevron_right_rounded),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          minVerticalPadding: 10,
         ),
       ),
     );
   }
-}
-
-@immutable
-class _MenuItem {
-  final String title;
-  final String subtitle;
-  final IconData icon;
-  final Widget screen;
-
-  const _MenuItem({
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-    required this.screen,
-  });
 }

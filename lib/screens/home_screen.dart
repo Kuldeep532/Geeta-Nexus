@@ -1,19 +1,13 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
 
 import '../theme.dart';
-import '../state/app_state.dart';
-import '../models/models.dart';
 import 'search_screen.dart';
 import 'karma_planner_screen.dart';
 import 'habit_tracker_screen.dart';
 import 'antakshari_screen.dart';
-import '../models/scripture_model.dart';
-import 'scripture_verse_detail_screen.dart';
 import 'scripture_library_screen.dart';
 import 'affirmations_screen.dart';
 import 'astrology_screen.dart';
@@ -27,434 +21,14 @@ import 'meditation_screen.dart';
 import 'reading_plan_screen.dart';
 import 'wisdom_cards_screen.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+// ─── Data models ────────────────────────────────────────────────────────────
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  final FlutterTts _flutterTts = FlutterTts();
-
-  final List<_FeatureItem> _features = [
-    _FeatureItem(
-      title: 'Scripture Library',
-      subtitle: 'Explore verses and teachings',
-      icon: Icons.menu_book_rounded,
-      screen: const ScriptureLibraryScreen(),
-    ),
-    _FeatureItem(
-      title: 'Meditation',
-      subtitle: 'Relax your mind with guided sessions',
-      icon: Icons.self_improvement_rounded,
-      screen: const MeditationScreen(),
-    ),
-    _FeatureItem(
-      title: 'Breathing Practice',
-      subtitle: 'Improve calmness and focus',
-      icon: Icons.air_rounded,
-      screen: const BreathingScreen(),
-    ),
-    _FeatureItem(
-      title: 'Affirmations',
-      subtitle: 'Daily positive affirmations',
-      icon: Icons.favorite_rounded,
-      screen: const AffirmationsScreen(),
-    ),
-    _FeatureItem(
-      title: 'Bookmarks',
-      subtitle: 'Quick access to saved content',
-      icon: Icons.bookmark_rounded,
-      screen: const BookmarksScreen(),
-    ),
-    _FeatureItem(
-      title: 'Reading Plan',
-      subtitle: 'Track your spiritual journey',
-      icon: Icons.checklist_rounded,
-      screen: const ReadingPlanScreen(),
-    ),
-    _FeatureItem(
-      title: 'Wisdom Cards',
-      subtitle: 'Get daily wisdom inspiration',
-      icon: Icons.style_rounded,
-      screen: const WisdomCardsScreen(),
-    ),
-    _FeatureItem(
-      title: 'Journal',
-      subtitle: 'Write your thoughts and reflections',
-      icon: Icons.edit_note_rounded,
-      screen: const JournalScreen(),
-    ),
-    _FeatureItem(
-      title: 'Glossary',
-      subtitle: 'Understand spiritual terms',
-      icon: Icons.translate_rounded,
-      screen: const GlossaryScreen(),
-    ),
-    _FeatureItem(
-      title: 'Astrology',
-      subtitle: 'Discover cosmic insights',
-      icon: Icons.auto_awesome_rounded,
-      screen: const AstrologyScreen(),
-    ),
-    _FeatureItem(
-      title: 'Chants',
-      subtitle: 'Listen and practice chants',
-      icon: Icons.music_note_rounded,
-      screen: const ChantsScreen(),
-    ),
-    _FeatureItem(
-      title: 'Voice Practice',
-      subtitle: 'Practice pronunciation and recitation',
-      icon: Icons.record_voice_over_rounded,
-      screen: const GeetaVoicePracticeScreen(),
-    ),
-  ];
-
-  final List<_AiFeatureItem> _aiFeatures = const [
-    _AiFeatureItem(
-      title: 'Karma-Yogi Planner',
-      subtitle: 'Plan your day through Krishna\'s teachings',
-      icon: Icons.event_note_rounded,
-      color: Color(0xFFFF9933),
-      tag: 'karma',
-    ),
-    _AiFeatureItem(
-      title: 'Habit Tracker',
-      subtitle: 'Track daily spiritual resolutions',
-      icon: Icons.track_changes_rounded,
-      color: Color(0xFF4CAF50),
-      tag: 'habit',
-    ),
-    _AiFeatureItem(
-      title: 'Shloka Antakshari',
-      subtitle: 'Voice word-chain game with Aira',
-      icon: Icons.music_note_rounded,
-      color: Color(0xFF9C27B0),
-      tag: 'antakshari',
-    ),
-  ];
-
-  @override
-  void dispose() {
-    _flutterTts.stop();
-    super.dispose();
-  }
-
-  Future<void> _speak(String text) async {
-    await _flutterTts.setLanguage('en-US');
-    await _flutterTts.setSpeechRate(0.45);
-    await _flutterTts.speak(text);
-  }
-
-  void _navigateTo(Widget screen) {
-    HapticFeedback.lightImpact();
-    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
-  }
-
-  void _openAiFeature(String tag) {
-    HapticFeedback.lightImpact();
-    Widget screen;
-    switch (tag) {
-      case 'karma':
-        screen = const KarmaPlannerScreen();
-        break;
-      case 'habit':
-        screen = const HabitTrackerScreen();
-        break;
-      case 'antakshari':
-        screen = const AntakshariScreen();
-        break;
-      default:
-        return;
-    }
-    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      body: SafeArea(
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverAppBar(
-              pinned: true,
-              expandedHeight: 120,
-              elevation: 0,
-              backgroundColor: theme.scaffoldBackgroundColor,
-              flexibleSpace: FlexibleSpaceBar(
-                titlePadding: const EdgeInsetsDirectional.only(
-                  start: 20,
-                  bottom: 16,
-                ),
-                title: Semantics(
-                  header: true,
-                  child: Text(
-                    'Spiritual Home',
-                    style: GoogleFonts.poppins(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w700,
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-              ),
-              actions: [
-                Semantics(
-                  button: true,
-                  label: 'Search spiritual content',
-                  child: IconButton(
-                    tooltip: 'Search',
-                    icon: const Icon(Icons.search_rounded),
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SearchScreen()),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
-              sliver: SliverToBoxAdapter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-
-                    // ─── AI ECOSYSTEM FEATURES ─────────────────────────────
-                    Semantics(
-                      header: true,
-                      child: Text(
-                        'AI Ecosystem',
-                        style: GoogleFonts.poppins(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Powered by Aira — your free, open-source AI companion',
-                      style: GoogleFonts.poppins(
-                        fontSize: 12,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    SizedBox(
-                      height: 112,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _aiFeatures.length,
-                        itemBuilder: (ctx, i) {
-                          final item = _aiFeatures[i];
-                          return Semantics(
-                            button: true,
-                            label: item.title,
-                            hint: item.subtitle,
-                            child: GestureDetector(
-                              onTap: () => _openAiFeature(item.tag),
-                              child: Container(
-                                width: 150,
-                                margin: EdgeInsets.only(
-                                    right: i < _aiFeatures.length - 1 ? 12 : 0),
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: isDark
-                                      ? item.color.withOpacity(0.12)
-                                      : item.color.withOpacity(0.08),
-                                  borderRadius: BorderRadius.circular(18),
-                                  border: Border.all(
-                                    color: item.color.withOpacity(0.3),
-                                  ),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Icon(item.icon,
-                                        color: item.color, size: 26),
-                                    const Spacer(),
-                                    Text(
-                                      item.title,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // ─── DAILY GUIDANCE ────────────────────────────────────
-                    Semantics(
-                      header: true,
-                      child: Text(
-                        'Daily Guidance',
-                        style: GoogleFonts.poppins(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    Text(
-                      'Choose a spiritual practice to continue your journey.',
-                      style: GoogleFonts.poppins(
-                        fontSize: 14,
-                        height: 1.4,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _features.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 1.02,
-                      ),
-                      itemBuilder: (context, index) {
-                        final item = _features[index];
-
-                        return Semantics(
-                          button: true,
-                          label: item.title,
-                          hint: item.subtitle,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(18),
-                            onTap: () => _navigateTo(item.screen),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 220),
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(18),
-                                color: isDark
-                                    ? Colors.white.withOpacity(0.05)
-                                    : Colors.white,
-                                border: Border.all(
-                                  color: theme.dividerColor.withOpacity(0.12),
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                    color: Colors.black.withOpacity(0.04),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(14),
-                                      color: theme.colorScheme.primary
-                                          .withOpacity(0.10),
-                                    ),
-                                    child: Icon(
-                                      item.icon,
-                                      size: 24,
-                                      color: theme.colorScheme.primary,
-                                    ),
-                                  ),
-
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item.title,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-
-                                      const SizedBox(height: 4),
-
-                                      Text(
-                                        item.subtitle,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: GoogleFonts.poppins(
-                                          fontSize: 11.5,
-                                          color: theme
-                                              .colorScheme.onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: Semantics(
-                                      button: true,
-                                      label: 'Listen to ${item.title}',
-                                      child: IconButton(
-                                        tooltip: 'Speak ${item.title}',
-                                        icon: const Icon(
-                                          Icons.volume_up_rounded,
-                                          size: 20,
-                                        ),
-                                        onPressed: () => _speak(item.title),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _FeatureItem {
+class _NavItem {
   final String title;
   final String subtitle;
   final IconData icon;
   final Widget screen;
-
-  const _FeatureItem({
+  const _NavItem({
     required this.title,
     required this.subtitle,
     required this.icon,
@@ -462,18 +36,261 @@ class _FeatureItem {
   });
 }
 
-class _AiFeatureItem {
+// ─── Screen ─────────────────────────────────────────────────────────────────
+
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
+
+  static const List<_NavItem> _aiItems = [
+    _NavItem(
+      title: 'Karma-Yogi Planner',
+      subtitle: 'Plan your day through Krishna\'s teachings',
+      icon: Icons.event_note_rounded,
+      screen: KarmaPlannerScreen(),
+    ),
+    _NavItem(
+      title: 'Habit Tracker',
+      subtitle: 'Track your daily spiritual resolutions',
+      icon: Icons.track_changes_rounded,
+      screen: HabitTrackerScreen(),
+    ),
+    _NavItem(
+      title: 'Shloka Antakshari',
+      subtitle: 'Voice word-chain game with Aira',
+      icon: Icons.music_note_rounded,
+      screen: AntakshariScreen(),
+    ),
+  ];
+
+  static const List<_NavItem> _guideItems = [
+    _NavItem(
+      title: 'Scripture Library',
+      subtitle: 'Explore Gita verses and teachings',
+      icon: Icons.menu_book_rounded,
+      screen: ScriptureLibraryScreen(),
+    ),
+    _NavItem(
+      title: 'Meditation',
+      subtitle: 'Guided meditation sessions',
+      icon: Icons.self_improvement_rounded,
+      screen: MeditationScreen(),
+    ),
+    _NavItem(
+      title: 'Breathing Practice',
+      subtitle: 'Improve calmness and focus',
+      icon: Icons.air_rounded,
+      screen: BreathingScreen(),
+    ),
+    _NavItem(
+      title: 'Affirmations',
+      subtitle: 'Daily positive affirmations',
+      icon: Icons.favorite_rounded,
+      screen: AffirmationsScreen(),
+    ),
+    _NavItem(
+      title: 'Bookmarks',
+      subtitle: 'Quick access to saved content',
+      icon: Icons.bookmark_rounded,
+      screen: BookmarksScreen(),
+    ),
+    _NavItem(
+      title: 'Reading Plan',
+      subtitle: 'Track your spiritual journey',
+      icon: Icons.checklist_rounded,
+      screen: ReadingPlanScreen(),
+    ),
+    _NavItem(
+      title: 'Wisdom Cards',
+      subtitle: 'Daily wisdom inspiration',
+      icon: Icons.style_rounded,
+      screen: WisdomCardsScreen(),
+    ),
+    _NavItem(
+      title: 'Journal',
+      subtitle: 'Write your thoughts and reflections',
+      icon: Icons.edit_note_rounded,
+      screen: JournalScreen(),
+    ),
+    _NavItem(
+      title: 'Glossary',
+      subtitle: 'Understand spiritual terms',
+      icon: Icons.translate_rounded,
+      screen: GlossaryScreen(),
+    ),
+    _NavItem(
+      title: 'Astrology',
+      subtitle: 'Discover cosmic insights',
+      icon: Icons.auto_awesome_rounded,
+      screen: AstrologyScreen(),
+    ),
+    _NavItem(
+      title: 'Chants',
+      subtitle: 'Listen and practice sacred chants',
+      icon: Icons.music_note_rounded,
+      screen: ChantsScreen(),
+    ),
+    _NavItem(
+      title: 'Voice Practice',
+      subtitle: 'Practice Sanskrit pronunciation',
+      icon: Icons.record_voice_over_rounded,
+      screen: GeetaVoicePracticeScreen(),
+    ),
+  ];
+
+  void _open(BuildContext context, Widget screen) {
+    HapticFeedback.lightImpact();
+    SemanticsService.announce(
+      'Opening screen',
+      TextDirection.ltr,
+    );
+    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        // Single clear heading — announced by screen reader when screen loads
+        title: Semantics(
+          header: true,
+          namesRoute: true,
+          child: Text(
+            'Spiritual Home',
+            style: GoogleFonts.poppins(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        actions: [
+          Semantics(
+            button: true,
+            label: 'Search spiritual content',
+            hint: 'Double tap to open search',
+            child: IconButton(
+              tooltip: 'Search',
+              icon: const Icon(Icons.search_rounded),
+              onPressed: () => _open(context, const SearchScreen()),
+            ),
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.only(bottom: 32),
+        children: [
+          // ── AI Tools section ─────────────────────────────────────────
+          _SectionHeader(title: 'AI Tools'),
+          ..._aiItems.map(
+            (item) => _AccessibleTile(
+              title: item.title,
+              subtitle: item.subtitle,
+              icon: item.icon,
+              iconColor: colorScheme.primary,
+              onTap: () => _open(context, item.screen),
+            ),
+          ),
+
+          const SizedBox(height: 8),
+          const Divider(indent: 16, endIndent: 16),
+          const SizedBox(height: 8),
+
+          // ── Daily Guidance section ───────────────────────────────────
+          _SectionHeader(title: 'Daily Guidance'),
+          ..._guideItems.map(
+            (item) => _AccessibleTile(
+              title: item.title,
+              subtitle: item.subtitle,
+              icon: item.icon,
+              iconColor: colorScheme.primary,
+              onTap: () => _open(context, item.screen),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Reusable section header ────────────────────────────────────────────────
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  const _SectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      header: true,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+        child: Text(
+          title,
+          style: GoogleFonts.poppins(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.8,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Single accessible list tile ────────────────────────────────────────────
+// One tap target per item. No nested buttons. Screen reader reads:
+// "Title. Subtitle. Button. Double tap to activate."
+
+class _AccessibleTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final IconData icon;
-  final Color color;
-  final String tag;
+  final Color iconColor;
+  final VoidCallback onTap;
 
-  const _AiFeatureItem({
+  const _AccessibleTile({
     required this.title,
     required this.subtitle,
     required this.icon,
-    required this.color,
-    required this.tag,
+    required this.iconColor,
+    required this.onTap,
   });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: '$title. $subtitle',
+      hint: 'Double tap to open',
+      // ExcludeSemantics on children so the label above is
+      // the ONLY thing TalkBack reads — no duplicate words.
+      child: ExcludeSemantics(
+        child: ListTile(
+          onTap: onTap,
+          leading: Icon(icon, color: iconColor, size: 26),
+          title: Text(
+            title,
+            style: GoogleFonts.poppins(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          subtitle: Text(
+            subtitle,
+            style: GoogleFonts.poppins(fontSize: 12),
+          ),
+          trailing: const Icon(Icons.chevron_right_rounded),
+          minVerticalPadding: 12,
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        ),
+      ),
+    );
+  }
 }
