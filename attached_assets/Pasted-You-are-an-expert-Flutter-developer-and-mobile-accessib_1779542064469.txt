@@ -1,0 +1,26 @@
+You are an expert Flutter developer and mobile accessibility (WCAG 2.1 AA/AAA) master specialist. 
+
+CRITICAL WARNING: I have a VERY LIMITED CREDIT LIMIT left. Do not give any introductory text, step-by-step explanations, or summaries. Output ONLY the clean, full, and final production-ready code. Do not use placeholders like "// TODO" or "// rest of code". I need everything in a single turn to save my tokens.
+
+OBJECTIVE:
+1. Fix the duplicate layout issue on the Onboarding screen.
+2. Implement the missing legal compliance and "Continue as Guest" flow.
+3. Provide an extremely reusable, highly accessible architecture (using clean base widgets or extensions) that fixes accessibility across ALL remaining app screens instantly without consuming extra tokens in the future.
+
+SPECIFIC ONBOARDING FIXES:
+- Clean Form: Exactly ONE 'Name' field in email registration. Wrapped in a standard Flutter Form.
+- Three Main Buttons: 
+  1. Continue with Email and Password (ElevatedButton)
+  2. Continue with Google (OutlinedButton)
+  3. Continue as Guest (TextButton)
+- Guest Flow State: Toggle a boolean (`isGuestMode`). When true, conditionally show a single TextFormField ("Enter Your Name") and a "Proceed" button.
+- Legal Compliance Footer: A mandatory Row with a Checkbox and RichText ("I accept the Terms and Conditions and Privacy Policy"). All main/proceed buttons must stay disabled (onPressed: null) until this checkbox is true.
+
+GLOBAL APP ACCESSIBILITY SYSTEM (TO FIX ALL OTHER SCREENS):
+To save my credits on other screens, write the following reusable components directly into this file so I can apply them everywhere:
+- AccessibleTextField: A reusable wrapper for TextFormField that strictly enforces visible `labelText`, minimum 44x44 tap target, and semantic hints.
+- AccessibleButton: A reusable button wrapper that includes `Semantics(button: true, label: ..., hint: ...)` automatically.
+- AccessibleLink: A wrapper for clickable rich text spans with proper `Semantics` and explicit touch target sizes.
+- Focus Shift Logic: Show how to use a `FocusNode` programmatically (e.g., automatically moving screen reader focus to the "Enter Your Name" field as soon as Guest Mode is activated).
+
+Please output the complete, self-contained, token-optimized Dart code containing these global accessible widgets and the fully fixed Onboarding screen layout now.
