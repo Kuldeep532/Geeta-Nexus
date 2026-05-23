@@ -590,7 +590,7 @@ class _OnboardingSlidersViewState
                   context,
                   MaterialPageRoute(
                     builder: (_) =>
-                        const TermsScreen(),
+                        const TermsAndConditionsScreen(),
                   ),
                 );
               },

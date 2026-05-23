@@ -22,4 +22,4 @@ echo "▶ Building Flutter web app (release)..."
 "$FLUTTER" build web --release $DART_DEFINES
 
 echo "▶ Starting web server on port 5000..."
-exec "$DHTTPD" --host 0.0.0.0 --port 5000 --path build/web
+exec npx --yes serve build/web -l 5000
