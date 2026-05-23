@@ -84,10 +84,10 @@ class ScriptureRepository {
     final root = jsonDecode(_safeUtf8(resp.bodyBytes)) as List;
     return root.map((e) {
       final map = e as Map<String, dynamic>;
-      // FIXED: Extra comma hataya
       final vNum = (map['verse_number'] ?? 0).toInt(); 
       return ScriptureVerse(
         source: ScriptureSource.gitaDharmicData,
+        section: ScriptureSectionInfo(label: 'Chapter $chapter', sectionIndex: chapter),
         verseIndex: vNum,
         originalText: (map['text'] ?? '').toString(),
       );
@@ -95,7 +95,35 @@ class ScriptureRepository {
   }
 
   // --- D. Global Search & Archive Logic ---
-  // ... (Baaki methods searchGita, searchRamayana, getStaticArchiveAudioTracks same rahenge)
+  Future<List<ScriptureVerse>> searchGita(String query) async {
+    final q = query.toLowerCase();
+    final List<ScriptureVerse> results = [];
+    for (int ch = 1; ch <= 18; ch++) {
+      try {
+        final verses = await fetchGitaChapter(ch);
+        for (final v in verses) {
+          if (v.originalText.toLowerCase().contains(q)) results.add(v);
+        }
+      } catch (_) {}
+      if (results.length > 20) break;
+    }
+    return results;
+  }
+
+  Future<List<ScriptureVerse>> searchRamayana(String query) async {
+    final q = query.toLowerCase();
+    final List<ScriptureVerse> results = [];
+    for (final sec in kRamayanaSections) {
+      try {
+        final verses = await fetchRamayanaKanda(sec);
+        for (final v in verses) {
+          if (v.originalText.toLowerCase().contains(q)) results.add(v);
+        }
+      } catch (_) {}
+      if (results.length > 20) break;
+    }
+    return results;
+  }
 
   Future<ArchiveAudioResult?> searchArchiveAudio(String query) async {
     try {
@@ -117,7 +145,7 @@ class ScriptureRepository {
         final audioFile = files?.firstWhere((f) => (f['name'] as String).toLowerCase().endsWith('.mp3'), orElse: () => null);
 
         if (audioFile != null) {
-          return ArchiveAudioResult(title: doc['title'] ?? 'Audio', url: 'https://archive.org/download/$id/${audioFile['name']}');
+          return ArchiveAudioResult(identifier: id, title: doc['title'] ?? 'Audio', streamUrl: 'https://archive.org/download/$id/${audioFile['name']}');
         }
       }
     } catch (_) {}

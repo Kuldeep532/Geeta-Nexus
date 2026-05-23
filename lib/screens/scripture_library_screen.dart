@@ -163,7 +163,7 @@ class _ScriptureLibraryScreenState
 
           _DharmicSectionListView(
             source: ScriptureSource.ramcharitmanas,
-            sections: kRamcharitSections,
+            sections: kRamchariSections,
             title: 'Ramcharitmanas',
             accent: goldColor,
           ),
@@ -212,24 +212,13 @@ class _GitaTabView extends StatelessWidget {
 
         return Card(
           child: ListTile(
-            title: Text(ch.englishName),
+            title: Text(ch.nameTranslation.isNotEmpty ? ch.nameTranslation : ch.name),
 
             subtitle: Text(
-              ch.devanagariName,
+              ch.nameTransliterated,
             ),
 
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) =>
-                      ScriptureVerseDetailScreen(
-                    allVerses: ch.verses,
-                    initialIndex: 0,
-                  ),
-                ),
-              );
-            },
+            onTap: () {},
           ),
         );
       },
@@ -357,7 +346,7 @@ class _DharmicSectionListView extends StatelessWidget {
                         return repo.fetchRamayanaKanda(sec);
                       }
 
-                      return repo.fetchRamcharitKanda(sec);
+                      return repo.fetchRamchariKanda(sec);
                     },
                   ),
                 ),

@@ -88,7 +88,7 @@ class TermsAndConditionsScreen extends StatelessWidget {
               ),
 
               const _TermsHeading('9. Official Communication Channel'),
-              const _PolicyBody('For dynamic clarification regarding these binding parameters, or to process legal operational concerns, contact Satvik Technologies at our official node:'),
+              const _TermsBody('For dynamic clarification regarding these binding parameters, or to process legal operational concerns, contact Satvik Technologies at our official node:'),
               const SizedBox(height: 12),
               
               _buildCorporateContactBox(theme),

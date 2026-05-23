@@ -64,14 +64,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isCheckingStatus) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: AppBranding.shyamBlue,
         body: Center(
           child: Semantics(
             label: 'Gita Nexus App Logo. Initializing application, please wait.',
             image: true,
             child: Image(
-              image: AssetImage(AppBranding.logoPath),
+              image: const AssetImage(AppBranding.logoPath),
               width: 160,
               height: 160,
               fit: BoxFit.contain,
@@ -94,7 +94,7 @@ class _OnboardingSlidersView extends StatefulWidget {
 
 class _OnboardingSlidersViewState extends State<_OnboardingSlidersView> {
   final PageController _controller = PageController();
-  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   int _page = 0;
   final TextEditingController _nameController = TextEditingController();
@@ -148,14 +148,7 @@ class _OnboardingSlidersViewState extends State<_OnboardingSlidersView> {
   }
 
   Future<void> _initializeGoogleSignIn() async {
-    try {
-      await _googleSignIn.initialize();
-      if (!mounted) return;
-      setState(() => _googleReady = true);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _googleReady = false);
-    }
+    setState(() => _googleReady = true);
   }
 
   @override
@@ -181,9 +174,10 @@ class _OnboardingSlidersViewState extends State<_OnboardingSlidersView> {
         throw Exception('Google Sign-In initialization failed');
       }
 
-      final GoogleSignInAccount account = await _googleSignIn.authenticate();
+      final GoogleSignInAccount? account = await _googleSignIn.signIn();
       _googleAttempted = true;
       if (!mounted) return;
+      if (account == null) throw Exception('Sign in cancelled');
       
       _nameController.text = account.displayName ?? "Seeker";
 
@@ -520,7 +514,7 @@ class _OnboardingSlidersViewState extends State<_OnboardingSlidersView> {
               children: [
                 const Text("I accept the ", style: TextStyle(fontSize: 14)),
                 GestureDetector(
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen())),
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen())),
                   child: Semantics(
                     link: true,
                     label: 'Open and read privacy policy statement document',
@@ -529,7 +523,7 @@ class _OnboardingSlidersViewState extends State<_OnboardingSlidersView> {
                 ),
                 const Text(" and ", style: TextStyle(fontSize: 14)),
                 GestureDetector(
-                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TermsAndConditionsScreen())),
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TermsAndConditionsScreen())),
                   child: Semantics(
                     link: true,
                     label: 'Open and read terms and conditions regulatory document',

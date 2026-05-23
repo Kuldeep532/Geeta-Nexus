@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../data/gita_data.dart';
+import '../data/gita_data.dart' show kChapters;
 import '../models/models.dart';
 import '../models/scripture_model.dart';
 import '../state/app_state.dart';
@@ -716,7 +716,7 @@ class _ChapterNavButtons extends StatelessWidget {
 
     final bool hasNext =
         currentChapter <
-            gitaChapters.length;
+            kChapters.length;
 
     return Row(
       children: [
@@ -748,7 +748,7 @@ class _ChapterNavButtons extends StatelessWidget {
                           builder: (_) =>
                               ChapterDetailScreen(
                             chapter:
-                                gitaChapters[
+                                kChapters[
                                     currentChapter -
                                         2],
                           ),
@@ -797,7 +797,7 @@ class _ChapterNavButtons extends StatelessWidget {
                           builder: (_) =>
                               ChapterDetailScreen(
                             chapter:
-                                gitaChapters[
+                                kChapters[
                                     currentChapter],
                           ),
                         ),

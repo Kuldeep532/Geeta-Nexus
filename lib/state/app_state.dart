@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-
-// Remove unused imports if not needed
-// import 'dart:convert';
-// import 'dart:async';
-// import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
 
 import '../models/models.dart';
 import '../models/scripture_model.dart';
@@ -19,6 +14,7 @@ class AppState extends ChangeNotifier {
 
   final Set<String> _bookmarks = {};
   final Set<String> _readVerses = {};
+  final List<ScriptureVerse> _bookmarkedVerses = [];
 
   List<JournalEntry> _journalEntries = [];
 
@@ -44,6 +40,11 @@ class AppState extends ChangeNotifier {
   String _userEmail = '';
   String _userRole = 'seeker';
 
+  bool _isAdmin = false;
+  bool _isSuperAdmin = false;
+
+  int _userCurrentDay = 1;
+
   // ---------------- GETTERS ----------------
 
   List<ScriptureVerse> get allVerses => _allVerses;
@@ -52,9 +53,13 @@ class AppState extends ChangeNotifier {
 
   int get streak => _streak;
 
+  int get level => (_xp ~/ 100) + 1;
+
   Set<String> get bookmarks => _bookmarks;
 
   Set<String> get readVerses => _readVerses;
+
+  List<ScriptureVerse> get bookmarkedVerses => _bookmarkedVerses;
 
   List<JournalEntry> get journalEntries => _journalEntries;
 
@@ -84,6 +89,12 @@ class AppState extends ChangeNotifier {
 
   String get userRole => _userRole;
 
+  bool get isAdmin => _isAdmin;
+
+  bool get isSuperAdmin => _isSuperAdmin;
+
+  int? get userCurrentDay => _userCurrentDay;
+
   // ---------------- METHODS ----------------
 
   void setAllVerses(List<ScriptureVerse> verses) {
@@ -101,6 +112,11 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void completeOnboarding() {
+    _onboardingComplete = true;
+    notifyListeners();
+  }
+
   void setUserName(String name) {
     _userName = name;
     notifyListeners();
@@ -111,8 +127,97 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateGoogleAccount({required String name, required String email}) {
+    _userName = name;
+    _userEmail = email;
+    notifyListeners();
+  }
+
+  void setAdmin(bool value) {
+    _isAdmin = value;
+    notifyListeners();
+  }
+
+  void setSuperAdmin(bool value) {
+    _isSuperAdmin = value;
+    notifyListeners();
+  }
+
+  void addXp(int amount) {
+    _xp += amount;
+    notifyListeners();
+  }
+
+  void incrementJapa() {
+    _japaCount++;
+    notifyListeners();
+  }
+
+  void resetJapa() {
+    _japaCount = 0;
+    notifyListeners();
+  }
+
   void addJapaCount() {
     _japaCount++;
+    notifyListeners();
+  }
+
+  bool isBookmarked(String id) => _bookmarks.contains(id);
+
+  void toggleBookmarkById(String id) {
+    if (_bookmarks.contains(id)) {
+      _bookmarks.remove(id);
+      _bookmarkedVerses.removeWhere(
+        (v) => (v.localVerseId ?? '${v.source}-${v.verseIndex}') == id,
+      );
+    } else {
+      _bookmarks.add(id);
+    }
+    notifyListeners();
+  }
+
+  void toggleBookmark(dynamic verseOrId) {
+    if (verseOrId is String) {
+      toggleBookmarkById(verseOrId);
+    } else if (verseOrId is ScriptureVerse) {
+      final id = verseOrId.localVerseId ?? '${verseOrId.source}-${verseOrId.verseIndex}';
+      if (_bookmarks.contains(id)) {
+        _bookmarks.remove(id);
+        _bookmarkedVerses.removeWhere(
+          (v) => (v.localVerseId ?? '${v.source}-${v.verseIndex}') == id,
+        );
+      } else {
+        _bookmarks.add(id);
+        _bookmarkedVerses.add(verseOrId);
+      }
+      notifyListeners();
+    }
+  }
+
+  void addJournalEntry({required String content, required String mood}) {
+    final entry = JournalEntry(
+      id: const Uuid().v4(),
+      content: content,
+      mood: mood,
+      date: DateTime.now(),
+    );
+    _journalEntries.insert(0, entry);
+    notifyListeners();
+  }
+
+  void deleteJournalEntry(String id) {
+    _journalEntries.removeWhere((e) => e.id == id);
+    notifyListeners();
+  }
+
+  void updateFlashcardIndex(int index) {
+    _currentFlashcardIndex = index;
+    notifyListeners();
+  }
+
+  void setUserCurrentDay(int day) {
+    _userCurrentDay = day;
     notifyListeners();
   }
 
@@ -127,50 +232,38 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  // ---------------- FIREBASE ----------------
+  void markChapterComplete(String chapterId) {
+    completeChapter(chapterId);
+  }
 
-  FirebaseFirestore? get firestore {
-    try {
-      return FirebaseFirestore.instance;
-    } catch (e) {
-      debugPrint('Firestore initialization error: $e');
-      return null;
-    }
+  void markNotificationRead(String id) {
+    _notifications = _notifications.map((n) {
+      if (n.id == id) return n.copyWith(isRead: true);
+      return n;
+    }).toList();
+    notifyListeners();
+  }
+
+  Future<void> sendGlobalNotification({required String title, required String body}) async {
+    final notification = AppNotification(
+      id: const Uuid().v4(),
+      title: title,
+      body: body,
+      createdAt: DateTime.now(),
+      isRead: false,
+    );
+    _notifications.insert(0, notification);
+    notifyListeners();
   }
 
   Future<void> syncUserRoleWithFirebase() async {
-    if (_userEmail.isEmpty) return;
-
-    final db = firestore;
-
-    if (db == null) return;
-
-    try {
-      final doc =
-          await db.collection('users').doc(_userEmail).get();
-
-      if (doc.exists) {
-        final data = doc.data();
-
-        _userRole = data?['role']?.toString() ?? 'seeker';
-      }
-    } catch (e) {
-      debugPrint('Firebase role sync error: $e');
-    }
-
-    notifyListeners();
+    // Firebase sync disabled — connect real Firebase credentials to enable
   }
 
   // ---------------- LOAD ----------------
 
   Future<void> load() async {
     try {
-      // SharedPreferences prefs =
-      //     await SharedPreferences.getInstance();
-
-      // Example:
-      // _xp = prefs.getInt('xp') ?? 0;
-
       notifyListeners();
     } catch (e) {
       debugPrint('Load error: $e');

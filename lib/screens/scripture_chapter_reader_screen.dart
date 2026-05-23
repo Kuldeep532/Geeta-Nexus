@@ -53,12 +53,12 @@ class _ScriptureChapterReaderScreenState
   Future<void> _loadData() async {
     setState(() { _loading = true; _error = null; });
     try {
-      final allVerses = await _service.fetchVerses();
+      final chNum = widget.chapter.chapterNumber;
+      final allVerses = await _service.fetchVersesForChapter(chNum);
       final allTranslations = await _service.fetchTranslations();
       if (!mounted) return;
-      final chNum = widget.chapter.chapterNumber;
       setState(() {
-        _verses = allVerses.where((v) => v.chapterNumber == chNum).toList();
+        _verses = allVerses;
         _translations = allTranslations
             .where((t) => t.chapterNumber == chNum && t.language == 'en')
             .toList();

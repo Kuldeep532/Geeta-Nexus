@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 
 // Imports
 import 'data/gita_data.dart'; 
@@ -17,22 +15,8 @@ import 'screens/more_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/update_checker.dart';
 
-@pragma('vm:entry-point')
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-}
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  try {
-    await Firebase.initializeApp();
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-    await FirebaseMessaging.instance.subscribeToTopic('all_users');
-    await FirebaseMessaging.instance.requestPermission();
-  } catch (e) {
-    debugPrint("Firebase init error: $e");
-  }
 
   final appState = AppState();
   await Future.wait([appState.load(), loadGitaData()]);

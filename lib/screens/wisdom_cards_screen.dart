@@ -115,7 +115,6 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
     // ACCESSIBILITY: Merging children semantics so the screen reader reads the whole card fluidly at once
     return MergeSemantics(
       child: Semantics(
-        card: true,
         headingLevel: 1,
         label: "Card $currentIndex of $totalCount. Bhagavad Gita Verse number ${verse.id}. Divine Guidance. ${verse.translation}",
         child: Container(

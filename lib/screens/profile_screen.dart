@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -21,8 +19,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-
   Future<void> _handleLogin(BuildContext context) async {
     setState(() {
       _isLoading = true;
@@ -37,53 +33,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
 
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      final userCredential =
-          await _auth.signInWithCredential(credential);
-
-      final user = userCredential.user;
-
-      if (user == null) return;
-
-      bool isAdmin = false;
-      bool isSuperAdmin = false;
-
-      final adminDoc = await FirebaseFirestore.instance
-          .collection('admins')
-          .doc(user.email)
-          .get();
-
-      final superAdminDoc = await FirebaseFirestore.instance
-          .collection('superadmins')
-          .doc(user.email)
-          .get();
-
-      isAdmin = adminDoc.exists;
-      isSuperAdmin = superAdminDoc.exists;
-
       final state =
           Provider.of<AppState>(context, listen: false);
 
       state.updateGoogleAccount(
-        name: user.displayName ?? 'Seeker',
-        email: user.email ?? '',
+        name: googleUser.displayName ?? 'Seeker',
+        email: googleUser.email,
       );
 
-      state.setAdmin(isAdmin);
-      state.setSuperAdmin(isSuperAdmin);
+      state.setAdmin(false);
+      state.setSuperAdmin(false);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Welcome ${user.displayName}',
+              'Welcome ${googleUser.displayName}',
             ),
           ),
         );
@@ -105,7 +70,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _handleLogout(BuildContext context) async {
     await _googleSignIn.signOut();
-    await _auth.signOut();
 
     final state =
         Provider.of<AppState>(context, listen: false);

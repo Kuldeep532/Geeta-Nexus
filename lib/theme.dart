@@ -97,6 +97,27 @@ ThemeData buildLightTheme() {
   );
 }
 
+class AppTheme {
+  static Color background(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? kBg : const Color(0xFFFFF8E7);
+  }
+
+  static Color card(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? kCard : const Color(0xFFFFFAEA);
+  }
+
+  static Gradient meditationGradient(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return RadialGradient(
+      colors: isDark
+          ? [kGold.withOpacity(0.3), kSurface]
+          : [kGold.withOpacity(0.4), const Color(0xFFFFF1CE)],
+    );
+  }
+}
+
 ThemeData buildDarkTheme() {
   return ThemeData(
     useMaterial3: true,

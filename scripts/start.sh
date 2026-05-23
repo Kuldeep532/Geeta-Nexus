@@ -1,11 +1,9 @@
 #!/bin/bash
 set -e
 
-FLUTTER=/nix/store/i07crp4mg1rimd97s1byrq4gasg7dsk5-flutter-wrapped-3.32.0-sdk-links/bin/flutter
+FLUTTER=$(which flutter)
+DHTTPD="$HOME/.pub-cache/bin/dhttpd"
 
-# Clear stale Dart build cache and restore packages (prevents @protected / Matrix4 kernel errors)
-echo "▶ Cleaning build cache..."
-"$FLUTTER" clean 2>/dev/null || true
 echo "▶ Restoring packages..."
 "$FLUTTER" pub get
 
@@ -20,4 +18,8 @@ if [ -n "$ADMIN_LOGIN_PASSWORD" ]; then
   DART_DEFINES="$DART_DEFINES --dart-define=ADMIN_LOGIN_PASSWORD=$ADMIN_LOGIN_PASSWORD"
 fi
 
-exec "$FLUTTER" run -d web-server --web-port 5000 --web-hostname 0.0.0.0 $DART_DEFINES
+echo "▶ Building Flutter web app (release)..."
+"$FLUTTER" build web --release $DART_DEFINES
+
+echo "▶ Starting web server on port 5000..."
+exec "$DHTTPD" --host 0.0.0.0 --port 5000 --path build/web

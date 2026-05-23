@@ -308,7 +308,7 @@ class _AboutUsScreenState extends State<AboutUsScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6.0),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.between,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: GoogleFonts.crimsonText(color: cs.onSurfaceVariant, fontSize: 16)),
           Text(value, style: GoogleFonts.crimsonText(color: cs.onSurface, fontSize: 16, fontWeight: FontWeight.bold)),
