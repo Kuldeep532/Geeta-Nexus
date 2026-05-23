@@ -1,38 +1,85 @@
-name: Geeta AI - Manual Build
+name: Geeta Nexus — Build & Deploy
 
 on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
+# ─── ENVIRONMENT ──────────────────────────────────────────────────────────────
+# ALL credentials come from GitHub repository secrets.
+# Never hardcode tokens, keys, or URLs in this file or in source code.
+env:
+  FLUTTER_VERSION: "3.32.0"
+  JAVA_VERSION: "17"
+  BUILD_NUMBER: ${{ github.run_number }}
+
 jobs:
-  build:
+  # ───────────────────────────────────────────────────────────────────────────
+  # JOB 1: ANALYSE — Lint & Static Analysis
+  # ───────────────────────────────────────────────────────────────────────────
+  analyse:
+    name: Static Analysis
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'gradle'
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
           cache: true
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: flutter pub get
 
-      - name: Decode Release Keystore
+      - name: Analyse code
+        run: flutter analyze --no-fatal-warnings
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # JOB 2: BUILD — Android Release APK
+  # Secrets injected as --dart-define flags so zero credentials appear in code.
+  # R8/ProGuard rules live in android/app/proguard-rules.pro.
+  # ───────────────────────────────────────────────────────────────────────────
+  build_android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    needs: analyse
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: gradle
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Decode release keystore
+        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
         run: |
           mkdir -p android/app/signing
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/signing/my-release-key.jks
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode \
+            > android/app/signing/my-release-key.jks
 
-      - name: Create key.properties
+      - name: Write key.properties
+        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
         run: |
           cat > android/key.properties <<EOF
           storeFile=../app/signing/my-release-key.jks
@@ -41,17 +88,109 @@ jobs:
           keyPassword=${{ secrets.KEY_PASSWORD }}
           EOF
 
-      - name: Create Google Services JSON
+      - name: Write google-services.json
+        if: ${{ secrets.GOOGLE_SERVICES_JSON != '' }}
         run: |
-          echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > android/app/google-services.json
+          echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode \
+            > android/app/google-services.json
 
-      - name: Build APK
+      - name: Build release APK
         run: |
-          chmod +x android/gradlew
-          flutter build apk --release --dart-define=GEMINI_API_KEY="${{ secrets.GEMINI_AI_API_KEY }}" --dart-define=ADMIN_LOGIN_EMAILS="${{ secrets.ADMIN_LOGIN_EMAILS }}"
+          flutter build apk \
+            --release \
+            --build-number=${{ env.BUILD_NUMBER }} \
+            --dart-define=GEMINI_AI_API_KEY=${{ secrets.GEMINI_AI_API_KEY }} \
+            --dart-define=AIRA_BACKEND_URL=${{ secrets.AIRA_BACKEND_URL }} \
+            --dart-define=ADMIN_LOGIN_EMAILS=${{ secrets.ADMIN_LOGIN_EMAILS }} \
+            --dart-define=APP_ENV=production
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: manual-release-apk
+          name: release-apk-${{ env.BUILD_NUMBER }}
           path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # JOB 3: BUILD — Flutter Web (Replit / static hosting)
+  # ───────────────────────────────────────────────────────────────────────────
+  build_web:
+    name: Build Flutter Web
+    runs-on: ubuntu-latest
+    needs: analyse
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build web release
+        run: |
+          flutter build web \
+            --release \
+            --dart-define=GEMINI_AI_API_KEY=${{ secrets.GEMINI_AI_API_KEY }} \
+            --dart-define=AIRA_BACKEND_URL=${{ secrets.AIRA_BACKEND_URL }} \
+            --dart-define=APP_ENV=production
+
+      - name: Upload web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build-${{ env.BUILD_NUMBER }}
+          path: build/web/
+          retention-days: 14
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # JOB 4: DEPLOY — Web to GitHub Pages (push to main only)
+  # ───────────────────────────────────────────────────────────────────────────
+  deploy_web:
+    name: Deploy Web to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: build_web
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Download web artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-build-${{ env.BUILD_NUMBER }}
+          path: ./web-dist
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./web-dist
+          publish_branch: gh-pages
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # JOB 5: DEPLOY — Aira FastAPI backend to Render (free tier)
+  # Set RENDER_DEPLOY_HOOK secret to your Render deploy hook URL.
+  # ───────────────────────────────────────────────────────────────────────────
+  deploy_backend:
+    name: Deploy Aira Backend
+    runs-on: ubuntu-latest
+    needs: analyse
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Trigger Render deploy hook
+        if: ${{ secrets.RENDER_DEPLOY_HOOK != '' }}
+        run: |
+          curl -s -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}" \
+               -H "Content-Type: application/json" \
+               -d '{"clearCache": false}' \
+          || echo "Render deploy hook unavailable — skipping"

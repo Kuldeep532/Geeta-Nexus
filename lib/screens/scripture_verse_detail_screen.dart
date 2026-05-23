@@ -7,6 +7,7 @@ import '../models/scripture_model.dart';
 import '../models/models.dart';
 import '../theme.dart';
 import 'quiz_screen.dart';
+import 'aira_screen.dart';
 
 class ScriptureVerseDetailScreen extends StatefulWidget {
   final List<dynamic> allVerses;
@@ -260,6 +261,14 @@ class _ScriptureVerseDetailScreenState
 
   @override
   Widget build(BuildContext context) {
+    final v = currentVerse;
+    final String shlokaContext = v is ScriptureVerse
+        ? '${v.originalText}\n[${v.section.displayLabel}]'
+        : '${v.sanskrit}\n[Chapter ${v.chapter}, Verse ${v.verse}]';
+    final String verseRef = v is ScriptureVerse
+        ? v.section.displayLabel
+        : 'Chapter ${v.chapter}, Verse ${v.verse}';
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
@@ -272,6 +281,28 @@ class _ScriptureVerseDetailScreenState
             fontWeight: FontWeight.w600,
           ),
         ),
+        actions: [
+          Semantics(
+            button: true,
+            label: 'Ask Aira about this verse',
+            hint: 'Double tap to open Aira AI with this verse as context',
+            child: IconButton(
+              tooltip: 'Ask Aira',
+              icon: const Icon(Icons.support_agent_rounded, color: kGold),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AiraScreen(
+                      contextShloka: shlokaContext,
+                      contextVerse: verseRef,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
 
       body: SafeArea(

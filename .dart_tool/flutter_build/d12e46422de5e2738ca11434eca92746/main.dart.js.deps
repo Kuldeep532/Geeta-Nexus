@@ -948,6 +948,8 @@ file:///home/runner/workspace/lib/screens/about_screen.dart
 file:///home/runner/workspace/lib/screens/admin_dashboard_screen.dart
 file:///home/runner/workspace/lib/screens/affirmations_screen.dart
 file:///home/runner/workspace/lib/screens/ai_screen.dart
+file:///home/runner/workspace/lib/screens/aira_screen.dart
+file:///home/runner/workspace/lib/screens/antakshari_screen.dart
 file:///home/runner/workspace/lib/screens/astrology_screen.dart
 file:///home/runner/workspace/lib/screens/bookmarks_screen.dart
 file:///home/runner/workspace/lib/screens/breathing_screen.dart
@@ -957,8 +959,10 @@ file:///home/runner/workspace/lib/screens/chapters_screen.dart
 file:///home/runner/workspace/lib/screens/contact_screen.dart
 file:///home/runner/workspace/lib/screens/geeta_voice_practice_screen.dart
 file:///home/runner/workspace/lib/screens/glossary_screen.dart
+file:///home/runner/workspace/lib/screens/habit_tracker_screen.dart
 file:///home/runner/workspace/lib/screens/home_screen.dart
 file:///home/runner/workspace/lib/screens/journal_screen.dart
+file:///home/runner/workspace/lib/screens/karma_planner_screen.dart
 file:///home/runner/workspace/lib/screens/meditation_screen.dart
 file:///home/runner/workspace/lib/screens/more_screen.dart
 file:///home/runner/workspace/lib/screens/notifications_screen.dart

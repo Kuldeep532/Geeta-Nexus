@@ -9,6 +9,7 @@ import '../models/scripture_model.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import 'scripture_verse_detail_screen.dart';
+import 'aira_screen.dart';
 
 class ChapterDetailScreen extends StatelessWidget {
   final Chapter chapter;
@@ -169,6 +170,39 @@ class ChapterDetailScreen extends StatelessWidget {
           ],
         ),
       ),
+
+      floatingActionButton: Semantics(
+        button: true,
+        label: 'Ask Aira about Chapter ${chapter.number}: ${chapter.name}',
+        hint: 'Double tap to open Aira AI with this chapter as context',
+        child: FloatingActionButton.extended(
+          heroTag: 'chapter_aira_fab',
+          backgroundColor: kGold,
+          foregroundColor: Colors.black,
+          icon: const Icon(Icons.support_agent_rounded),
+          label: Text(
+            'Ask Aira',
+            style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+          ),
+          tooltip: 'Ask Aira about this chapter',
+          onPressed: () {
+            HapticFeedback.mediumImpact();
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AiraScreen(
+                  contextShloka:
+                      '${chapter.name} (Chapter ${chapter.number}): ${chapter.summary}',
+                  contextVerse:
+                      'Bhagavad Gita, Chapter ${chapter.number} — ${chapter.nameSanskrit}',
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
 
       bottomNavigationBar: Container(
         decoration: BoxDecoration(

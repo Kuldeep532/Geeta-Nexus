@@ -5,11 +5,14 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-// --- Imports ---
 import '../theme.dart';
 import '../state/app_state.dart';
 import '../models/models.dart';
 import 'search_screen.dart';
+import 'aira_screen.dart';
+import 'karma_planner_screen.dart';
+import 'habit_tracker_screen.dart';
+import 'antakshari_screen.dart';
 import '../models/scripture_model.dart';
 import 'scripture_verse_detail_screen.dart';
 import 'scripture_library_screen.dart';
@@ -110,6 +113,30 @@ class _HomeScreenState extends State<HomeScreen> {
     ),
   ];
 
+  final List<_AiFeatureItem> _aiFeatures = const [
+    _AiFeatureItem(
+      title: 'Karma-Yogi Planner',
+      subtitle: 'Plan your day through Krishna\'s teachings',
+      icon: Icons.event_note_rounded,
+      color: Color(0xFFFF9933),
+      tag: 'karma',
+    ),
+    _AiFeatureItem(
+      title: 'Habit Tracker',
+      subtitle: 'Track daily spiritual resolutions',
+      icon: Icons.track_changes_rounded,
+      color: Color(0xFF4CAF50),
+      tag: 'habit',
+    ),
+    _AiFeatureItem(
+      title: 'Shloka Antakshari',
+      subtitle: 'Voice word-chain game with Aira',
+      icon: Icons.music_note_rounded,
+      color: Color(0xFF9C27B0),
+      tag: 'antakshari',
+    ),
+  ];
+
   @override
   void dispose() {
     _flutterTts.stop();
@@ -124,11 +151,34 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _navigateTo(Widget screen) {
     HapticFeedback.lightImpact();
+    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
+  }
 
+  void _openAira() {
+    HapticFeedback.mediumImpact();
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => screen),
+      MaterialPageRoute(builder: (_) => const AiraScreen()),
     );
+  }
+
+  void _openAiFeature(String tag) {
+    HapticFeedback.lightImpact();
+    Widget screen;
+    switch (tag) {
+      case 'karma':
+        screen = const KarmaPlannerScreen();
+        break;
+      case 'habit':
+        screen = const HabitTrackerScreen();
+        break;
+      case 'antakshari':
+        screen = const AntakshariScreen();
+        break;
+      default:
+        return;
+    }
+    Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
   }
 
   @override
@@ -159,7 +209,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: GoogleFonts.poppins(
                       fontSize: 20,
                       fontWeight: FontWeight.w700,
-                      color: theme.colorScheme.onBackground,
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -171,14 +221,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: IconButton(
                     tooltip: 'Search',
                     icon: const Icon(Icons.search_rounded),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const SearchScreen(),
-                        ),
-                      );
-                    },
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SearchScreen()),
+                    ),
                   ),
                 ),
               ],
@@ -190,6 +236,175 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+
+                    // ─── CUSTOMER SUPPORT BANNER ───────────────────────────
+                    Semantics(
+                      button: true,
+                      label: 'Customer Support — Aira AI assistant',
+                      hint: 'Double tap to open Aira, your spiritual support companion',
+                      child: GestureDetector(
+                        onTap: _openAira,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 220),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 18, vertical: 16),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: isDark
+                                  ? [
+                                      kGold.withOpacity(0.18),
+                                      kSaffron.withOpacity(0.10),
+                                    ]
+                                  : [
+                                      kGold.withOpacity(0.22),
+                                      kSaffron.withOpacity(0.12),
+                                    ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: kGold.withOpacity(0.45),
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                blurRadius: 16,
+                                offset: const Offset(0, 4),
+                                color: kGold.withOpacity(0.12),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 48,
+                                height: 48,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: const LinearGradient(
+                                    colors: [kGold, kSaffron],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.support_agent_rounded,
+                                  color: Colors.black,
+                                  size: 26,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Customer Support',
+                                      style: GoogleFonts.poppins(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 16,
+                                        color: isDark ? kGoldLight : kGoldDim,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Chat or speak with Aira — your AI companion',
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        color: isDark
+                                            ? kTextDim
+                                            : Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(Icons.chevron_right_rounded,
+                                  color: kGold),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // ─── AI ECOSYSTEM FEATURES ─────────────────────────────
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        'AI Ecosystem',
+                        style: GoogleFonts.poppins(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Powered by Aira — your free, open-source AI companion',
+                      style: GoogleFonts.poppins(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    SizedBox(
+                      height: 112,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _aiFeatures.length,
+                        itemBuilder: (ctx, i) {
+                          final item = _aiFeatures[i];
+                          return Semantics(
+                            button: true,
+                            label: item.title,
+                            hint: item.subtitle,
+                            child: GestureDetector(
+                              onTap: () => _openAiFeature(item.tag),
+                              child: Container(
+                                width: 150,
+                                margin: EdgeInsets.only(
+                                    right: i < _aiFeatures.length - 1 ? 12 : 0),
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? item.color.withOpacity(0.12)
+                                      : item.color.withOpacity(0.08),
+                                  borderRadius: BorderRadius.circular(18),
+                                  border: Border.all(
+                                    color: item.color.withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(item.icon,
+                                        color: item.color, size: 26),
+                                    const Spacer(),
+                                    Text(
+                                      item.title,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: GoogleFonts.poppins(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // ─── DAILY GUIDANCE ────────────────────────────────────
                     Semantics(
                       header: true,
                       child: Text(
@@ -244,37 +459,32 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ? Colors.white.withOpacity(0.05)
                                     : Colors.white,
                                 border: Border.all(
-                                  color:
-                                      theme.dividerColor.withOpacity(0.12),
+                                  color: theme.dividerColor.withOpacity(0.12),
                                 ),
                                 boxShadow: [
                                   BoxShadow(
                                     blurRadius: 10,
                                     offset: const Offset(0, 4),
-                                    color:
-                                        Colors.black.withOpacity(0.04),
+                                    color: Colors.black.withOpacity(0.04),
                                   ),
                                 ],
                               ),
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      borderRadius:
-                                          BorderRadius.circular(14),
+                                      borderRadius: BorderRadius.circular(14),
                                       color: theme.colorScheme.primary
                                           .withOpacity(0.10),
                                     ),
                                     child: Icon(
                                       item.icon,
                                       size: 24,
-                                      color:
-                                          theme.colorScheme.primary,
+                                      color: theme.colorScheme.primary,
                                     ),
                                   ),
 
@@ -285,12 +495,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                       Text(
                                         item.title,
                                         maxLines: 2,
-                                        overflow:
-                                            TextOverflow.ellipsis,
+                                        overflow: TextOverflow.ellipsis,
                                         style: GoogleFonts.poppins(
                                           fontSize: 14,
-                                          fontWeight:
-                                              FontWeight.w600,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                       ),
 
@@ -299,12 +507,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                       Text(
                                         item.subtitle,
                                         maxLines: 2,
-                                        overflow:
-                                            TextOverflow.ellipsis,
+                                        overflow: TextOverflow.ellipsis,
                                         style: GoogleFonts.poppins(
                                           fontSize: 11.5,
-                                          color: theme.colorScheme
-                                              .onSurfaceVariant,
+                                          color: theme
+                                              .colorScheme.onSurfaceVariant,
                                         ),
                                       ),
                                     ],
@@ -314,18 +521,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                     alignment: Alignment.centerRight,
                                     child: Semantics(
                                       button: true,
-                                      label:
-                                          'Listen to ${item.title}',
+                                      label: 'Listen to ${item.title}',
                                       child: IconButton(
-                                        tooltip:
-                                            'Speak ${item.title}',
+                                        tooltip: 'Speak ${item.title}',
                                         icon: const Icon(
                                           Icons.volume_up_rounded,
                                           size: 20,
                                         ),
-                                        onPressed: () {
-                                          _speak(item.title);
-                                        },
+                                        onPressed: () => _speak(item.title),
                                       ),
                                     ),
                                   ),
@@ -358,5 +561,21 @@ class _FeatureItem {
     required this.subtitle,
     required this.icon,
     required this.screen,
+  });
+}
+
+class _AiFeatureItem {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final Color color;
+  final String tag;
+
+  const _AiFeatureItem({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.color,
+    required this.tag,
   });
 }
