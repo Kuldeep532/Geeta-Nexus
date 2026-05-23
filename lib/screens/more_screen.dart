@@ -11,6 +11,7 @@ import 'contact_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'profile_screen.dart';
 import 'terms_screen.dart';
+import 'voice_support_screen.dart';
 
 class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
@@ -294,18 +295,17 @@ class _MoreScreenState extends State<MoreScreen> {
                       appState,
                     ),
 
-                    const SizedBox(
-                      height: 30,
-                    ),
+                    const SizedBox(height: 20),
+
+                    _buildCustomerSupportButton(context),
+
+                    const SizedBox(height: 20),
 
                     const _SectionHeader(
-                      title:
-                          'Support & Information',
+                      title: 'Support & Information',
                     ),
 
-                    const SizedBox(
-                      height: 8,
-                    ),
+                    const SizedBox(height: 8),
                   ],
                 ),
               ),
@@ -366,6 +366,94 @@ class _MoreScreenState extends State<MoreScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCustomerSupportButton(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Semantics(
+      button: true,
+      label: 'Customer Support — Voice call with Aira',
+      hint: 'Double tap to open the customer support panel',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const VoiceSupportScreen(),
+            ),
+          ),
+          borderRadius: BorderRadius.circular(20),
+          child: Ink(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [kGold.withOpacity(0.18), kSaffron.withOpacity(0.10)]
+                    : [kGold.withOpacity(0.20), kSaffron.withOpacity(0.12)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: kGold.withOpacity(0.42), width: 1.4),
+              boxShadow: [
+                BoxShadow(
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                  color: kGold.withOpacity(0.12),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [kGold, kSaffron],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.support_agent_rounded,
+                    color: Colors.black87,
+                    size: 26,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Customer Support',
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: isDark ? kGoldLight : kGoldDim,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Start a voice call with Aira, your AI companion',
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: isDark ? kTextDim : Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right_rounded, color: kGold),
+              ],
+            ),
+          ),
         ),
       ),
     );

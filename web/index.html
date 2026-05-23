@@ -18,6 +18,17 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <script src="https://js.puter.com/v2/"></script>
+  <script>
+    window.puterTTS = async function(text) {
+      try {
+        const audio = await puter.ai.txt2speech(text);
+        audio.play();
+      } catch (e) {
+        console.warn('Puter TTS failed:', e);
+      }
+    };
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

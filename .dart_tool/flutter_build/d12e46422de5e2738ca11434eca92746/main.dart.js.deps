@@ -981,8 +981,11 @@ file:///home/runner/workspace/lib/screens/social_links.dart
 file:///home/runner/workspace/lib/screens/terms_screen.dart
 file:///home/runner/workspace/lib/screens/update_checker.dart
 file:///home/runner/workspace/lib/screens/updates_screen.dart
+file:///home/runner/workspace/lib/screens/voice_support_screen.dart
 file:///home/runner/workspace/lib/screens/wisdom_cards_screen.dart
 file:///home/runner/workspace/lib/services/ai_service.dart
+file:///home/runner/workspace/lib/services/puter_tts.dart
+file:///home/runner/workspace/lib/services/puter_tts_web.dart
 file:///home/runner/workspace/lib/services/scripture_repository.dart
 file:///home/runner/workspace/lib/services/scripture_service.dart
 file:///home/runner/workspace/lib/state/app_state.dart

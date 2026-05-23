@@ -9,7 +9,6 @@ import '../theme.dart';
 import '../state/app_state.dart';
 import '../models/models.dart';
 import 'search_screen.dart';
-import 'aira_screen.dart';
 import 'karma_planner_screen.dart';
 import 'habit_tracker_screen.dart';
 import 'antakshari_screen.dart';
@@ -154,14 +153,6 @@ class _HomeScreenState extends State<HomeScreen> {
     Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
   }
 
-  void _openAira() {
-    HapticFeedback.mediumImpact();
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const AiraScreen()),
-    );
-  }
-
   void _openAiFeature(String tag) {
     HapticFeedback.lightImpact();
     Widget screen;
@@ -236,99 +227,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
-                    // ─── CUSTOMER SUPPORT BANNER ───────────────────────────
-                    Semantics(
-                      button: true,
-                      label: 'Customer Support — Aira AI assistant',
-                      hint: 'Double tap to open Aira, your spiritual support companion',
-                      child: GestureDetector(
-                        onTap: _openAira,
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 220),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 18, vertical: 16),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: isDark
-                                  ? [
-                                      kGold.withOpacity(0.18),
-                                      kSaffron.withOpacity(0.10),
-                                    ]
-                                  : [
-                                      kGold.withOpacity(0.22),
-                                      kSaffron.withOpacity(0.12),
-                                    ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: kGold.withOpacity(0.45),
-                              width: 1.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                blurRadius: 16,
-                                offset: const Offset(0, 4),
-                                color: kGold.withOpacity(0.12),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 48,
-                                height: 48,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: const LinearGradient(
-                                    colors: [kGold, kSaffron],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                ),
-                                child: const Icon(
-                                  Icons.support_agent_rounded,
-                                  color: Colors.black,
-                                  size: 26,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Customer Support',
-                                      style: GoogleFonts.poppins(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 16,
-                                        color: isDark ? kGoldLight : kGoldDim,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      'Chat or speak with Aira — your AI companion',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 12,
-                                        color: isDark
-                                            ? kTextDim
-                                            : Colors.grey.shade600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Icon(Icons.chevron_right_rounded,
-                                  color: kGold),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
 
                     // ─── AI ECOSYSTEM FEATURES ─────────────────────────────
                     Semantics(
