@@ -1,0 +1,45 @@
+You are an expert multi-platform software architect, mobile developer, and open-source AI audio specialist. I am developing a Flutter application called "Geeta Nexus" (containing all Shlokas of the Bhagavad Gita). I have a strict budget limit of 10 USD, so the entire setup must rely heavily on free, open-source, and highly cost-efficient architectures. 
+
+I need you to write the complete structural logic, code blueprints, and integration pipeline based on these refined, budget-conscious instructions:
+
+### 1. Zero-Cost Voice System & GitHub/Open-Source Voice Integration
+- CRITICAL COST CONTROL: Do not use any expensive, usage-based paid APIs for voice generation or voice cloning. 
+- Instead, integrate completely free, lightweight, open-source Text-to-Speech (TTS) and voice models available directly on GitHub, Hugging Face Free Tiers, or Gita Press public audio repositories (such as Piper TTS, Coqui open-source variants, or local Android/iOS native high-quality voice assets).
+- Provide the exact implementation code to fetch, cache, and play these high-quality free voice models locally within the Flutter app or via a free-tier hosting pipeline.
+
+### 2. Absolute Security & GitHub Actions Secret Management
+- Every single backend token, open-source repository credential, or deployment URL must be treated as a strict secret. Absolutely no credentials should be hardcoded.
+- Provide a robust GitHub Actions workflow (.github/workflows/main.yml) that securely injects these variables into the Flutter build environment at runtime.
+- The pipeline must automatically build the production APK and actively resolve common environment-specific compilation errors (such as Gradle mismatches, ProGuard/R8 shrinking rules, and cross-platform dependency conflicts).
+
+### 3. Universal, Framework-Agnostic AI Support Agent Backend: "Aira"
+- Design the AI customer support agent named "Aira" to be completely UNIVERSAL. 
+- The core logical engine of "Aira" must be loosely coupled and written in a highly modular style so that it can be instantly ported or re-implemented across ANY development framework—including Flutter, React Native, Jetpack Compose, or native Java.
+- The agent must accept generic JSON or Markdown structures for its knowledge base, allowing me to pass entirely different application data to it in the future without changing the core AI logic.
+- Provide a lightweight, free-tier compatible backend blueprint (e.g., Python FastAPI deployable on free hosting like Render, Hugging Face Spaces, or Railway) to act as Aira's processing brain.
+
+### 4. Front-End Integration & "Customer Support" Interface
+- Front-End Accessibility Entry Point: On the main/home screen of the Flutter app, implement a highly visible and 100% accessible interface element explicitly named "Customer Support". 
+- When activated, this element must instantly launch the universal "Aira" conversational voice/text layer.
+- Unified Ecosystem Integration (No Extra Screens): Instead of creating heavy brand-new screens, seamlessly inject AI capabilities directly into the existing UI components of the app:
+    - *Unified Smart Search Bar:* Upgrade the app's existing standard text search bar. When a user types a keyword or an emotional sentence, the native search mechanism automatically runs through the local/free embedding engine to display relevant Shlokas in place.
+    - *In-Context Shloka Querying:* On the standard Shloka display screen, inject an inline "Ask Aira" interactive option. While reading any specific Shloka, the user can immediately ask a question about that specific verse. The AI automatically reads the context of the current Shloka and answers without forcing the user to leave the page.
+
+### 5. 100% Complete Accessibility (Universal Design)
+- MANDATORY REQUIREMENT: Every single integrated feature, upgraded search component, the new "Customer Support" interface, and inline contextual overlay must be 100% accessible. 
+- The code must strictly comply with global accessibility standards (WCAG). Ensure flawless implementation of Flutter Semantics, accessible labels, explicit hints, and focus node controls so that screen readers (like TalkBack and VoiceOver) can traverse and announce everything smoothly for a blind user. No visual element should lack an interactive text/audio counterpart.
+
+### 6. Six Optimized AI-Driven Ecosystem Features
+Optimize and integrate these features directly into the existing app ecosystem using free/open-source stacks to make this month's update high-value:
+* Feature 1: Upgraded Semantic Search Engine (Merged into existing Search Bar)
+* Feature 2: Completely Hands-Free Voice Navigation & App Controls (Accessible shortcuts)
+* Feature 3: In-Context Philosophical Commentary (Inline "Ask Aira" on Shloka pages)
+* Feature 4 [NEW & UNIQUE]: AI Karma-Yogi Daily Mindful Planner
+    - A voice-driven task planner where the user tells Aira their daily tasks, duties, or schedules. Aira reviews them locally and structures them through the lens of Lord Krishna's teachings on 'Karma Yoga' and 'Duty without Attachment', providing a daily philosophical audio briefing on how to approach chores with a calm mindset.
+* Feature 5: Daily Spiritual Resolution & Habit Tracker (An interactive conversational widget where users tell Aira their daily spiritual goals—like "I will read 2 Shlokas today"—and Aira gently tracks and reminds them via audio notifications).
+* Feature 6 [NEW & UNIQUE]: Conversational Shloka Antakshari / Word-Chain Game
+    - An engaging, gamified audio-only module where Aira recites a Shloka, and challenge the user to reply with another Shloka starting with the last letter or keyword. The on-device speech-to-text processes the user's audio input, maps it against the local Gita dataset, validates the rule, and responds interactively.
+
+### 7. Architectural Deliverables
+- Provide structural code templates and architectural diagrams detailing how the universal AI core and its dedicated backend communicate across Flutter, React Native, and Native Java layers.
+- Provide clean implementation blueprints for local/backend open-source LLM, Embedding injection, and High-Quality Audio streaming in Dart.
