@@ -56,35 +56,31 @@ class AccessibleTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      textField: true,
-      label: label,
-      hint: semanticHint ?? hint,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 44),
-        child: TextFormField(
-          controller: controller,
-          focusNode: focusNode,
-          keyboardType: keyboardType,
-          textInputAction: textInputAction,
-          obscureText: obscureText,
-          autofillHints: autofillHints,
-          onFieldSubmitted: onSubmitted,
-          validator: validator,
-          maxLines: maxLines,
-          decoration: InputDecoration(
-            labelText: label,
-            hintText: hint,
-            errorText: errorText,
-            filled: true,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 18,
-            ),
-          ),
+    // No outer Semantics wrapper — TextFormField owns its own a11y tree via
+    // InputDecoration.labelText. Adding a duplicate Semantics(textField:true)
+    // node causes screen readers to announce the label twice ("Your Name,
+    // edit text… Your Name, edit text").
+    return TextFormField(
+      controller: controller,
+      focusNode: focusNode,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      obscureText: obscureText,
+      autofillHints: autofillHints,
+      onFieldSubmitted: onSubmitted,
+      validator: validator,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        errorText: errorText,
+        filled: true,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 18,
         ),
       ),
     );

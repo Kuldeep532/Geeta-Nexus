@@ -83,7 +83,8 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Semantics(
             header: true,
-            child: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 56),
+            child: const Icon(Icons.check_circle_rounded,
+                color: Colors.green, size: 56),
           ),
           content: Text(
             'Your message has been sent!\nWe will get back to you soon.',
@@ -117,7 +118,8 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
       appBar: AppBar(
         title: Semantics(
           header: true,
-          child: const Text('Contact Us'),
+          namesRoute: true,
+          child: const Text('Chat Support'),
         ),
         centerTitle: true,
         elevation: 0,
@@ -131,9 +133,13 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Screen description for screen readers
+                // Intro — wrapped once so screen reader reads it as a single
+                // description; ExcludeSemantics prevents the visual Text from
+                // being read a second time by the tree walk.
                 Semantics(
-                  label: 'Contact Us form. Fill in your name, email, and message, then press Send Message.',
+                  label: 'Send us a message and we will get back to you. '
+                      'Fill in your name, email address, and message, '
+                      'then tap Send Message.',
                   child: ExcludeSemantics(
                     child: Text(
                       'Send us a message and we\'ll get back to you.',
@@ -147,80 +153,77 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                 ),
                 const SizedBox(height: 28),
 
-                // Field 1: Your Name
-                _FieldLabel(label: 'Your Name'),
-                const SizedBox(height: 8),
-                Semantics(
-                  label: 'Your Name text field',
-                  textField: true,
-                  child: TextFormField(
-                    controller: _nameCtrl,
-                    textInputAction: TextInputAction.next,
-                    autofillHints: const [AutofillHints.name],
-                    decoration: _fieldDecoration(
-                      isDark: isDark,
-                      hint: 'Enter your full name',
-                      icon: Icons.person_outline_rounded,
-                    ),
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Please enter your name' : null,
+                // ── Field 1: Your Name ─────────────────────────────────────
+                // labelText is the single a11y source of truth.
+                // No outer Semantics wrapper — avoids "Your Name edit box
+                // Your Name text field edit box" double-announcement.
+                TextFormField(
+                  controller: _nameCtrl,
+                  textInputAction: TextInputAction.next,
+                  autofillHints: const [AutofillHints.name],
+                  decoration: _fieldDecoration(
+                    isDark: isDark,
+                    label: 'Your Name',
+                    hint: 'Enter your full name',
+                    icon: Icons.person_outline_rounded,
                   ),
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Please enter your name'
+                      : null,
                 ),
                 const SizedBox(height: 20),
 
-                // Field 2: Your Email
-                _FieldLabel(label: 'Your Email'),
-                const SizedBox(height: 8),
-                Semantics(
-                  label: 'Your Email text field',
-                  textField: true,
-                  child: TextFormField(
-                    controller: _emailCtrl,
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    autofillHints: const [AutofillHints.email],
-                    decoration: _fieldDecoration(
-                      isDark: isDark,
-                      hint: 'Enter your email address',
-                      icon: Icons.email_outlined,
-                    ),
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Please enter your email';
-                      if (!v.contains('@') || !v.contains('.')) {
-                        return 'Please enter a valid email address';
-                      }
-                      return null;
-                    },
+                // ── Field 2: Email Address ─────────────────────────────────
+                TextFormField(
+                  controller: _emailCtrl,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  autofillHints: const [AutofillHints.email],
+                  decoration: _fieldDecoration(
+                    isDark: isDark,
+                    label: 'Email Address',
+                    hint: 'you@example.com',
+                    icon: Icons.email_outlined,
                   ),
+                  validator: (v) {
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Please enter your email';
+                    }
+                    if (!v.contains('@') || !v.contains('.')) {
+                      return 'Please enter a valid email address';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 20),
 
-                // Field 3: Your Message
-                _FieldLabel(label: 'Your Message'),
-                const SizedBox(height: 8),
-                Semantics(
-                  label: 'Your Message text field',
-                  textField: true,
-                  child: TextFormField(
-                    controller: _messageCtrl,
-                    maxLines: 5,
-                    textInputAction: TextInputAction.newline,
-                    decoration: _fieldDecoration(
-                      isDark: isDark,
-                      hint: 'Type your message here',
-                      icon: Icons.message_outlined,
-                    ),
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? 'Please enter your message' : null,
+                // ── Field 3: Message ───────────────────────────────────────
+                TextFormField(
+                  controller: _messageCtrl,
+                  maxLines: 5,
+                  textInputAction: TextInputAction.newline,
+                  decoration: _fieldDecoration(
+                    isDark: isDark,
+                    label: 'Message',
+                    hint: 'Type your message here',
+                    icon: Icons.message_outlined,
                   ),
+                  validator: (v) => (v == null || v.trim().isEmpty)
+                      ? 'Please enter your message'
+                      : null,
                 ),
                 const SizedBox(height: 36),
 
-                // Single action button — min 48dp tall
+                // ── Send button ────────────────────────────────────────────
+                // Semantics wraps only the SizedBox so the button label is
+                // predictable; excludeSemantics prevents the child Text from
+                // being read separately.
                 Semantics(
                   button: true,
                   enabled: !_isSending,
-                  label: _isSending ? 'Sending message, please wait' : 'Send Message',
+                  label: _isSending
+                      ? 'Sending your message, please wait'
+                      : 'Send Message',
                   excludeSemantics: true,
                   child: SizedBox(
                     height: 56,
@@ -262,16 +265,22 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
     );
   }
 
+  // labelText drives screen-reader announcement; hintText is shown when the
+  // field is empty. No extra Semantics node is needed on top of this.
   InputDecoration _fieldDecoration({
     required bool isDark,
+    required String label,
     required String hint,
     required IconData icon,
   }) {
     return InputDecoration(
+      labelText: label,
       hintText: hint,
       prefixIcon: Icon(icon, color: kGoldDim, size: 20),
       filled: true,
-      fillColor: isDark ? Colors.white.withOpacity(0.05) : Colors.grey.withOpacity(0.06),
+      fillColor: isDark
+          ? Colors.white.withOpacity(0.05)
+          : Colors.grey.withOpacity(0.06),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
@@ -292,28 +301,8 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: Colors.redAccent, width: 1.5),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-    );
-  }
-}
-
-class _FieldLabel extends StatelessWidget {
-  final String label;
-  const _FieldLabel({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      header: true,
-      child: Text(
-        label,
-        style: GoogleFonts.lato(
-          fontWeight: FontWeight.w700,
-          fontSize: 14,
-          color: Theme.of(context).colorScheme.primary,
-          letterSpacing: 0.4,
-        ),
-      ),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
   }
 }
