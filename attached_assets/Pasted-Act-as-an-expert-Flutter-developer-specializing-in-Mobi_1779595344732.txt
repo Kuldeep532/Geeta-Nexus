@@ -1,0 +1,23 @@
+Act as an expert Flutter developer specializing in Mobile Accessibility (A11y), Semantics, and Clean Architecture. Refactor my code to execute the following specific layout, functional, and accessibility fixes immediately. Provide only the clean, refactored Dart code with concise inline comments for the changes made, without any introductory or concluding conversational explanations.
+
+1. Textbox & Screen Reader Pacing Fixes:
+   - Consolidate all double/overlapping input fields (where a disabled textbox sits next to an active one) into a single, fully accessible TextFormField.
+   - Implement 'Semantics', 'MergeSemantics', or 'ExcludeSemantics' across all modified widgets to introduce a clean pause/space between element descriptions and actionable screen reader hints (preventing overlapping speech like "Double tap to open").
+
+2. Home & Support Screen Updates:
+   - Rename the "Home" / "Special Home" screen text and its underlying semantics labels to "Geeta Nexus".
+   - Keep the existing Customer Support Screen, but add highly accessible, distinct buttons for both "Chat Support" and "Voice Call" with clear semantic labels and touch targets of at least 48x48 dp.
+
+3. Onboarding Screen Fixes:
+   - Add the missing, fully functional buttons for "Privacy Policy" and "Terms and Conditions" to the Onboarding Screen, ensuring they are perfectly accessible to assistive technologies. (Note: Do NOT add a "Rate Us" option).
+
+4. Stream Accessibility & Error Handling (No Red Screens):
+   - Fix all overall stream accessibility issues, ensuring that asynchronous data streams, active playback states, and live updates are properly wrapped in semantic live regions ('LiveRegionMode.polite' or 'assertive') so assistive tools announce state changes dynamically.
+   - Implement robust try-catch blocks and error state builders for all StreamBuilders and FutureBuilders. Under no circumstances should a broken stream trigger a default Flutter red error screen. Instead, gracefully catch errors and display a clean, fully accessible placeholder or retry widget.
+
+5. Scripture Library & Selective Reader Screen Bug Fixes:
+   - Fix the broken data fetching and audio streaming logic for the Scripture Library and Bhagavad Gita chapters. Ensure proper loading, success, and error states that are automatically announced to screen readers.
+   - Do NOT touch or modify any existing Reader Screens that are already fully accessible. Only refactor and fix the specific Reader Screen elements or text segments that are currently broken, ensuring verses, translations, and audio controls flow flawlessly and sequentially for assistive tools.
+
+6. Code Cleanup:
+   - Identify and completely purge any unused screens, dead routes, or redundant widgets left over from previous iterations.
