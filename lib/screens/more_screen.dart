@@ -206,18 +206,47 @@ class _MoreScreenState extends State<MoreScreen> {
 
           const Divider(indent: 16, endIndent: 16),
 
-          // ── Customer Support tile ─────────────────────────────────────
+          // ── Customer Support — Chat ───────────────────────────────────
           Semantics(
             button: true,
-            label: 'Customer Support. Start a voice call with Aira, your AI companion.',
-            hint: 'Double tap to open',
+            label: 'Chat Support. Send a message to the support team.',
+            hint: 'Double tap to open chat support form',
+            child: ExcludeSemantics(
+              child: ListTile(
+                onTap: () => _open(const ContactUsScreen()),
+                leading: const Icon(Icons.chat_bubble_outline_rounded,
+                    color: kGold, size: 26),
+                title: Text(
+                  'Chat Support',
+                  style: GoogleFonts.poppins(
+                      fontWeight: FontWeight.w600, fontSize: 15),
+                ),
+                subtitle: Text(
+                  'Send a message to our support team',
+                  style: GoogleFonts.poppins(fontSize: 12),
+                ),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                minVerticalPadding: 12,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 4),
+
+          // ── Customer Support — Voice Call ─────────────────────────────
+          Semantics(
+            button: true,
+            label: 'Voice Call Support. Start a voice call with Aira, your AI companion.',
+            hint: 'Double tap to start voice call',
             child: ExcludeSemantics(
               child: ListTile(
                 onTap: () => _open(const VoiceSupportScreen()),
-                leading: const Icon(Icons.support_agent_rounded,
+                leading: const Icon(Icons.phone_in_talk_rounded,
                     color: kGold, size: 26),
                 title: Text(
-                  'Customer Support',
+                  'Voice Call',
                   style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w600, fontSize: 15),
                 ),
@@ -228,6 +257,7 @@ class _MoreScreenState extends State<MoreScreen> {
                 trailing: const Icon(Icons.chevron_right_rounded),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                minVerticalPadding: 12,
               ),
             ),
           ),

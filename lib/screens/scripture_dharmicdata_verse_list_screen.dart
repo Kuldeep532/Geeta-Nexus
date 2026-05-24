@@ -98,20 +98,38 @@ class _ScriptureDharmicVerseListScreenState
   }
 
   Widget _buildError(ThemeData theme, Color accent) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.wifi_off_rounded, size: 48, color: accent.withOpacity(0.5)),
-          const SizedBox(height: 16),
-          Text('Could not load content.', style: TextStyle(color: theme.textTheme.bodyMedium?.color)),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _load,
-            style: ElevatedButton.styleFrom(backgroundColor: kGold, foregroundColor: Colors.black),
-            child: const Text('Retry'),
+    return Semantics(
+      label: 'Failed to load ${widget.section.englishName} content.',
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ExcludeSemantics(
+                child: Icon(Icons.wifi_off_rounded, size: 48, color: accent.withOpacity(0.5)),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Could not load content.\nCheck your connection.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: theme.textTheme.bodyMedium?.color),
+              ),
+              const SizedBox(height: 16),
+              Semantics(
+                button: true,
+                label: 'Retry loading ${widget.section.englishName}',
+                hint: 'Double tap to try again',
+                child: ElevatedButton.icon(
+                  onPressed: _load,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry'),
+                  style: ElevatedButton.styleFrom(backgroundColor: kGold, foregroundColor: Colors.black),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -140,7 +158,7 @@ class _ScriptureDharmicVerseListScreenState
               ),
             Semantics(
               button: true,
-              label: 'Verse ${verse.verseIndex}. ${verse.originalText.substring(0, 40)}... Double tap to read detail.',
+              label: 'Verse ${verse.verseIndex}. ${verse.originalText.length > 40 ? "${verse.originalText.substring(0, 40)}..." : verse.originalText} Double tap to read detail.',
               child: Card(
                 margin: const EdgeInsets.only(bottom: 10),
                 color: theme.cardColor,

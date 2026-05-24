@@ -98,7 +98,17 @@ class _ScriptureChapterReaderScreenState
       _liveAudioStatus = label;
     });
     SemanticsService.announce(label, TextDirection.ltr);
-    await _audioPlayer.play(UrlSource(url));
+    try {
+      await _audioPlayer.play(UrlSource(url));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _playingVerseNumber = null;
+        _liveAudioStatus = 'Audio unavailable for verse $verse';
+      });
+      SemanticsService.announce(
+          'Audio unavailable for verse $verse', TextDirection.ltr);
+    }
   }
 
   Future<void> _playChapterSummaryAudio() async {
@@ -121,7 +131,17 @@ class _ScriptureChapterReaderScreenState
       _liveAudioStatus = label;
     });
     SemanticsService.announce(label, TextDirection.ltr);
-    await _audioPlayer.play(UrlSource(url));
+    try {
+      await _audioPlayer.play(UrlSource(url));
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isChapterSummaryPlaying = false;
+        _liveAudioStatus = 'Chapter summary audio unavailable';
+      });
+      SemanticsService.announce(
+          'Chapter summary audio unavailable', TextDirection.ltr);
+    }
   }
 
   Future<void> _pauseResumeAudio() async {

@@ -550,6 +550,9 @@ class _OnboardingSlidersViewState extends State<_OnboardingSlidersView> {
                       _isGuestMode
                           ? _buildGuestPanel()
                           : _buildEmailPanel(),
+                      const SizedBox(height: 16),
+                      // Standalone legal buttons — always visible on last page
+                      _buildLegalButtons(context),
                       const SizedBox(height: 24),
                     ],
                   ],
@@ -688,6 +691,69 @@ class _OnboardingSlidersViewState extends State<_OnboardingSlidersView> {
           semanticHint: 'Double tap to go back to email and Google sign in',
           onPressed: _deactivateGuestMode,
           child: const Text('Back to Sign In'),
+        ),
+      ],
+    );
+  }
+
+  // ── Standalone legal navigation buttons ───────────────────────────────
+  Widget _buildLegalButtons(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Semantics(
+            button: true,
+            label: 'Privacy Policy',
+            hint: 'Double tap to read the Privacy Policy',
+            child: SizedBox(
+              height: 48,
+              child: OutlinedButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const PrivacyPolicyScreen()),
+                ),
+                icon: const Icon(Icons.privacy_tip_outlined, size: 16),
+                label: const Text('Privacy Policy'),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: kGold.withOpacity(0.5)),
+                  foregroundColor: kGold,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Semantics(
+            button: true,
+            label: 'Terms and Conditions',
+            hint: 'Double tap to read the Terms and Conditions',
+            child: SizedBox(
+              height: 48,
+              child: OutlinedButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const TermsAndConditionsScreen()),
+                ),
+                icon: const Icon(Icons.description_outlined, size: 16),
+                label: const Text('Terms & Conditions'),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: kGold.withOpacity(0.5)),
+                  foregroundColor: kGold,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+              ),
+            ),
+          ),
         ),
       ],
     );

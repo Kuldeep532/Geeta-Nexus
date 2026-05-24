@@ -160,8 +160,9 @@ class HomeScreen extends StatelessWidget {
         title: Semantics(
           header: true,
           namesRoute: true,
+          label: 'Geeta Nexus',
           child: Text(
-            'Spiritual Home',
+            'Geeta Nexus',
             style: GoogleFonts.poppins(
               fontSize: 20,
               fontWeight: FontWeight.w700,
