@@ -904,166 +904,287 @@ class _MeditationScreenState
             ),
 
             // =================================================
-            // SETTINGS PANEL
+            // SETTINGS PANEL — shown only before/after session
             // =================================================
 
             if (!_immersiveMode)
-
               Align(
-
-                alignment:
-                    Alignment.bottomCenter,
-
+                alignment: Alignment.bottomCenter,
                 child: Container(
-
-                  padding:
-                      const EdgeInsets.all(
-                    20,
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.62,
                   ),
-
-                  decoration:
-                      BoxDecoration(
-
-                    color:
-                        AppTheme.card(
-                      context,
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                  decoration: BoxDecoration(
+                    color: AppTheme.card(context),
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(28),
                     ),
-
-                    borderRadius:
-                        const BorderRadius
-                            .vertical(
-
-                      top: Radius.circular(
-                        30,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.12),
+                        blurRadius: 20,
+                        offset: const Offset(0, -4),
                       ),
-                    ),
+                    ],
                   ),
-
-                  child:
-                      SingleChildScrollView(
-
+                  child: SingleChildScrollView(
                     child: Column(
-
-                      mainAxisSize:
-                          MainAxisSize.min,
-
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
 
-                        // CUSTOM TIME INPUT
-
-                        TextField(
-
-                          controller:
-                              _customMinutesController,
-
-                          keyboardType:
-                              TextInputType
-                                  .number,
-
-                          inputFormatters: [
-
-                            FilteringTextInputFormatter
-                                .digitsOnly,
-                          ],
-
-                          decoration:
-                              const InputDecoration(
-
-                            labelText:
-                                'Custom Minutes',
-
-                            hintText:
-                                'Enter meditation time',
-                          ),
-                        ),
-
-                        const SizedBox(
-                          height: 20,
-                        ),
-
-                        // MUSIC VOLUME
-
-                        Slider(
-
-                          value:
-                              _musicVolume,
-
-                          onChanged:
-                              (value) {
-
-                            setState(() {
-
-                              _musicVolume =
-                                  value;
-                            });
-                          },
-                        ),
-
-                        // GUIDE VOLUME
-
-                        Slider(
-
-                          value:
-                              _guideVolume,
-
-                          onChanged:
-                              (value) {
-
-                            setState(() {
-
-                              _guideVolume =
-                                  value;
-                            });
-                          },
-                        ),
-
-                        // START
-
-                        SizedBox(
-
-                          width:
-                              double.infinity,
-
-                          child:
-                              ElevatedButton(
-
-                            onPressed:
-                                _isLoading
-                                    ? null
-                                    : (_running
-                                        ? _pauseMeditation
-                                        : _startMeditation),
-
-                            child: Text(
-
-                              _isLoading
-                                  ? 'Loading...'
-                                  : (_running
-                                      ? 'Pause Meditation'
-                                      : 'Start Meditation'),
+                        // ── Drag handle ──────────────────────────────────
+                        Center(
+                          child: ExcludeSemantics(
+                            child: Container(
+                              width: 40,
+                              height: 4,
+                              margin: const EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                color: theme.dividerColor,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
                             ),
                           ),
                         ),
 
-                        const SizedBox(
-                          height: 10,
+                        // ── Duration presets ─────────────────────────────
+                        Semantics(
+                          label: 'Duration presets',
+                          container: true,
+                          child: Wrap(
+                            spacing: 8,
+                            children: [5, 10, 15, 20, 30].map((min) {
+                              final selected = _selectedMinutes == min;
+                              return Semantics(
+                                button: true,
+                                selected: selected,
+                                label: '$min minute${min == 1 ? '' : 's'}, '
+                                    '${selected ? 'selected' : 'not selected'}',
+                                excludeSemantics: true,
+                                child: ChoiceChip(
+                                  label: Text('$min min'),
+                                  selected: selected,
+                                  onSelected: (_) => setState(() {
+                                    _selectedMinutes = min;
+                                    _secondsLeft.value = min * 60;
+                                    _customMinutesController.clear();
+                                  }),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // ── Custom duration input ────────────────────────
+                        TextField(
+                          controller: _customMinutesController,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly,
+                          ],
+                          onSubmitted: (_) => _applyDuration(),
+                          decoration: const InputDecoration(
+                            labelText: 'Custom duration (minutes)',
+                            hintText: 'e.g. 45',
+                            prefixIcon: Icon(Icons.timer_outlined),
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 12),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // ── Ambient music selector ───────────────────────
+                        DropdownButtonFormField<String>(
+                          value: _selectedMusic,
+                          decoration: const InputDecoration(
+                            labelText: 'Ambient Music',
+                            prefixIcon: Icon(Icons.music_note_outlined),
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 12),
+                          ),
+                          items: _musicTracks.keys
+                              .map((track) => DropdownMenuItem(
+                                    value: track,
+                                    child: Text(track),
+                                  ))
+                              .toList(),
+                          onChanged: _running
+                              ? null
+                              : (val) => setState(
+                                  () => _selectedMusic = val ?? 'None'),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // ── Guided meditation selector ───────────────────
+                        DropdownButtonFormField<String>(
+                          value: _selectedGuide,
+                          decoration: const InputDecoration(
+                            labelText: 'Guided Meditation',
+                            prefixIcon:
+                                Icon(Icons.record_voice_over_outlined),
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 12),
+                          ),
+                          items: _guides.keys
+                              .map((g) => DropdownMenuItem(
+                                    value: g,
+                                    child: Text(g),
+                                  ))
+                              .toList(),
+                          onChanged: _running
+                              ? null
+                              : (val) => setState(
+                                  () => _selectedGuide = val ?? 'None'),
+                        ),
+                        const SizedBox(height: 16),
+
+                        // ── Music volume slider ──────────────────────────
+                        Semantics(
+                          label:
+                              'Music volume, ${(_musicVolume * 100).round()} percent',
+                          slider: true,
+                          excludeSemantics: true,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Music volume  ${(_musicVolume * 100).round()}%',
+                                style: theme.textTheme.bodySmall,
+                              ),
+                              Slider(
+                                value: _musicVolume,
+                                onChanged: (v) =>
+                                    setState(() => _musicVolume = v),
+                              ),
+                            ],
+                          ),
                         ),
 
-                        // RESET
+                        // ── Guide volume slider ──────────────────────────
+                        Semantics(
+                          label:
+                              'Guide volume, ${(_guideVolume * 100).round()} percent',
+                          slider: true,
+                          excludeSemantics: true,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Guide volume  ${(_guideVolume * 100).round()}%',
+                                style: theme.textTheme.bodySmall,
+                              ),
+                              Slider(
+                                value: _guideVolume,
+                                onChanged: (v) =>
+                                    setState(() => _guideVolume = v),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
 
-                        SizedBox(
+                        // ── Toggles row ──────────────────────────────────
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Semantics(
+                                toggled: _autoVolume,
+                                label: 'Auto-lower music during guide',
+                                excludeSemantics: true,
+                                child: SwitchListTile.adaptive(
+                                  dense: true,
+                                  contentPadding: EdgeInsets.zero,
+                                  title: const Text('Auto-lower music',
+                                      style: TextStyle(fontSize: 13)),
+                                  value: _autoVolume,
+                                  onChanged: (v) =>
+                                      setState(() => _autoVolume = v),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Semantics(
+                                toggled: _bellEnabled,
+                                label: 'Bell on session start and end',
+                                excludeSemantics: true,
+                                child: SwitchListTile.adaptive(
+                                  dense: true,
+                                  contentPadding: EdgeInsets.zero,
+                                  title: const Text('Bell',
+                                      style: TextStyle(fontSize: 13)),
+                                  value: _bellEnabled,
+                                  onChanged: (v) =>
+                                      setState(() => _bellEnabled = v),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
 
-                          width:
-                              double.infinity,
+                        // ── Start / Pause button ─────────────────────────
+                        Semantics(
+                          button: true,
+                          enabled: !_isLoading,
+                          label: _isLoading
+                              ? 'Loading audio, please wait'
+                              : (_running
+                                  ? 'Pause meditation'
+                                  : 'Start meditation'),
+                          excludeSemantics: true,
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: ElevatedButton.icon(
+                              onPressed: _isLoading
+                                  ? null
+                                  : (_running
+                                      ? _pauseMeditation
+                                      : _startMeditation),
+                              icon: _isLoading
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.black),
+                                    )
+                                  : Icon(_running
+                                      ? Icons.pause_rounded
+                                      : Icons.play_arrow_rounded),
+                              label: Text(
+                                _isLoading
+                                    ? 'Loading…'
+                                    : (_running
+                                        ? 'Pause Meditation'
+                                        : 'Start Meditation'),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
 
-                          child:
-                              OutlinedButton(
-
-                            onPressed:
-                                _resetMeditation,
-
-                            child: const Text(
-                              'Reset',
+                        // ── Reset button ─────────────────────────────────
+                        Semantics(
+                          button: true,
+                          label: 'Reset timer and stop all audio',
+                          excludeSemantics: true,
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: OutlinedButton.icon(
+                              onPressed: _resetMeditation,
+                              icon: const Icon(Icons.refresh_rounded),
+                              label: const Text('Reset'),
                             ),
                           ),
                         ),

@@ -126,11 +126,14 @@ class AccessibleButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // excludeSemantics:true means this node replaces the inner button's own
+    // semantics node, so screen readers hear the label exactly once.
     return Semantics(
       button: true,
       enabled: onPressed != null,
       label: label,
       hint: semanticHint,
+      excludeSemantics: true,
       child: SizedBox(
         height: height,
         width: double.infinity,

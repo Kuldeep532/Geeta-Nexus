@@ -6,7 +6,7 @@ import '../services/scripture_service.dart';
 class ScriptureRepository {
   // --- Constants & Base URLs ---
   static const _dharmicBase = 'https://raw.githubusercontent.com/bhavykhatri/DharmicData/main';
-  static const _everydayCodingsGitaBase = 'https://raw.githubusercontent.com/everydaycodings/Bhagavad-Gita/main';
+  static const _everydayCodingsGitaBase = 'https://raw.githubusercontent.com/everydaycodings/Bhagavad-Gita/master';
   static const _timeout = Duration(seconds: 20);
 
   // --- Core Helper ---
@@ -21,7 +21,9 @@ class ScriptureRepository {
 
   // --- A. Gita Methods ---
   Future<List<ScriptureChapterData>> fetchChapters() async {
-    final resp = await _get('$_dharmicBase/SrimadBhagvadGita/chapters.json');
+    // DharmicData chapters.json returns 404; use the verified-working
+    // everydaycodings master branch which has all 18 chapter records.
+    final resp = await _get('$_everydayCodingsGitaBase/data/gita/chapters.json');
     if (resp.statusCode != 200) return [];
     final list = jsonDecode(_safeUtf8(resp.bodyBytes)) as List;
     return list.map((e) => ScriptureChapterData.fromJson(e)).toList();

@@ -243,6 +243,7 @@ class _GitaTabView extends StatelessWidget {
                   button: true,
                   label: 'Retry loading chapters',
                   hint: 'Double tap to try again',
+                  excludeSemantics: true,
                   child: ElevatedButton.icon(
                     onPressed: onRetry,
                     icon: const Icon(Icons.refresh),
@@ -268,6 +269,7 @@ class _GitaTabView extends StatelessWidget {
             button: true,
             label: 'Retry loading chapters',
             hint: 'Double tap to try again',
+            excludeSemantics: true,
             child: ElevatedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
@@ -379,6 +381,7 @@ class _UpanishadTabView extends StatelessWidget {
                   button: true,
                   label: 'Retry loading Upanishads',
                   hint: 'Double tap to try again',
+                  excludeSemantics: true,
                   child: ElevatedButton.icon(
                     onPressed: onRetry,
                     icon: const Icon(Icons.refresh),
@@ -403,6 +406,7 @@ class _UpanishadTabView extends StatelessWidget {
           child: Semantics(
             button: true,
             label: 'Retry loading Upanishads',
+            excludeSemantics: true,
             child: ElevatedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),

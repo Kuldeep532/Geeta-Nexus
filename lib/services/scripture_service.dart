@@ -106,7 +106,7 @@ class UpanishadVerseData {
 class ScriptureService {
   // Screen ke repositories ke mutabik synchronized Base URLs (Branch updated to 'main')
   static const String _everydaycodingsGitaBase =
-      'https://raw.githubusercontent.com/everydaycodings/Bhagavad-Gita/main/data/gita';
+      'https://raw.githubusercontent.com/everydaycodings/Bhagavad-Gita/master/data/gita';
   static const String _dharmicBase =
       'https://raw.githubusercontent.com/bhavykhatri/DharmicData/main/data';
   
