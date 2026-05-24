@@ -1,15 +1,13 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:speech_to_text/speech_to_text.dart';
 
-import '../services/puter_tts.dart';
+import '../services/sherpa_tts_service.dart';
 import '../theme.dart';
 
 enum _CallState { idle, listening, processing, speaking }
@@ -24,12 +22,12 @@ class VoiceSupportScreen extends StatefulWidget {
 class _VoiceSupportScreenState extends State<VoiceSupportScreen>
     with TickerProviderStateMixin {
   static const String _backendUrl = String.fromEnvironment(
-    'AIRA_BACKEND_URL',
+    'AIRA_API_URL',
     defaultValue: '',
   );
 
   final SpeechToText _stt = SpeechToText();
-  final FlutterTts _tts = FlutterTts();
+  final SherpaTtsService _tts = SherpaTtsService();
 
   _CallState _state = _CallState.idle;
   String _transcript = '';
@@ -50,13 +48,14 @@ class _VoiceSupportScreenState extends State<VoiceSupportScreen>
       CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
     );
     _initStt();
+    _tts.initialize();
   }
 
   @override
   void dispose() {
     _pulseCtrl.dispose();
     _stt.stop();
-    _tts.stop();
+    _tts.dispose();
     super.dispose();
   }
 
@@ -109,7 +108,7 @@ class _VoiceSupportScreenState extends State<VoiceSupportScreen>
     try {
       final url = _backendUrl.isEmpty
           ? null
-          : Uri.tryParse('$_backendUrl/api/chat');
+          : Uri.tryParse('$_backendUrl/ask');
 
       if (url == null) {
         reply = _localFallback(text);
@@ -118,7 +117,7 @@ class _VoiceSupportScreenState extends State<VoiceSupportScreen>
             .post(
               url,
               headers: {'Content-Type': 'application/json'},
-              body: jsonEncode({'message': text}),
+              body: jsonEncode({'query': text, 'persona': 'aira'}),
             )
             .timeout(const Duration(seconds: 20));
 
@@ -142,17 +141,7 @@ class _VoiceSupportScreenState extends State<VoiceSupportScreen>
     setState(() => _state = _CallState.speaking);
     SemanticsService.announce('Aira is responding.', TextDirection.ltr);
 
-    if (kIsWeb) {
-      await puterSpeak(text);
-      await Future.delayed(
-        Duration(milliseconds: (text.length * 60).clamp(2000, 12000)),
-      );
-    } else {
-      await _tts.setLanguage('en-US');
-      await _tts.setSpeechRate(0.47);
-      await _tts.speak(text);
-      await _tts.awaitSpeakCompletion(true);
-    }
+    await _tts.speak(text);
 
     if (mounted) setState(() => _state = _CallState.idle);
   }

@@ -64,7 +64,7 @@ dependencies:
   just_audio_background: ^0.0.1-beta.17
   audio_video_progress_bar: ^2.0.3
   speech_to_text: ^7.3.1
-  flutter_tts: ^4.2.3
+  sherpa_onnx: ^1.10.29
   wakelock_plus: ^1.2.8
   vibration: ^2.0.0
   flutter_cache_manager: ^3.4.1
