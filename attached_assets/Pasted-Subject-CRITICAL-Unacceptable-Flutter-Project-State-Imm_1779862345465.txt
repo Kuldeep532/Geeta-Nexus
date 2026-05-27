@@ -1,0 +1,33 @@
+Subject: CRITICAL: Unacceptable Flutter Project State – Immediate Fixes & UI Corrections Required
+
+Context: 
+The current state of the Flutter project is completely unacceptable. The previous work is highly substandard, major requirements have been outright ignored, and the UI logic is completely broken and messy across the Home Screen and EVERY other screen. While the app components might technically exist, the user experience is a disaster and extremely confusing for anyone trying to use it. 
+
+You are required to halt all other tasks and fix these critical issues immediately. No excuses will be accepted.
+
+Please implement the following changes now:
+
+1. Critical Login Screen & Field Swap Fix
+- Issue: The Login Screen has a ridiculous UI bug where the fields are completely mismatched—the 'Name' field is placed where 'Email' should be, and the 'Email' field is placed where 'Password' should be. This is why the actual Password input field is missing.
+- Action Required: Correct the field layout immediately. Rearrange and label the fields properly. Ensure there are separate, correctly labeled inputs for Name, Email, and a secure Password field (with proper text controllers and validation).
+
+2. App-Wide UX Simplification (Home Screen & All Screens)
+- Issue: The layout on the Home Screen and all other screens is overly complicated and poorly structured. It is so confusing that users cannot navigate or understand the flow.
+- Action Required: Clean up the UI architecture across all screens. Simplify the user flow, fix layout issues, and ensure the interface is highly intuitive, clean, and accessible.
+
+3. Mandatory Hugging Face Integration Guide
+- Issue: You completely failed to provide the Hugging Face integration guide that was explicitly requested.
+- Action Required: Provide a comprehensive, step-by-step technical guide/documentation on how the Hugging Face models are integrated into this Flutter project.
+
+4. Complete Rebranding: Kill "Icecream", Deploy "Aira"
+- Issue: Residual code and UI elements of the old "Icecream" AI system are still lingering in the project.
+- Action Required: 
+  * Completely delete and purge the old "Icecream" branding, assets, and AI logic from the entire Flutter codebase.
+  * Discontinue the old AI system permanently.
+  * Implement and replace it with the new "Aira" AI branding, updating all assets, text strings, and API endpoints across all screens.
+
+5. Onboarding Screen Scratch Redesign
+- Issue: The current onboarding screens are extremely confusing, poorly structured, and visually messy.
+- Action Required: Delete the old onboarding widget trees completely. Design and implement a brand-new, modern, clean, and highly intuitive onboarding flow from scratch.
+
+Deliverables: Clean, production-ready Flutter code with fixed field logic, simplified UX, updated asset folders, and the missing Hugging Face documentation. Do not skip any steps.
