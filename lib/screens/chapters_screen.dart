@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../data/gita_data.dart';
 import '../state/app_state.dart';
-import '../theme.dart'; // ERROR FIX: Theme file import ki gayi
+import '../theme.dart';
 import 'chapter_detail_screen.dart';
 
 class ChaptersScreen extends StatelessWidget {
@@ -28,85 +29,70 @@ class ChaptersScreen extends StatelessWidget {
         itemCount: kChapters.length,
         itemBuilder: (context, index) {
           final chapter = kChapters[index];
-          // AppState ke naye logic ke hisab se completion check
           final bool isCompleted = state.isChapterCompleted(chapter.number.toString());
 
-          return Semantics(
-            container: true,
-            label: "Chapter ${chapter.number}: ${chapter.name}. ${chapter.verses.length} verses. ${isCompleted ? 'Completed' : 'Not completed'}",
-            hint: 'Double tap to open chapter details',
-            button: true,
-            excludeSemantics: true,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Material(
-                color: theme.cardColor,
-                elevation: 0,
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Material(
+              color: theme.cardColor,
+              elevation: 0,
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
                 borderRadius: BorderRadius.circular(16),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ChapterDetailScreen(chapter: chapter),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isCompleted ? kGold : theme.dividerColor.withOpacity(0.2),
-                        width: isCompleted ? 1.5 : 1,
-                      ),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ChapterDetailScreen(chapter: chapter),
                     ),
-                    child: Row(
-                      children: [
-                        ExcludeSemantics(
-                          child: _buildChapterIndicator(context, chapter.number, isCompleted),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ExcludeSemantics(
-                                child: Text(
-                                chapter.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: theme.textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: isCompleted ? kGold : null,
-                                ),
-                                ),
-                              ),
-                              ExcludeSemantics(
-                                child: Text(
-                                chapter.nameSanskrit,
-                                style: TextStyle(
-                                  color: kGold.withOpacity(0.8),
-                                  fontSize: 13,
-                                  fontStyle: FontStyle.italic,
-                                ),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              ExcludeSemantics(child: _buildChapterMeta(context, chapter)),
-                            ],
-                          ),
-                        ),
-                        ExcludeSemantics(
-                          child: Icon(
-                          Icons.chevron_right,
-                          color: kGold.withOpacity(0.5),
-                          size: 20,
-                        ),
-                        ),
-                      ],
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isCompleted ? kGold : theme.dividerColor.withOpacity(0.2),
+                      width: isCompleted ? 1.5 : 1,
                     ),
+                  ),
+                  child: Row(
+                    children: [
+                      _buildChapterIndicator(context, chapter.number, isCompleted),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              chapter.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: isCompleted ? kGold : null,
+                              ),
+                            ),
+                            Text(
+                              chapter.nameSanskrit,
+                              style: TextStyle(
+                                color: kGold.withOpacity(0.8),
+                                fontSize: 13,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            _buildChapterMeta(context, chapter),
+                          ],
+                        ),
+                      ),
+                      Icon(
+                        Icons.chevron_right,
+                        color: kGold.withOpacity(0.5),
+                        size: 20,
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -145,7 +131,6 @@ class ChaptersScreen extends StatelessWidget {
 
   Widget _buildChapterMeta(BuildContext context, dynamic chapter) {
     final theme = Theme.of(context);
-    
     return Row(
       children: [
         Flexible(

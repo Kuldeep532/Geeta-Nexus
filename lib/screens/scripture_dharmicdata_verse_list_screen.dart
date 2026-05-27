@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../models/scripture_model.dart';
 import '../theme.dart';
-import 'scripture_verse_detail_screen.dart';
+import 'scripture_chapter_reader_screen.dart';
 
 class ScriptureDharmicVerseListScreen extends StatefulWidget {
   final ScriptureSectionDef section;
@@ -166,7 +166,10 @@ class _ScriptureDharmicVerseListScreenState
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => ScriptureVerseDetailScreen(allVerses: _verses, initialIndex: index),
+                      builder: (_) => ScriptureChapterReaderScreen(
+                        chapterNumber: _verses[index].section.sectionIndex,
+                        initialVerseNumber: _verses[index].verseIndex,
+                      ),
                     ),
                   ),
                   child: Padding(

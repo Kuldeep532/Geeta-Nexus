@@ -1,15 +1,22 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../services/scripture_service.dart';
 import '../theme.dart';
 
 class ScriptureChapterReaderScreen extends StatefulWidget {
-  final ScriptureChapterData chapter;
+  final ScriptureChapterData? chapter;
+  final int? chapterNumber;
+  final int? initialVerseNumber;
 
-  const ScriptureChapterReaderScreen({super.key, required this.chapter});
+  const ScriptureChapterReaderScreen({
+    super.key,
+    this.chapter,
+    this.chapterNumber,
+    this.initialVerseNumber,
+  }) : assert(chapter != null || chapterNumber != null);
 
   @override
   State<ScriptureChapterReaderScreen> createState() =>
@@ -21,6 +28,7 @@ class _ScriptureChapterReaderScreenState
   final ScriptureService _service = ScriptureService();
   final AudioPlayer _audioPlayer = AudioPlayer();
 
+  ScriptureChapterData? _chapter;
   List<ScriptureVerseData> _verses = [];
   List<ScriptureTranslationData> _translations = [];
   bool _loading = true;
@@ -30,6 +38,9 @@ class _ScriptureChapterReaderScreenState
   int? _playingVerseNumber;
   bool _isChapterSummaryPlaying = false;
   String _liveAudioStatus = '';
+
+  final ScrollController _scrollController = ScrollController();
+  final Map<int, GlobalKey> _verseKeys = {};
 
   @override
   void initState() {
@@ -47,15 +58,27 @@ class _ScriptureChapterReaderScreenState
   @override
   void dispose() {
     _audioPlayer.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
   Future<void> _loadData() async {
     setState(() { _loading = true; _error = null; });
     try {
-      final chNum = widget.chapter.chapterNumber;
+      if (widget.chapter != null) {
+        _chapter = widget.chapter;
+      } else {
+        final allChapters = await _service.fetchChapters();
+        _chapter = allChapters.firstWhere(
+          (c) => c.chapterNumber == widget.chapterNumber,
+          orElse: () => allChapters.first,
+        );
+      }
+
+      final chNum = _chapter!.chapterNumber;
       final allVerses = await _service.fetchVersesForChapter(chNum);
       final allTranslations = await _service.fetchTranslations();
+
       if (!mounted) return;
       setState(() {
         _verses = allVerses;
@@ -64,9 +87,29 @@ class _ScriptureChapterReaderScreenState
             .toList();
         _loading = false;
       });
+
+      // Scroll to initial verse after frame
+      if (widget.initialVerseNumber != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToVerse(widget.initialVerseNumber!);
+        });
+      }
     } catch (e) {
       if (mounted) setState(() { _error = e.toString(); _loading = false; });
     }
+  }
+
+  void _scrollToVerse(int verseNumber) {
+    final key = _verseKeys[verseNumber];
+    if (key == null) return;
+    final ctx = key.currentContext;
+    if (ctx == null) return;
+    Scrollable.ensureVisible(
+      ctx,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+      alignment: 0.1,
+    );
   }
 
   void _onPlaybackComplete() {
@@ -75,19 +118,16 @@ class _ScriptureChapterReaderScreenState
       _isChapterSummaryPlaying = false;
       _liveAudioStatus = 'Playback finished';
     });
-    
   }
 
   Future<void> _playVerseAudio(int verse) async {
-    final ch = widget.chapter.chapterNumber;
+    final ch = _chapter!.chapterNumber;
     final url = ScriptureService.verseRecitationUrl(ch, verse);
-    final label = 'Now playing Chapter $ch, Verse $verse';
 
     if (_playerState == PlayerState.playing) {
       await _audioPlayer.stop();
       if (_playingVerseNumber == verse && !_isChapterSummaryPlaying) {
         setState(() { _playingVerseNumber = null; _liveAudioStatus = 'Stopped verse $verse'; });
-        
         return;
       }
     }
@@ -95,9 +135,9 @@ class _ScriptureChapterReaderScreenState
     setState(() {
       _playingVerseNumber = verse;
       _isChapterSummaryPlaying = false;
-      _liveAudioStatus = label;
+      _liveAudioStatus = 'Now playing Chapter $ch, Verse $verse';
     });
-    
+
     try {
       await _audioPlayer.play(UrlSource(url));
     } catch (_) {
@@ -106,20 +146,17 @@ class _ScriptureChapterReaderScreenState
         _playingVerseNumber = null;
         _liveAudioStatus = 'Audio unavailable for verse $verse';
       });
-      
     }
   }
 
   Future<void> _playChapterSummaryAudio() async {
-    final ch = widget.chapter.chapterNumber;
+    final ch = _chapter!.chapterNumber;
     final url = ScriptureService.chapterSummaryAudioUrl(ch);
-    final label = 'Now playing chapter ${widget.chapter.nameTranslation} summary audio';
 
     if (_playerState == PlayerState.playing) {
       await _audioPlayer.stop();
       if (_isChapterSummaryPlaying) {
         setState(() { _isChapterSummaryPlaying = false; _liveAudioStatus = 'Chapter summary audio stopped'; });
-        
         return;
       }
     }
@@ -127,9 +164,9 @@ class _ScriptureChapterReaderScreenState
     setState(() {
       _isChapterSummaryPlaying = true;
       _playingVerseNumber = null;
-      _liveAudioStatus = label;
+      _liveAudioStatus = 'Now playing chapter ${_chapter!.nameTranslation} summary audio';
     });
-    
+
     try {
       await _audioPlayer.play(UrlSource(url));
     } catch (_) {
@@ -138,21 +175,16 @@ class _ScriptureChapterReaderScreenState
         _isChapterSummaryPlaying = false;
         _liveAudioStatus = 'Chapter summary audio unavailable';
       });
-      
     }
   }
 
   Future<void> _pauseResumeAudio() async {
     if (_playerState == PlayerState.playing) {
       await _audioPlayer.pause();
-      const msg = 'Audio paused';
-      setState(() => _liveAudioStatus = msg);
-      
+      setState(() => _liveAudioStatus = 'Audio paused');
     } else if (_playerState == PlayerState.paused) {
       await _audioPlayer.resume();
-      const msg = 'Audio resumed';
-      setState(() => _liveAudioStatus = msg);
-      
+      setState(() => _liveAudioStatus = 'Audio resumed');
     }
   }
 
@@ -163,7 +195,6 @@ class _ScriptureChapterReaderScreenState
       _isChapterSummaryPlaying = false;
       _liveAudioStatus = 'Audio stopped';
     });
-    
   }
 
   String _translationFor(int verse) {
@@ -176,88 +207,67 @@ class _ScriptureChapterReaderScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final ch = widget.chapter;
+    final ch = _chapter;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Semantics(
-          label: 'Chapter ${ch.chapterNumber}: ${ch.nameTranslation}',
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Chapter ${ch.chapterNumber}',
-                style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, color: kGold, fontSize: 16),
+        title: ch == null
+            ? const Text('Chapter')
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Chapter ${ch.chapterNumber}',
+                    style: GoogleFonts.cinzel(fontWeight: FontWeight.bold, color: kGold, fontSize: 16),
+                  ),
+                  Text(
+                    ch.nameTranslation,
+                    style: GoogleFonts.lato(color: kGoldDim, fontSize: 12),
+                  ),
+                ],
               ),
-              Text(
-                ch.nameTranslation,
-                style: GoogleFonts.lato(color: kGoldDim, fontSize: 12),
-              ),
-            ],
-          ),
-        ),
         elevation: 0,
       ),
       body: _loading
-          ? Semantics(
-              label: 'Loading verses for chapter ${ch.chapterNumber}, please wait',
-              child: const Center(child: CircularProgressIndicator(color: kGold)),
-            )
+          ? const Center(child: CircularProgressIndicator(color: kGold))
           : _error != null
               ? _buildError()
               : Column(
                   children: [
-                    _buildAudioStatusRegion(),
                     _buildChapterHeader(isDark),
-                    _buildFloatingAudioBar(theme, isDark),
+                    _buildFloatingAudioBar(theme),
                     Expanded(child: _buildVerseList(theme, isDark)),
                   ],
                 ),
     );
   }
 
-  Widget _buildAudioStatusRegion() {
-    return Semantics(
-      liveRegion: true,
-      label: _liveAudioStatus,
-      child: const SizedBox.shrink(),
-    );
-  }
-
   Widget _buildError() {
-    return Semantics(
-      label: 'Error loading verses. Tap retry to try again.',
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.wifi_off_rounded, size: 48, color: kGoldDim),
-              const SizedBox(height: 16),
-              const Text('Could not load verses.\nCheck your connection and try again.',
-                  textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              Semantics(
-                button: true,
-                label: 'Retry loading verses',
-                child: ElevatedButton.icon(
-                  onPressed: _loadData,
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Retry'),
-                  style: ElevatedButton.styleFrom(backgroundColor: kGold, foregroundColor: Colors.black),
-                ),
-              ),
-            ],
-          ),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.wifi_off_rounded, size: 48, color: kGoldDim),
+            const SizedBox(height: 16),
+            const Text('Could not load verses.\nCheck your connection and try again.', textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _loadData,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry'),
+              style: ElevatedButton.styleFrom(backgroundColor: kGold, foregroundColor: Colors.black),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildChapterHeader(bool isDark) {
-    final ch = widget.chapter;
+    final ch = _chapter!;
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
@@ -275,16 +285,9 @@ class _ScriptureChapterReaderScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Semantics(
-                      header: true,
-                      child: Text(
-                        ch.name,
-                        style: GoogleFonts.cinzel(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: kGold,
-                        ),
-                      ),
+                    Text(
+                      ch.name,
+                      style: GoogleFonts.cinzel(fontSize: 20, fontWeight: FontWeight.bold, color: kGold),
                     ),
                     Text(
                       ch.nameTransliterated,
@@ -293,23 +296,17 @@ class _ScriptureChapterReaderScreenState
                   ],
                 ),
               ),
-              Semantics(
-                button: true,
-                label: _isChapterSummaryPlaying && _playerState == PlayerState.playing
-                    ? 'Stop chapter summary audio'
-                    : 'Play chapter summary audio for ${ch.nameTranslation}',
-                child: IconButton(
-                  onPressed: _playChapterSummaryAudio,
-                  icon: Icon(
-                    _isChapterSummaryPlaying && _playerState == PlayerState.playing
-                        ? Icons.stop_circle_rounded
-                        : Icons.play_circle_filled_rounded,
-                    color: kGold,
-                    size: 36,
-                  ),
-                  tooltip: _isChapterSummaryPlaying && _playerState == PlayerState.playing
-                      ? 'Stop summary'
-                      : 'Play summary audio',
+              IconButton(
+                tooltip: _isChapterSummaryPlaying && _playerState == PlayerState.playing
+                    ? 'Stop summary'
+                    : 'Play summary audio',
+                onPressed: _playChapterSummaryAudio,
+                icon: Icon(
+                  _isChapterSummaryPlaying && _playerState == PlayerState.playing
+                      ? Icons.stop_circle_rounded
+                      : Icons.play_circle_filled_rounded,
+                  color: kGold,
+                  size: 36,
                 ),
               ),
             ],
@@ -322,16 +319,13 @@ class _ScriptureChapterReaderScreenState
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 6),
-          Text(
-            '${ch.versesCount} verses',
-            style: TextStyle(fontSize: 12, color: Colors.grey),
-          ),
+          Text('${ch.versesCount} verses', style: TextStyle(fontSize: 12, color: Colors.grey)),
         ],
       ),
     );
   }
 
-  Widget _buildFloatingAudioBar(ThemeData theme, bool isDark) {
+  Widget _buildFloatingAudioBar(ThemeData theme) {
     final isPlaying = _playerState == PlayerState.playing;
     final isPaused = _playerState == PlayerState.paused;
     final hasActive = isPlaying || isPaused;
@@ -344,51 +338,41 @@ class _ScriptureChapterReaderScreenState
             ? 'Verse $_playingVerseNumber'
             : '';
 
-    return Semantics(
-      label: 'Audio player. Now playing: $label. ${isPlaying ? "Playing" : "Paused"}.',
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: kCard,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: kGold.withOpacity(0.4)),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(
-                isPlaying ? '♫  Playing: $label' : '⏸  Paused: $label',
-                style: GoogleFonts.lato(color: kGold, fontWeight: FontWeight.w600, fontSize: 13),
-                overflow: TextOverflow.ellipsis,
-              ),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: kCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: kGold.withOpacity(0.4)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              isPlaying ? 'Playing: $label' : 'Paused: $label',
+              style: GoogleFonts.lato(color: kGold, fontWeight: FontWeight.w600, fontSize: 13),
+              overflow: TextOverflow.ellipsis,
             ),
-            Semantics(
-              button: true,
-              label: isPlaying ? 'Pause audio' : 'Resume audio',
-              child: IconButton(
-                onPressed: _pauseResumeAudio,
-                icon: Icon(isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, color: kGold),
-                tooltip: isPlaying ? 'Pause' : 'Resume',
-              ),
-            ),
-            Semantics(
-              button: true,
-              label: 'Stop audio',
-              child: IconButton(
-                onPressed: _stopAudio,
-                icon: const Icon(Icons.stop_rounded, color: kGoldDim),
-                tooltip: 'Stop',
-              ),
-            ),
-          ],
-        ),
+          ),
+          IconButton(
+            tooltip: isPlaying ? 'Pause' : 'Resume',
+            onPressed: _pauseResumeAudio,
+            icon: Icon(isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, color: kGold),
+          ),
+          IconButton(
+            tooltip: 'Stop',
+            onPressed: _stopAudio,
+            icon: const Icon(Icons.stop_rounded, color: kGoldDim),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildVerseList(ThemeData theme, bool isDark) {
     return ListView.builder(
+      controller: _scrollController,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       itemCount: _verses.length,
       itemBuilder: (context, index) {
@@ -398,127 +382,93 @@ class _ScriptureChapterReaderScreenState
             !_isChapterSummaryPlaying &&
             _playingVerseNumber == verse.verseNumber;
 
-        return Semantics(
-          container: true,
-          label: 'Verse ${verse.verseNumber} of ${widget.chapter.chapterNumber}. '
-              'Sanskrit text: ${verse.text.replaceAll('\n', ' ')}. '
-              'Transliteration: ${verse.transliteration.replaceAll('\n', ' ')}. '
-              '${translation.isNotEmpty ? "Translation: $translation." : ""}',
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: isThisPlaying
-                  ? kGold.withOpacity(0.08)
-                  : theme.cardColor,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: isThisPlaying ? kGold.withOpacity(0.5) : kGold.withOpacity(0.12),
-                width: isThisPlaying ? 1.5 : 1,
-              ),
+        _verseKeys.putIfAbsent(verse.verseNumber, () => GlobalKey());
+
+        return Container(
+          key: _verseKeys[verse.verseNumber],
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: isThisPlaying ? kGold.withOpacity(0.08) : theme.cardColor,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isThisPlaying ? kGold.withOpacity(0.5) : kGold.withOpacity(0.12),
+              width: isThisPlaying ? 1.5 : 1,
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      ExcludeSemantics(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: kGold.withOpacity(0.12),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '${widget.chapter.chapterNumber}.${verse.verseNumber}',
-                            style: GoogleFonts.cinzel(fontSize: 12, color: kGold, fontWeight: FontWeight.bold),
-                          ),
-                        ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: kGold.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      Semantics(
-                        button: true,
-                        label: isThisPlaying
-                            ? 'Stop recitation of verse ${verse.verseNumber}'
-                            : 'Play recitation of verse ${verse.verseNumber}',
-                        child: IconButton(
-                          onPressed: () => _playVerseAudio(verse.verseNumber),
-                          icon: Icon(
-                            isThisPlaying
-                                ? Icons.stop_circle_rounded
-                                : Icons.record_voice_over_rounded,
-                            color: isThisPlaying ? kGold : kGoldDim,
-                            size: 26,
-                          ),
-                          tooltip: isThisPlaying ? 'Stop verse audio' : 'Play verse recitation',
-                          padding: EdgeInsets.zero,
-                          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                      child: Text(
+                        '${_chapter!.chapterNumber}.${verse.verseNumber}',
+                        style: GoogleFonts.cinzel(fontSize: 12, color: kGold, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: isThisPlaying ? 'Stop verse audio' : 'Play verse recitation',
+                      onPressed: () => _playVerseAudio(verse.verseNumber),
+                      icon: Icon(
+                        isThisPlaying ? Icons.stop_circle_rounded : Icons.record_voice_over_rounded,
+                        color: isThisPlaying ? kGold : kGoldDim,
+                        size: 26,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // Sanskrit text — accessible, NOT excluded
+                Text(
+                  verse.text.trim(),
+                  style: GoogleFonts.lato(
+                    fontSize: 16,
+                    height: 1.8,
+                    fontStyle: FontStyle.italic,
+                    color: isDark ? kText : null,
+                  ),
+                ),
+                if (verse.transliteration.trim().isNotEmpty) ...[
+                  const Divider(height: 20, color: kDivider),
+                  Text(
+                    verse.transliteration.trim(),
+                    style: GoogleFonts.lato(fontSize: 13, height: 1.6, color: kGoldDim),
+                  ),
+                ],
+                if (translation.isNotEmpty) ...[
+                  const Divider(height: 20, color: kDivider),
+                  Text(
+                    translation,
+                    style: GoogleFonts.lato(fontSize: 13, height: 1.6, color: isDark ? kTextDim : null),
+                  ),
+                ],
+                if (verse.wordMeanings.trim().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    title: Text('Word meanings', style: GoogleFonts.lato(fontSize: 12, color: theme.hintColor)),
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          verse.wordMeanings.trim(),
+                          style: GoogleFonts.lato(fontSize: 12, height: 1.6, color: theme.hintColor),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  ExcludeSemantics(
-                    child: Text(
-                      verse.text.trim(),
-                      style: GoogleFonts.lato(
-                        fontSize: 16,
-                        height: 1.8,
-                        fontStyle: FontStyle.italic,
-                        color: isDark ? kText : null,
-                      ),
-                    ),
-                  ),
-                  if (verse.transliteration.trim().isNotEmpty) ...[
-                    const Divider(height: 20, color: kDivider),
-                    ExcludeSemantics(
-                      child: Text(
-                        verse.transliteration.trim(),
-                        style: GoogleFonts.lato(
-                          fontSize: 13,
-                          height: 1.6,
-                          color: kGoldDim,
-                        ),
-                      ),
-                    ),
-                  ],
-                  if (translation.isNotEmpty) ...[
-                    const Divider(height: 20, color: kDivider),
-                    ExcludeSemantics(
-                      child: Text(
-                        translation,
-                        style: GoogleFonts.lato(
-                          fontSize: 13,
-                          height: 1.6,
-                          color: isDark ? kTextDim : null,
-                        ),
-                      ),
-                    ),
-                  ],
-                  if (verse.wordMeanings.trim().isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    ExcludeSemantics(
-                      child: ExpansionTile(
-                        tilePadding: EdgeInsets.zero,
-                        title: Text(
-                          'Word meanings',
-                          style: GoogleFonts.lato(fontSize: 12, color: theme.hintColor),
-                        ),
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Text(
-                              verse.wordMeanings.trim(),
-                              style: GoogleFonts.lato(fontSize: 12, height: 1.6, color: theme.hintColor),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
                 ],
-              ),
+              ],
             ),
           ),
         );

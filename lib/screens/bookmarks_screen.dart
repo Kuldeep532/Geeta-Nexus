@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import '../models/scripture_model.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
-import 'scripture_verse_detail_screen.dart';
+import 'scripture_chapter_reader_screen.dart';
 
 class BookmarksScreen extends StatelessWidget {
   const BookmarksScreen({super.key});
@@ -110,9 +110,9 @@ class BookmarksScreen extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => ScriptureVerseDetailScreen(
-                allVerses: [verse],
-                initialIndex: 0,
+              builder: (_) => ScriptureChapterReaderScreen(
+                chapterNumber: verse.section.sectionIndex,
+                initialVerseNumber: verse.verseIndex,
               ),
             ),
           );
@@ -177,9 +177,9 @@ class BookmarksScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => ScriptureVerseDetailScreen(
-                      allVerses: [verse],
-                      initialIndex: 0,
+                    builder: (_) => ScriptureChapterReaderScreen(
+                      chapterNumber: verse.section.sectionIndex,
+                      initialVerseNumber: verse.verseIndex,
                     ),
                   ),
                 );

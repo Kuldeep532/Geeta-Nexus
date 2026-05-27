@@ -40,13 +40,6 @@ class HomeScreen extends StatelessWidget {
 
   static const List<_NavItem> _aiItems = [
     _NavItem(
-      title: 'Aira Chat',
-      subtitle: 'Ask Aira anything about the Gita',
-      icon: Icons.chat_bubble_outline_rounded,
-      screen: AiScreenPlaceholder(),
-      isNew: true,
-    ),
-    _NavItem(
       title: 'Karma-Yogi Planner',
       subtitle: 'Plan your day through Krishna\'s teachings',
       icon: Icons.event_note_rounded,
@@ -390,13 +383,3 @@ class _FeatureCard extends StatelessWidget {
   }
 }
 
-class AiScreenPlaceholder extends StatelessWidget {
-  const AiScreenPlaceholder({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Aira Chat')),
-      body: const Center(child: Text('Aira Chat coming soon')),
-    );
-  }
-}

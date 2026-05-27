@@ -8,7 +8,7 @@ import 'package:speech_to_text/speech_to_text.dart';
 import '../models/scripture_model.dart';
 import '../services/scripture_repository.dart';
 import '../theme.dart';
-import 'scripture_verse_detail_screen.dart';
+import 'scripture_chapter_reader_screen.dart';
 import 'aira_screen.dart';
 
 /// Semantic keyword-to-theme mappings — maps emotional / conceptual
@@ -175,10 +175,14 @@ class _SearchScreenState extends State<SearchScreen> {
   void _navigateToDestination(BuildContext ctx, dynamic item) {
     if (item is ScriptureVerse) {
       Navigator.push(
-          ctx,
-          MaterialPageRoute(
-              builder: (_) => ScriptureVerseDetailScreen(
-                  allVerses: [item], initialIndex: 0)));
+        ctx,
+        MaterialPageRoute(
+          builder: (_) => ScriptureChapterReaderScreen(
+            chapterNumber: item.section.sectionIndex,
+            initialVerseNumber: item.verseIndex,
+          ),
+        ),
+      );
     }
   }
 

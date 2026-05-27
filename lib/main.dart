@@ -88,7 +88,7 @@ class _MainShellState extends State<MainShell> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.menu_book_outlined), label: 'Chapters'),
-          BottomNavigationBarItem(icon: Icon(Icons.auto_awesome_outlined), label: 'Ask Krishna'),
+          BottomNavigationBarItem(icon: Icon(Icons.auto_awesome_outlined), label: 'Ask Ira'),
           BottomNavigationBarItem(icon: Icon(Icons.trending_up_outlined), label: 'Progress'),
           BottomNavigationBarItem(icon: Icon(Icons.apps_outlined), label: 'More'),
         ],

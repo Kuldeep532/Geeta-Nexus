@@ -8,7 +8,7 @@ import '../models/models.dart';
 import '../models/scripture_model.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
-import 'scripture_verse_detail_screen.dart';
+import 'scripture_chapter_reader_screen.dart';
 import 'aira_screen.dart';
 
 class ChapterDetailScreen extends StatelessWidget {
@@ -155,6 +155,7 @@ class ChapterDetailScreen extends StatelessWidget {
 
                     _VerseList(
                       verses: chapter.verses,
+                      chapterNumber: chapter.number,
                     ),
 
                     const SizedBox(height: 32),
@@ -388,9 +389,11 @@ class _SummaryCard extends StatelessWidget {
 
 class _VerseList extends StatelessWidget {
   final List<Verse> verses;
+  final int chapterNumber;
 
   const _VerseList({
     required this.verses,
+    required this.chapterNumber,
   });
 
   @override
@@ -423,6 +426,7 @@ class _VerseList extends StatelessWidget {
           verse: verses[index],
           allVerses: verses,
           currentIndex: index,
+          chapterNumber: chapterNumber,
         );
       },
     );
@@ -433,11 +437,13 @@ class _VerseRowItem extends StatelessWidget {
   final Verse verse;
   final List<Verse> allVerses;
   final int currentIndex;
+  final int chapterNumber;
 
   const _VerseRowItem({
     required this.verse,
     required this.allVerses,
     required this.currentIndex,
+    required this.chapterNumber,
   });
 
   @override
@@ -523,22 +529,10 @@ class _VerseRowItem extends StatelessWidget {
           onTap: () {
             Navigator.push(
               context,
-
               MaterialPageRoute(
-                builder: (_) =>
-                    ScriptureVerseDetailScreen(
-                  allVerses: allVerses
-                      .map(
-                        (v) =>
-                            ScriptureVerse
-                                .fromLocalVerse(
-                          v,
-                        ),
-                      )
-                      .toList(),
-
-                  initialIndex:
-                      currentIndex,
+                builder: (_) => ScriptureChapterReaderScreen(
+                  chapterNumber: chapterNumber,
+                  initialVerseNumber: currentIndex + 1,
                 ),
               ),
             );

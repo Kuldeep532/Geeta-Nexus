@@ -1,0 +1,32 @@
+SYSTEM PROMPT / AI CORRECTION INSTRUCTIONS
+
+AUTOMATED SCREEN IDENTIFICATION & CLEANUP (CRITICAL)
+* Auto-Detect Screens: The AI must automatically scan the project files (inside the lib/screens directory) to identify the two existing reader screens, as the exact filenames are not specified.
+* Retain & Fix Accessible Screen: Analyze the code structures to find the screen designed with accessibility features. Keep this screen, and fix the specific layout bug where content is incorrectly read as a generic "text box" or a "disabled button" by assistive technologies. Ensure the actual Shlok text, translations, and commentaries are fully exposed to the screen reader.
+* Auto-Delete Unused Screen: Identify the older, legacy, or unused reader screen that is redundant or causing incorrect layouts, and completely remove/delete it from the codebase.
+* Global Routing Update: Automatically update all navigation paths, imports, and references across the application to point exclusively to the retained, fully accessible primary reader screen.
+
+ONBOARDING SCREEN PRIVACY & TERMS BUTTONS UPDATE
+* Convert Links to Buttons: On the onboarding screens (specifically page 2 or 3 where privacy policy and terms are located), convert the existing plain text links into proper, accessible UI Buttons.
+* Strict Button Placement: Position both the "Privacy Policy" button and the "Terms & Conditions" button directly above the main "Continue" button on the layout.
+
+DYNAMIC AUDIO NARRATION & LANGUAGE SELECTOR (READER SCREEN)
+* Conditional Language Selector: On the primary accessible reader screen, add a conditional dynamic Language Selector Bottom Sheet for audio narration.
+* Visibility Constraint: The option or button to open this language selector bottom sheet must ONLY be visible when the audio narration is explicitly available in multiple languages. If multiple languages are not available, this UI element must remain completely hidden.
+
+AI SHORTCUTS & HOME SCREEN CLEAN-UP ONLY
+* Home Screen Shortcut Removal: Strictly remove the independent or standalone "Ask AI" shortcut button ONLY from the main home screen layout. 
+* Retain All Other AI Access: Do NOT modify or remove any other AI shortcuts or buttons. Keep the main bottom navigation tab bar fully active so users can access "Ask Ira" from anywhere, and ensure the existing "Ask About This Shlok" button on the reader screen remains fully functional.
+
+AUDIO OUTPUT & PRE-INTEGRATED HUGGING FACE VOICE MODELS
+* Restrict to AI Features Only: The pre-integrated, free open-source Hugging Face voice models must be used strictly and exclusively for interactive AI features (such as "Ask Ira"). 
+* No Automated Shlok Audio: Do not integrate or use any automated speech synthesis or AI audio output for the standard Bhagavad Gita Shlok text screens, as authentic audio recordings are handled separately.
+
+TEXT AND SPACING CORRECTIONS
+* Spacing Fix: Correct any text layout rendering or string concatenation bugs where words are clumped together without spaces (e.g., change instances like "ask anything about without space" strictly to "Ask anything about...").
+* Rebranding: Replace all instances of "Ask Krishna" with "Ask Ira" globally across the home screen, layout headers, and navigation tabs.
+
+AUTHENTICATION & BUTTON MODIFICATIONS
+* Remove Account Creation: Completely remove the "Create Account" button/option from the user interface.
+* User Authentication: Limit regular user login strictly to the "Sign in with Google" authentication flow.
+* Admin Access: Restrict the traditional Email and Password input fields exclusively to the Admin User login portal.
