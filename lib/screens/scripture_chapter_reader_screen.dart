@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../data/gita_data.dart' show kChapters;
+import '../models/models.dart';
 import '../services/scripture_service.dart';
 import '../theme.dart';
 
@@ -94,8 +96,70 @@ class _ScriptureChapterReaderScreenState
           _scrollToVerse(widget.initialVerseNumber!);
         });
       }
-    } catch (e) {
-      if (mounted) setState(() { _error = e.toString(); _loading = false; });
+    } catch (_) {
+      // API failed — fall back to locally loaded CSV data
+      _fallbackToLocalData();
+    }
+  }
+
+  /// Convert locally loaded CSV verses into the types this reader expects.
+  void _fallbackToLocalData() {
+    final int targetNum = widget.chapter?.chapterNumber ?? widget.chapterNumber ?? 0;
+
+    // Find chapter in local data
+    Chapter? localChapter;
+    if (targetNum > 0) {
+      for (final ch in kChapters) {
+        if (ch.number == targetNum) {
+          localChapter = ch;
+          break;
+        }
+      }
+    }
+    if (localChapter == null) {
+      if (mounted) setState(() { _error = 'Chapter not found in local data'; _loading = false; });
+      return;
+    }
+
+    // Convert local Chapter -> ScriptureChapterData
+    _chapter = ScriptureChapterData(
+      chapterNumber: localChapter.number,
+      name: localChapter.nameSanskrit,
+      nameTranslation: localChapter.name,
+      nameTransliterated: '',
+      nameMeaning: '',
+      chapterSummary: localChapter.summary,
+      chapterSummaryHindi: '',
+      versesCount: localChapter.verses.length,
+      imageName: '',
+    );
+
+    // Convert local Verse list -> ScriptureVerseData list
+    _verses = localChapter.verses.map((v) => ScriptureVerseData(
+      chapterNumber: v.chapter,
+      verseNumber: v.verse,
+      text: v.sanskrit,
+      transliteration: v.transliteration,
+      wordMeanings: v.meaning,
+    )).toList();
+
+    // Build translations from verse.translation
+    _translations = localChapter.verses.map((v) => ScriptureTranslationData(
+      chapterNumber: v.chapter,
+      verseNumber: v.verse,
+      authorName: 'English',
+      description: v.translation,
+      language: 'en',
+    )).toList();
+
+    if (mounted) {
+      setState(() { _loading = false; _error = null; });
+    }
+
+    if (widget.initialVerseNumber != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollToVerse(widget.initialVerseNumber!);
+      });
     }
   }
 
