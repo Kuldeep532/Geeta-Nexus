@@ -8,7 +8,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'package:just_audio/just_audio.dart';
-import 'package:just_audio_background/just_audio_background.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -50,11 +49,6 @@ class _ChantsScreenState extends State<ChantsScreen> {
   }
 
   Future<void> _initializeAudio() async {
-    await JustAudioBackground.init(
-      androidNotificationChannelId: 'chants.audio.channel',
-      androidNotificationChannelName: 'Chants Playback',
-      androidNotificationOngoing: true,
-    );
   }
 
   Future<void> _loadMantras() async {

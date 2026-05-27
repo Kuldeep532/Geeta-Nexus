@@ -1,9 +1,3 @@
-file:///home/runner/.pub-cache/hosted/pub.dev/audio_service-0.18.18/lib/audio_service.dart
-file:///home/runner/.pub-cache/hosted/pub.dev/audio_service_platform_interface-0.1.3/lib/audio_service_platform_interface.dart
-file:///home/runner/.pub-cache/hosted/pub.dev/audio_service_platform_interface-0.1.3/lib/method_channel_audio_service.dart
-file:///home/runner/.pub-cache/hosted/pub.dev/audio_service_platform_interface-0.1.3/lib/no_op_audio_service.dart
-file:///home/runner/.pub-cache/hosted/pub.dev/audio_service_web-0.1.4/lib/audio_service_web.dart
-file:///home/runner/.pub-cache/hosted/pub.dev/audio_service_web-0.1.4/lib/js/media_session_web.dart
 file:///home/runner/.pub-cache/hosted/pub.dev/audio_session-0.1.25/lib/audio_session.dart
 file:///home/runner/.pub-cache/hosted/pub.dev/audio_session-0.1.25/lib/audio_session_web.dart
 file:///home/runner/.pub-cache/hosted/pub.dev/audio_session-0.1.25/lib/src/android.dart
@@ -105,14 +99,8 @@ file:///home/runner/.pub-cache/hosted/pub.dev/csv-6.0.0/lib/list_to_csv_converte
 file:///home/runner/.pub-cache/hosted/pub.dev/csv-6.0.0/lib/src/complex_converter.dart
 file:///home/runner/.pub-cache/hosted/pub.dev/csv-6.0.0/lib/src/csv_argument_errors.dart
 file:///home/runner/.pub-cache/hosted/pub.dev/csv-6.0.0/lib/src/csv_parser.dart
-file:///home/runner/.pub-cache/hosted/pub.dev/device_info_plus-11.5.0/lib/device_info_plus.dart
 file:///home/runner/.pub-cache/hosted/pub.dev/device_info_plus-11.5.0/lib/src/device_info_plus_web.dart
-file:///home/runner/.pub-cache/hosted/pub.dev/device_info_plus-11.5.0/lib/src/model/android_device_info.dart
-file:///home/runner/.pub-cache/hosted/pub.dev/device_info_plus-11.5.0/lib/src/model/ios_device_info.dart
-file:///home/runner/.pub-cache/hosted/pub.dev/device_info_plus-11.5.0/lib/src/model/linux_device_info.dart
-file:///home/runner/.pub-cache/hosted/pub.dev/device_info_plus-11.5.0/lib/src/model/macos_device_info.dart
 file:///home/runner/.pub-cache/hosted/pub.dev/device_info_plus-11.5.0/lib/src/model/web_browser_info.dart
-file:///home/runner/.pub-cache/hosted/pub.dev/device_info_plus-11.5.0/lib/src/model/windows_device_info.dart
 file:///home/runner/.pub-cache/hosted/pub.dev/device_info_plus_platform_interface-7.0.3/lib/device_info_plus_platform_interface.dart
 file:///home/runner/.pub-cache/hosted/pub.dev/device_info_plus_platform_interface-7.0.3/lib/method_channel/method_channel_device_info.dart
 file:///home/runner/.pub-cache/hosted/pub.dev/device_info_plus_platform_interface-7.0.3/lib/model/base_device_info.dart
@@ -346,7 +334,6 @@ file:///home/runner/.pub-cache/hosted/pub.dev/json_annotation-4.9.0/lib/src/json
 file:///home/runner/.pub-cache/hosted/pub.dev/json_annotation-4.9.0/lib/src/json_serializable.g.dart
 file:///home/runner/.pub-cache/hosted/pub.dev/json_annotation-4.9.0/lib/src/json_value.dart
 file:///home/runner/.pub-cache/hosted/pub.dev/just_audio-0.9.46/lib/just_audio.dart
-file:///home/runner/.pub-cache/hosted/pub.dev/just_audio_background-0.0.1-beta.17/lib/just_audio_background.dart
 file:///home/runner/.pub-cache/hosted/pub.dev/just_audio_platform_interface-4.6.0/lib/just_audio_platform_interface.dart
 file:///home/runner/.pub-cache/hosted/pub.dev/just_audio_platform_interface-4.6.0/lib/method_channel_just_audio.dart
 file:///home/runner/.pub-cache/hosted/pub.dev/just_audio_web-0.4.16/lib/just_audio_web.dart
@@ -738,9 +725,6 @@ file:///home/runner/.pub-cache/hosted/pub.dev/vector_math-2.1.4/lib/src/vector_m
 file:///home/runner/.pub-cache/hosted/pub.dev/vector_math-2.1.4/lib/src/vector_math_64/vector3.dart
 file:///home/runner/.pub-cache/hosted/pub.dev/vector_math-2.1.4/lib/src/vector_math_64/vector4.dart
 file:///home/runner/.pub-cache/hosted/pub.dev/vector_math-2.1.4/lib/vector_math_64.dart
-file:///home/runner/.pub-cache/hosted/pub.dev/vibration-2.1.0/lib/vibration.dart
-file:///home/runner/.pub-cache/hosted/pub.dev/vibration_platform_interface-0.0.3/lib/src/method_channel_vibration.dart
-file:///home/runner/.pub-cache/hosted/pub.dev/vibration_platform_interface-0.0.3/lib/vibration_platform_interface.dart
 file:///home/runner/.pub-cache/hosted/pub.dev/wakelock_plus-1.3.3/lib/src/wakelock_plus_web_plugin.dart
 file:///home/runner/.pub-cache/hosted/pub.dev/wakelock_plus-1.3.3/lib/src/web_impl/import_js_library.dart
 file:///home/runner/.pub-cache/hosted/pub.dev/wakelock_plus-1.3.3/lib/src/web_impl/js_wakelock.dart
@@ -985,10 +969,9 @@ file:///home/runner/workspace/lib/screens/updates_screen.dart
 file:///home/runner/workspace/lib/screens/voice_support_screen.dart
 file:///home/runner/workspace/lib/screens/wisdom_cards_screen.dart
 file:///home/runner/workspace/lib/services/ai_service.dart
-file:///home/runner/workspace/lib/services/puter_tts.dart
-file:///home/runner/workspace/lib/services/puter_tts_web.dart
 file:///home/runner/workspace/lib/services/scripture_repository.dart
 file:///home/runner/workspace/lib/services/scripture_service.dart
+file:///home/runner/workspace/lib/services/sherpa_tts_service.dart
 file:///home/runner/workspace/lib/state/app_state.dart
 file:///home/runner/workspace/lib/theme.dart
 file:///nix/store/rga4z7r7x705lns431b89gwxx47zs1zp-flutter-wrapped-3.29.3-sdk-links/bin/cache/flutter_web_sdk/kernel/dart2js_platform.dill
