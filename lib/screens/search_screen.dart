@@ -103,8 +103,7 @@ class _SearchScreenState extends State<SearchScreen> {
       _aiQuery = query;
     });
 
-    SemanticsService.announce(
-        'Searching for: $query', TextDirection.ltr);
+    
 
     final expandedTerms = _expandQuery(query);
 
@@ -133,8 +132,7 @@ class _SearchScreenState extends State<SearchScreen> {
         _isSearching = false;
       });
 
-      SemanticsService.announce(
-          '${merged.length} results found for $query', TextDirection.ltr);
+      
     } catch (_) {
       if (!mounted) return;
       setState(() => _isSearching = false);
@@ -155,8 +153,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
     if (!available) return;
     setState(() => _isListening = true);
-    SemanticsService.announce('Voice search active — speak your query',
-        TextDirection.ltr);
+    
     _speech.listen(
       pauseFor: const Duration(seconds: 4),
       listenFor: const Duration(seconds: 30),

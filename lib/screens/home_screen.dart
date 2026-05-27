@@ -139,10 +139,7 @@ class HomeScreen extends StatelessWidget {
 
   void _open(BuildContext context, Widget screen) {
     HapticFeedback.lightImpact();
-    SemanticsService.announce(
-      'Opening screen',
-      TextDirection.ltr,
-    );
+    
     Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
   }
 

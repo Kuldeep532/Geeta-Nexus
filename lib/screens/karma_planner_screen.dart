@@ -80,8 +80,7 @@ class _KarmaPlannerScreenState extends State<KarmaPlannerScreen> {
       _isGenerating = true;
     });
 
-    SemanticsService.announce("Getting Karma Yoga insight for: $title",
-        TextDirection.ltr);
+    
 
     try {
       final prompt =
@@ -121,8 +120,7 @@ class _KarmaPlannerScreenState extends State<KarmaPlannerScreen> {
       _briefingReady = false;
     });
 
-    SemanticsService.announce("Generating daily Karma Yoga briefing",
-        TextDirection.ltr);
+    
 
     final taskList = _tasks.map((t) => '- ${t.title}').join('\n');
     final prompt =
@@ -159,7 +157,7 @@ class _KarmaPlannerScreenState extends State<KarmaPlannerScreen> {
     );
     if (!available) return;
     setState(() => _isListening = true);
-    SemanticsService.announce("Speak your task", TextDirection.ltr);
+    
     _speech.listen(
       pauseFor: const Duration(seconds: 4),
       listenFor: const Duration(seconds: 30),

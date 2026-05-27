@@ -1,0 +1,29 @@
+# Master Engineering Directive: Architecture Refactoring & Enterprise Optimization
+
+Execute a comprehensive refactoring of the codebase to enforce strict design patterns, optimize architectural layers, and guarantee universal accessibility. The final implementation must adhere to production-grade, enterprise-ready standards.
+
+### 1. Automated Accessibility Engine & UI Optimization
+- **Pattern-Based Layout Scanning:** Implement an automated, structural pattern scan across all layout templates, view containers, and presentation screens. Systematically detect and target any UI component that handles core textual data, description blocks, or localized content.
+- **Semantic Streamlining:** Programmatically eliminate redundant, nested, or conflicting custom semantic wrappers (such as over-engineered `Semantics` or misplaced `ExcludeSemantics` in Flutter) that introduce focus stutters, layout skips, or duplicate announcements.
+- **Universal Text Exposure:** Guarantee that all structural content containers dynamically expose their inner text elements to the system's assistive technologies. Every information block must maintain a sequential, predictable, and fully focused screen reader traversal flow across all screens.
+- **Native Component Standardization:** Enforce the exclusive use of standard native framework components (e.g., standard `ListTile`, `AppBar`, and `IconButton` with native tooltips). Avoid custom-built structural overrides to ensure flawless compatibility with OS-level accessibility features.
+
+### 2. Enterprise Security & Credential Management
+- **Zero-Hardcoded Secrets Policy:** Purge and completely bypass all hardcoded API keys, environment credentials, or local tokens within the application logic.
+- **Secure CI/CD Authentication:** Restructure the authentication layer to rely exclusively on securely injected runtime secrets (such as GitHub Secrets). Do not introduce local environment file variables into the repository.
+
+### 3. Backend Architecture Consolidation
+- **Monolithic Service Integration:** Consolidate isolated, micro-scoped, or redundant backend services into a single, unified, high-performance server architecture.
+- **Redundancy Elimination:** Streamline the internal routing and business logic to eliminate architectural duplication while maintaining full backward compatibility and operational integrity of all core features.
+
+### 4. Codebase Sanitization
+- **Legacy Code Purge:** Clean the repository by permanently deleting all dead code, commented-out blocks, experimental logic, and obsolete developer notes.
+- **Lifecycle Integrity:** Ensure that critical production logic, configuration matrices, database migrations, and essential application lifecycle files remain completely intact during the sanitization phase.
+
+### 5. Unified AI Voice Infrastructure (Hugging Face)
+- **Model Centralization:** Refactor the entire interactive voice assistant subsystem, telephony agent flows, and real-time audio components to interface exclusively with models hosted on Hugging Face.
+- **Endpoint Abstraction:** Replace all legacy third-party audio APIs, local Text-to-Speech (TTS) engines, and Speech-to-Text (STT) dependencies with optimized Hugging Face Inference Endpoints.
+
+### 6. Technical Deployment Documentation
+- **Infrastructure Guide:** Provision a precise, step-by-step technical execution manual outlining the provisioning, scaling, and deployment of the AI voice models on Hugging Face (via Spaces or Dedicated Inference Endpoints).
+- **Secure Gateway Connection:** Document the precise network configuration required to establish a secure, low-latency connection between the Hugging Face infrastructure and the consolidated enterprise backend server.

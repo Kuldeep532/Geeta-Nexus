@@ -193,7 +193,7 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
 
   Future<void> _generateKundli() async {
     if (!_isProfileComplete) {
-      SemanticsService.announce('Please complete your profile first', TextDirection.ltr);
+      
       return;
     }
     FocusScope.of(context).unfocus();
@@ -201,7 +201,7 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
     HapticFeedback.lightImpact();
     await Future.delayed(const Duration(milliseconds: 500));
     _isGeneratingNotifier.value = false;
-    SemanticsService.announce('Kundli generated successfully', TextDirection.ltr);
+    
     if (mounted) setState(() {});
   }
 

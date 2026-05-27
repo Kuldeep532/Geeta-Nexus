@@ -1,13 +1,11 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:speech_to_text/speech_to_text.dart';
 
-import '../services/sherpa_tts_service.dart';
+import '../services/huggingface_voice_service.dart';
 import '../theme.dart';
 
 enum _CallState { idle, listening, processing, speaking }
@@ -22,12 +20,12 @@ class VoiceSupportScreen extends StatefulWidget {
 class _VoiceSupportScreenState extends State<VoiceSupportScreen>
     with TickerProviderStateMixin {
   static const String _backendUrl = String.fromEnvironment(
-    'AIRA_API_URL',
+    'BACKEND_URL',
     defaultValue: '',
   );
 
   final SpeechToText _stt = SpeechToText();
-  final SherpaTtsService _tts = SherpaTtsService();
+  final HuggingFaceVoiceService _tts = HuggingFaceVoiceService();
 
   _CallState _state = _CallState.idle;
   String _transcript = '';
@@ -48,7 +46,6 @@ class _VoiceSupportScreenState extends State<VoiceSupportScreen>
       CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
     );
     _initStt();
-    _tts.initialize();
   }
 
   @override
@@ -60,9 +57,7 @@ class _VoiceSupportScreenState extends State<VoiceSupportScreen>
   }
 
   Future<void> _initStt() async {
-    final ok = await _stt.initialize(
-      onError: (_) => _onSttError(),
-    );
+    final ok = await _stt.initialize(onError: (_) => _onSttError());
     if (mounted) setState(() => _sttAvailable = ok);
   }
 
@@ -84,7 +79,6 @@ class _VoiceSupportScreenState extends State<VoiceSupportScreen>
       _transcript = '';
       _aiReply = '';
     });
-    SemanticsService.announce('Listening. Please speak now.', TextDirection.ltr);
 
     await _stt.listen(
       onResult: (result) {
@@ -102,13 +96,10 @@ class _VoiceSupportScreenState extends State<VoiceSupportScreen>
 
   Future<void> _sendToBackend(String text) async {
     setState(() => _state = _CallState.processing);
-    SemanticsService.announce('Processing your message.', TextDirection.ltr);
 
     String reply;
     try {
-      final url = _backendUrl.isEmpty
-          ? null
-          : Uri.tryParse('$_backendUrl/ask');
+      final url = _backendUrl.isEmpty ? null : Uri.tryParse('$_backendUrl/ask');
 
       if (url == null) {
         reply = _localFallback(text);
@@ -139,10 +130,7 @@ class _VoiceSupportScreenState extends State<VoiceSupportScreen>
 
   Future<void> _speak(String text) async {
     setState(() => _state = _CallState.speaking);
-    SemanticsService.announce('Aira is responding.', TextDirection.ltr);
-
-    await _tts.speak(text);
-
+    await _tts.synthesize(text);
     if (mounted) setState(() => _state = _CallState.idle);
   }
 
@@ -160,13 +148,12 @@ class _VoiceSupportScreenState extends State<VoiceSupportScreen>
     if (q.contains('planner') || q.contains('karma')) {
       return 'The Karma-Yogi Planner lets you plan your day through Krishna\'s teachings. Find it on the Home screen.';
     }
-    return 'Thank you for your question. Explore the app\'s features — Scripture Library, Meditation, and AI tools — for comprehensive spiritual guidance.';
+    return 'Thank you for your question. Explore the app\'s features for comprehensive spiritual guidance.';
   }
 
   void _showSnack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   String get _statusLabel {
@@ -176,11 +163,11 @@ class _VoiceSupportScreenState extends State<VoiceSupportScreen>
             ? 'Tap "Start Voice Call" to speak with Aira'
             : 'Tap "Speak Again" to continue';
       case _CallState.listening:
-        return 'Listening… speak now';
+        return 'Listening... speak now';
       case _CallState.processing:
-        return 'Aira is thinking…';
+        return 'Aira is thinking...';
       case _CallState.speaking:
-        return 'Aira is speaking…';
+        return 'Aira is speaking...';
     }
   }
 
@@ -221,24 +208,18 @@ class _VoiceSupportScreenState extends State<VoiceSupportScreen>
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
-        leading: Semantics(
-          button: true,
-          label: 'Go back',
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded),
-            onPressed: () => Navigator.pop(context),
-          ),
+        leading: IconButton(
+          tooltip: 'Go back',
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => Navigator.pop(context),
         ),
-        title: Semantics(
-          header: true,
-          child: Text(
-            'Customer Support',
-            style: GoogleFonts.cinzel(
-              color: kGold,
-              fontWeight: FontWeight.bold,
-              fontSize: 18,
-              letterSpacing: 1.1,
-            ),
+        title: Text(
+          'Customer Support',
+          style: GoogleFonts.cinzel(
+            color: kGold,
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            letterSpacing: 1.1,
           ),
         ),
         centerTitle: true,
@@ -249,46 +230,38 @@ class _VoiceSupportScreenState extends State<VoiceSupportScreen>
           child: Column(
             children: [
               const SizedBox(height: 12),
-
-              // ── Avatar ──────────────────────────────────────────────────
-              Semantics(
-                label: 'Aira AI assistant avatar. Status: ${_statusLabel}',
-                child: ScaleTransition(
-                  scale: _state == _CallState.listening
-                      ? _pulseAnim
-                      : const AlwaysStoppedAnimation(1.0),
-                  child: Container(
-                    width: 110,
-                    height: 110,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [
-                          _stateColor.withOpacity(0.85),
-                          _stateColor.withOpacity(0.45),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          blurRadius: 28,
-                          color: _stateColor.withOpacity(0.35),
-                        ),
+              ScaleTransition(
+                scale: _state == _CallState.listening
+                    ? _pulseAnim
+                    : const AlwaysStoppedAnimation(1.0),
+                child: Container(
+                  width: 110,
+                  height: 110,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        _stateColor.withOpacity(0.85),
+                        _stateColor.withOpacity(0.45),
                       ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    child: Icon(
-                      _stateIcon,
-                      size: 52,
-                      color: Colors.white,
-                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        blurRadius: 28,
+                        color: _stateColor.withOpacity(0.35),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    _stateIcon,
+                    size: 52,
+                    color: Colors.white,
                   ),
                 ),
               ),
-
               const SizedBox(height: 18),
-
-              // ── Name & Status ────────────────────────────────────────────
               Text(
                 'Aira',
                 style: GoogleFonts.cinzel(
@@ -299,29 +272,21 @@ class _VoiceSupportScreenState extends State<VoiceSupportScreen>
                 ),
               ),
               const SizedBox(height: 6),
-              Semantics(
-                liveRegion: true,
-                label: _statusLabel,
-                child: Text(
-                  _statusLabel,
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+              Text(
+                _statusLabel,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
-
               const SizedBox(height: 28),
-
-              // ── Transcript card ──────────────────────────────────────────
               if (_transcript.isNotEmpty)
                 _ConversationBubble(
                   text: _transcript,
                   isUser: true,
                   isDark: isDark,
                 ),
-
               if (_aiReply.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 _ConversationBubble(
@@ -330,8 +295,6 @@ class _VoiceSupportScreenState extends State<VoiceSupportScreen>
                   isDark: isDark,
                 ),
               ],
-
-              // ── Processing indicator ─────────────────────────────────────
               if (_state == _CallState.processing) ...[
                 const SizedBox(height: 16),
                 const CircularProgressIndicator(
@@ -339,10 +302,7 @@ class _VoiceSupportScreenState extends State<VoiceSupportScreen>
                   strokeWidth: 2.5,
                 ),
               ],
-
               const Spacer(),
-
-              // ── Action Button ────────────────────────────────────────────
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -371,28 +331,20 @@ class _VoiceSupportScreenState extends State<VoiceSupportScreen>
                   ),
                 ),
               ),
-
               const SizedBox(height: 12),
-
-              // ── End Call / note ──────────────────────────────────────────
               if (!busy)
-                Semantics(
-                  button: true,
-                  label: 'End call and go back',
-                  child: TextButton.icon(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.call_end_rounded,
-                        color: Colors.redAccent, size: 18),
-                    label: Text(
-                      'End Call',
-                      style: GoogleFonts.poppins(
-                        color: Colors.redAccent,
-                        fontSize: 14,
-                      ),
+                TextButton.icon(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.call_end_rounded,
+                      color: Colors.redAccent, size: 18),
+                  label: Text(
+                    'End Call',
+                    style: GoogleFonts.poppins(
+                      color: Colors.redAccent,
+                      fontSize: 14,
                     ),
                   ),
                 ),
-
               const SizedBox(height: 8),
             ],
           ),
@@ -415,40 +367,33 @@ class _ConversationBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: isUser ? 'You said: $text' : 'Aira replied: $text',
-      child: Align(
-        alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 320),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: isUser
-                ? kGold.withOpacity(isDark ? 0.22 : 0.18)
-                : (isDark
-                    ? Colors.white.withOpacity(0.07)
-                    : Colors.grey.shade100),
-            borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(18),
-              topRight: const Radius.circular(18),
-              bottomLeft: Radius.circular(isUser ? 18 : 4),
-              bottomRight: Radius.circular(isUser ? 4 : 18),
-            ),
-            border: Border.all(
-              color: isUser
-                  ? kGold.withOpacity(0.35)
-                  : Colors.transparent,
-            ),
+    return Align(
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 320),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: isUser
+              ? kGold.withOpacity(isDark ? 0.22 : 0.18)
+              : (isDark
+                  ? Colors.white.withOpacity(0.07)
+                  : Colors.grey.shade100),
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(18),
+            topRight: const Radius.circular(18),
+            bottomLeft: Radius.circular(isUser ? 18 : 4),
+            bottomRight: Radius.circular(isUser ? 4 : 18),
           ),
-          child: Text(
-            text,
-            style: GoogleFonts.poppins(
-              fontSize: 13.5,
-              height: 1.45,
-              color: isDark
-                  ? Colors.white.withOpacity(0.88)
-                  : Colors.black87,
-            ),
+          border: Border.all(
+            color: isUser ? kGold.withOpacity(0.35) : Colors.transparent,
+          ),
+        ),
+        child: Text(
+          text,
+          style: GoogleFonts.poppins(
+            fontSize: 13.5,
+            height: 1.45,
+            color: isDark ? Colors.white.withOpacity(0.88) : Colors.black87,
           ),
         ),
       ),

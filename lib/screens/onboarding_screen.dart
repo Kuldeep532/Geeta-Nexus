@@ -354,10 +354,7 @@ class _OnboardingSlidersViewState extends State<_OnboardingSlidersView> {
     // Programmatic focus shift: move screen-reader to guest name field
     WidgetsBinding.instance.addPostFrameCallback((_) {
       FocusScope.of(context).requestFocus(_guestNameFocus);
-      SemanticsService.announce(
-        'Guest mode. Enter your name to proceed.',
-        TextDirection.ltr,
-      );
+      
     });
   }
 
@@ -772,12 +769,7 @@ class _OnboardingSlidersViewState extends State<_OnboardingSlidersView> {
               activeColor: kGold,
               onChanged: (v) {
                 setState(() => _acceptedPolicies = v ?? false);
-                SemanticsService.announce(
-                  _acceptedPolicies
-                      ? 'Terms accepted'
-                      : 'Terms not accepted',
-                  TextDirection.ltr,
-                );
+                
               },
             ),
           ),

@@ -1,13 +1,11 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
 import '../services/ai_service.dart';
-import '../services/sherpa_tts_service.dart';
+import '../services/huggingface_voice_service.dart';
 import '../theme.dart';
 
 enum _AiraUiState { initializingModels, ready, speaking, listening, error }
@@ -15,26 +13,24 @@ enum _AiraUiState { initializingModels, ready, speaking, listening, error }
 class _ChatMessage {
   final String text;
   final bool fromUser;
-
   const _ChatMessage({required this.text, required this.fromUser});
 }
 
 class AiScreen extends StatefulWidget {
   const AiScreen({super.key});
-
   @override
   State<AiScreen> createState() => _AiScreenState();
 }
 
 class _AiScreenState extends State<AiScreen> {
   final AIService _aiService = AIService();
-  final SherpaTtsService _tts = SherpaTtsService();
+  final HuggingFaceVoiceService _tts = HuggingFaceVoiceService();
   final SpeechToText _stt = SpeechToText();
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
   final List<_ChatMessage> _messages = <_ChatMessage>[];
-  StreamSubscription<SherpaTtsStatus>? _ttsStatusSub;
+  StreamSubscription<VoiceStatus>? _ttsStatusSub;
 
   _AiraUiState _uiState = _AiraUiState.initializingModels;
   bool _thinking = false;
@@ -45,7 +41,7 @@ class _AiScreenState extends State<AiScreen> {
     super.initState();
     _messages.add(
       const _ChatMessage(
-        text: 'Namaste 🙏 I am Aira AI. Ask me anything about the app or Bhagavad Gita.',
+        text: 'Namaste. I am Aira AI. Ask me anything about the app or Bhagavad Gita.',
         fromUser: false,
       ),
     );
@@ -56,11 +52,9 @@ class _AiScreenState extends State<AiScreen> {
     _ttsStatusSub = _tts.statusStream.listen((status) {
       if (!mounted) return;
       setState(() {
-        if (status == SherpaTtsStatus.initializing) {
-          _uiState = _AiraUiState.initializingModels;
-        } else if (status == SherpaTtsStatus.speaking) {
+        if (status == VoiceStatus.synthesizing) {
           _uiState = _AiraUiState.speaking;
-        } else if (status == SherpaTtsStatus.error) {
+        } else if (status == VoiceStatus.error) {
           _uiState = _AiraUiState.error;
         } else if (_uiState != _AiraUiState.listening) {
           _uiState = _AiraUiState.ready;
@@ -69,7 +63,6 @@ class _AiScreenState extends State<AiScreen> {
     });
 
     try {
-      await _tts.initialize();
       _sttAvailable = await _stt.initialize(
         onError: (_) {
           if (!mounted) return;
@@ -126,7 +119,7 @@ class _AiScreenState extends State<AiScreen> {
       _thinking = false;
     });
 
-    await _tts.speak(reply);
+    await _tts.synthesize(reply);
     _scrollToBottom();
   }
 
@@ -139,7 +132,6 @@ class _AiScreenState extends State<AiScreen> {
       return;
     }
 
-    await _tts.stop();
     if (mounted) setState(() => _uiState = _AiraUiState.listening);
 
     await _stt.listen(
@@ -180,59 +172,49 @@ class _AiScreenState extends State<AiScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            Semantics(
-              liveRegion: true,
-              label: 'Voice status: $_statusText',
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                color: Colors.black12,
-                child: Text('Status: $_statusText'),
-              ),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              color: Colors.black12,
+              child: Text('Status: $_statusText'),
             ),
             Expanded(
-              child: Semantics(
-                label: 'Conversation history',
-                child: ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.all(12),
-                  itemCount: _messages.length + (_thinking ? 1 : 0),
-                  itemBuilder: (_, i) {
-                    if (_thinking && i == _messages.length) {
-                      return const Padding(
-                        padding: EdgeInsets.all(8),
-                        child: Text('Aira is thinking...'),
-                      );
-                    }
-                    final msg = _messages[i];
-                    return Align(
-                      alignment: msg.fromUser ? Alignment.centerRight : Alignment.centerLeft,
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 6),
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: msg.fromUser ? kGold : Colors.grey.shade200,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(msg.text),
-                      ),
+              child: ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(12),
+                itemCount: _messages.length + (_thinking ? 1 : 0),
+                itemBuilder: (_, i) {
+                  if (_thinking && i == _messages.length) {
+                    return const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Text('Aira is thinking...'),
                     );
-                  },
-                ),
+                  }
+                  final msg = _messages[i];
+                  return Align(
+                    alignment: msg.fromUser ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 6),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: msg.fromUser ? kGold : Colors.grey.shade200,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(msg.text),
+                    ),
+                  );
+                },
               ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
               child: Row(
                 children: [
-                  Semantics(
-                    button: true,
-                    label: _uiState == _AiraUiState.listening ? 'Stop microphone' : 'Start microphone',
-                    child: IconButton(
-                      onPressed: _toggleMic,
-                      icon: Icon(
-                        _uiState == _AiraUiState.listening ? Icons.mic_off_rounded : Icons.mic_rounded,
-                      ),
+                  IconButton(
+                    tooltip: _uiState == _AiraUiState.listening ? 'Stop microphone' : 'Start microphone',
+                    onPressed: _toggleMic,
+                    icon: Icon(
+                      _uiState == _AiraUiState.listening ? Icons.mic_off_rounded : Icons.mic_rounded,
                     ),
                   ),
                   Expanded(
@@ -247,13 +229,9 @@ class _AiScreenState extends State<AiScreen> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Semantics(
-                    button: true,
-                    label: 'Send message',
-                    child: ElevatedButton(
-                      onPressed: _sendText,
-                      child: const Text('Send'),
-                    ),
+                  ElevatedButton(
+                    onPressed: _sendText,
+                    child: const Text('Send'),
                   ),
                 ],
               ),

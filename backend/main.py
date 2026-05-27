@@ -1,39 +1,30 @@
 """
-Aira — Universal AI Support Backend
-=====================================
-FastAPI backend for the Aira conversational agent.
+Aira — Unified AI & Voice Backend
+====================================
+Single consolidated FastAPI backend for:
+- AI chat (Gemini + local KB + Hugging Face fallback)
+- Text-to-Speech (Hugging Face Inference API)
+- Speech-to-Text (Hugging Face Inference API)
 
-Architecture
-------------
-This backend is intentionally FRAMEWORK-AGNOSTIC:
-- It accepts plain JSON requests with a "query" + optional "context" field.
-- The knowledge base is a generic Markdown/JSON file — swap it for any
-  domain without changing the core logic.
-- Deployable FREE on: Render, Hugging Face Spaces, Railway, or Fly.io.
-
-Cost control
-------------
-- Primary: local keyword/embedding search against the Gita knowledge base (FREE).
-- Fallback: Gemini 1.5 Flash (Google free tier — 15 RPM / 1M tokens/day).
-- No paid voice API is ever called from this backend.
-
-Environment variables required (never hardcode):
-    GEMINI_AI_API_KEY   — Google Gemini API key (optional; free tier)
-    ALLOWED_ORIGINS     — Comma-separated CORS origins (default: *)
-    SECRET_TOKEN        — Simple bearer token to prevent open abuse (optional)
+Deployable FREE on: Render, Hugging Face Spaces, Railway, Fly.io, or Replit.
 """
 
 import os
 import json
 import re
+import base64
+import asyncio
 from pathlib import Path
 from typing import Optional
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Header, Depends
+from fastapi import FastAPI, HTTPException, Header, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+import httpx
 
-# ── Optional Gemini import (graceful degradation if not installed) ─────────
+# ── Optional Gemini import (graceful degradation) ─────────────────────────
 try:
     import google.generativeai as genai
     _GEMINI_AVAILABLE = True
@@ -42,25 +33,18 @@ except ImportError:
 
 # ── Config ─────────────────────────────────────────────────────────────────
 GEMINI_KEY = os.environ.get("GEMINI_AI_API_KEY", "")
+HF_API_KEY = os.environ.get("HF_API_KEY", "")
 ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "*").split(",")
 SECRET_TOKEN = os.environ.get("SECRET_TOKEN", "")
 
 if _GEMINI_AVAILABLE and GEMINI_KEY:
     genai.configure(api_key=GEMINI_KEY)
 
-app = FastAPI(
-    title="Aira — Gita Nexus AI Support",
-    description="Universal, framework-agnostic AI companion backend.",
-    version="1.0.0",
-)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Hugging Face endpoints (public or dedicated)
+HF_TTS_ENDPOINT = os.environ.get(
+    "HF_TTS_ENDPOINT", "https://api-inference.huggingface.co/models/microsoft/speecht5_tts")
+HF_STT_ENDPOINT = os.environ.get(
+    "HF_STT_ENDPOINT", "https://api-inference.huggingface.co/models/openai/whisper-base")
 
 # ── Knowledge base ──────────────────────────────────────────────────────────
 _KB_PATH = Path(__file__).parent / "knowledge_base.json"
@@ -72,7 +56,6 @@ def _load_kb() -> None:
     if _KB_PATH.exists():
         with open(_KB_PATH, encoding="utf-8") as f:
             data = json.load(f)
-        # Accept both flat {"q": "a"} and list [{"question": …, "answer": …}]
         if isinstance(data, dict):
             _kb = {k.lower(): v for k, v in data.items()}
         elif isinstance(data, list):
@@ -83,10 +66,10 @@ def _load_kb() -> None:
             }
 
 
-_load_kb()  # Load at startup
+_load_kb()
 
 
-# ── Auth dependency (optional) ─────────────────────────────────────────────
+# ── Auth dependency (optional bearer token) ────────────────────────────────
 def _check_token(authorization: Optional[str] = Header(default=None)) -> None:
     if not SECRET_TOKEN:
         return
@@ -97,20 +80,30 @@ def _check_token(authorization: Optional[str] = Header(default=None)) -> None:
         raise HTTPException(status_code=403, detail="Invalid token")
 
 
-# ── Request / Response models ───────────────────────────────────────────────
+# ── Pydantic Models ─────────────────────────────────────────────────────────
 class AiraRequest(BaseModel):
     query: str
-    context: Optional[str] = None   # Shloka text / verse reference / feature name
-    persona: Optional[str] = "aira" # aira | krishna | guide
+    context: Optional[str] = None
+    persona: Optional[str] = "aira"
 
 
 class AiraResponse(BaseModel):
     reply: str
-    source: str  # "local_kb" | "gemini" | "fallback"
+    source: str
     persona: str
 
 
-# ── Core logic: local keyword search ───────────────────────────────────────
+class TtsRequest(BaseModel):
+    text: str
+    voice: Optional[str] = "default"
+
+
+class SttRequest(BaseModel):
+    audio_base64: str
+    language: Optional[str] = "en"
+
+
+# ── Core logic: local keyword search ────────────────────────────────────────
 def _local_search(query: str) -> Optional[str]:
     q = query.lower().strip()
     if q in _kb:
@@ -118,7 +111,6 @@ def _local_search(query: str) -> Optional[str]:
     for key, answer in _kb.items():
         if q in key or key in q:
             return answer
-    # Word-overlap scoring
     q_words = set(re.findall(r"\w+", q))
     best_score, best_answer = 0, None
     for key, answer in _kb.items():
@@ -129,25 +121,21 @@ def _local_search(query: str) -> Optional[str]:
     return best_answer if best_score >= 2 else None
 
 
-# ── Core logic: Gemini fallback ─────────────────────────────────────────────
+# ── Core logic: Gemini fallback ───────────────────────────────────────────
 async def _gemini_reply(query: str, context: Optional[str], persona: str) -> str:
     if not (_GEMINI_AVAILABLE and GEMINI_KEY):
-        return (
-            "I am Aira, your spiritual companion. My AI brain is resting — "
-            "please check back soon or consult the app's offline knowledge."
-        )
+        return "AI brain is resting — please check back soon or consult offline knowledge."
 
     system_map = {
         "krishna": "You are Lord Krishna from the Bhagavad Gita. Answer with divine wisdom.",
         "guide": "You are a knowledgeable Bhagavad Gita guide. Be clear and educational.",
         "aira": (
-            "You are Aira, a warm and helpful AI support companion for the Geeta Nexus app. "
+            "You are Aira, a warm AI support companion for the Geeta Nexus app. "
             "Answer questions about the app, the Bhagavad Gita, and spiritual practice. "
             "Be friendly, concise (under 120 words), and always encouraging."
         ),
     }
     system_prompt = system_map.get(persona, system_map["aira"])
-
     full_prompt = system_prompt
     if context:
         full_prompt += f"\n\nContext provided:\n{context}"
@@ -161,51 +149,150 @@ async def _gemini_reply(query: str, context: Optional[str], persona: str) -> str
     return response.text.strip()
 
 
+# ── Core logic: Hugging Face fallback ───────────────────────────────────────
+async def _hf_chat_reply(query: str, context: Optional[str], persona: str) -> str:
+    if not HF_API_KEY:
+        return "AI services unavailable. Please try again later."
+
+    system_map = {
+        "krishna": "You are Lord Krishna. Answer with divine wisdom from the Bhagavad Gita.",
+        "guide": "You are a Gita guide. Be clear and educational.",
+        "aira": "You are Aira, a warm spiritual AI companion. Be concise and encouraging.",
+    }
+    system = system_map.get(persona, system_map["aira"])
+    prompt = f"{system}\n\nUser: {query}\nAssistant:"
+    if context:
+        prompt = f"{system}\n\nContext: {context}\n\nUser: {query}\nAssistant:"
+
+    url = os.environ.get("HF_CHAT_ENDPOINT", "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2")
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.post(
+            url,
+            headers={"Authorization": f"Bearer {HF_API_KEY}"},
+            json={"inputs": prompt, "parameters": {"max_new_tokens": 300, "temperature": 0.6}},
+        )
+        if resp.status_code == 200:
+            data = resp.json()
+            if isinstance(data, list) and len(data) > 0:
+                text = data[0].get("generated_text", "")
+                # Remove the prompt echo
+                if text.startswith(prompt):
+                    text = text[len(prompt):].strip()
+                return text
+        return "Hugging Face inference returned an unexpected response."
+
+
+# ── FastAPI lifespan ────────────────────────────────────────────────────────
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    _load_kb()
+    yield
+
+
+app = FastAPI(
+    title="Aira — Gita Nexus Unified Backend",
+    description="Single backend for AI chat, TTS, and STT via Hugging Face & Gemini.",
+    version="2.0.0",
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 # ── Routes ──────────────────────────────────────────────────────────────────
 @app.get("/health")
 def health():
-    return {"status": "ok", "kb_entries": len(_kb), "gemini": _GEMINI_AVAILABLE and bool(GEMINI_KEY)}
+    return {
+        "status": "ok",
+        "kb_entries": len(_kb),
+        "gemini": _GEMINI_AVAILABLE and bool(GEMINI_KEY),
+        "huggingface": bool(HF_API_KEY),
+    }
 
 
 @app.post("/ask", response_model=AiraResponse, dependencies=[Depends(_check_token)])
 async def ask_aira(payload: AiraRequest) -> AiraResponse:
-    """
-    Universal ask endpoint.
-    Accepts: { "query": "...", "context": "...", "persona": "aira|krishna|guide" }
-    Returns: { "reply": "...", "source": "local_kb|gemini|fallback", "persona": "..." }
-
-    This JSON contract is intentionally framework-agnostic — call it
-    from Flutter, React Native, Jetpack Compose, or plain Java equally.
-    """
     if not payload.query.strip():
         raise HTTPException(status_code=400, detail="Query cannot be empty")
 
-    # 1. Try local knowledge base first (zero cost, instant)
+    # 1. Try local knowledge base (zero cost, instant)
     local = _local_search(payload.query)
     if local:
         return AiraResponse(reply=local, source="local_kb", persona=payload.persona or "aira")
 
-    # 2. Combine query + context and call Gemini free tier
-    try:
-        reply = await _gemini_reply(
-            payload.query, payload.context, payload.persona or "aira"
+    # 2. Try Gemini
+    if _GEMINI_AVAILABLE and GEMINI_KEY:
+        try:
+            reply = await _gemini_reply(payload.query, payload.context, payload.persona or "aira")
+            return AiraResponse(reply=reply, source="gemini", persona=payload.persona or "aira")
+        except Exception:
+            pass
+
+    # 3. Fallback to Hugging Face
+    if HF_API_KEY:
+        try:
+            reply = await _hf_chat_reply(payload.query, payload.context, payload.persona or "aira")
+            return AiraResponse(reply=reply, source="huggingface", persona=payload.persona or "aira")
+        except Exception:
+            pass
+
+    # 4. Graceful offline fallback
+    return AiraResponse(
+        reply="I am having a moment of stillness. Please try again or consult the Bhagavad Gita directly.",
+        source="fallback",
+        persona=payload.persona or "aira",
+    )
+
+
+@app.post("/tts")
+async def tts(payload: TtsRequest):
+    """Text-to-Speech via Hugging Face Inference API. Returns base64 audio."""
+    if not HF_API_KEY:
+        raise HTTPException(status_code=503, detail="HF_API_KEY not configured")
+
+    async with httpx.AsyncClient(timeout=60) as client:
+        resp = await client.post(
+            HF_TTS_ENDPOINT,
+            headers={"Authorization": f"Bearer {HF_API_KEY}"},
+            json={"inputs": payload.text},
         )
-        return AiraResponse(reply=reply, source="gemini", persona=payload.persona or "aira")
-    except Exception as exc:
-        # 3. Graceful offline fallback — never crash the client
-        return AiraResponse(
-            reply=(
-                "I'm having a moment of stillness. "
-                "Please try again or consult the Bhagavad Gita directly for guidance."
-            ),
-            source="fallback",
-            persona=payload.persona or "aira",
+        if resp.status_code != 200:
+            raise HTTPException(status_code=502, detail=f"HF TTS error: {resp.status_code}")
+
+        audio_bytes = resp.content
+        return {"audio_base64": base64.b64encode(audio_bytes).decode(), "format": "audio/wav"}
+
+
+@app.post("/stt")
+async def stt(payload: SttRequest):
+    """Speech-to-Text via Hugging Face Inference API. Accepts base64 audio."""
+    if not HF_API_KEY:
+        raise HTTPException(status_code=503, detail="HF_API_KEY not configured")
+
+    audio_bytes = base64.b64decode(payload.audio_base64)
+
+    async with httpx.AsyncClient(timeout=60) as client:
+        resp = await client.post(
+            HF_STT_ENDPOINT,
+            headers={"Authorization": f"Bearer {HF_API_KEY}"},
+            content=audio_bytes,
         )
+        if resp.status_code != 200:
+            raise HTTPException(status_code=502, detail=f"HF STT error: {resp.status_code}")
+
+        data = resp.json()
+        text = data.get("text", "") if isinstance(data, dict) else ""
+        return {"text": text}
 
 
 @app.post("/reload-kb", dependencies=[Depends(_check_token)])
 def reload_kb() -> dict:
-    """Hot-reload the knowledge base without restarting the server."""
     _load_kb()
     return {"status": "reloaded", "entries": len(_kb)}
 

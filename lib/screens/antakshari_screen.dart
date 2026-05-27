@@ -52,10 +52,7 @@ class _AntakshariScreenState extends State<AntakshariScreen> {
     _tts.setCompletionHandler(() {
       if (_state == _GameState.airaReciting) {
         setState(() => _state = _GameState.userTurn);
-        SemanticsService.announce(
-          'Your turn! Speak a Shloka starting with the keyword: $_challengeKeyword',
-          TextDirection.ltr,
-        );
+        
       }
     });
   }
@@ -106,8 +103,7 @@ class _AntakshariScreenState extends State<AntakshariScreen> {
       _matchedVerse = null;
     });
 
-    SemanticsService.announce(
-      'Round $_round. Aira is reciting a Shloka.', TextDirection.ltr);
+    
 
     await _tts.stop();
     final announcement =
@@ -146,8 +142,7 @@ class _AntakshariScreenState extends State<AntakshariScreen> {
     if (!available) return;
 
     setState(() => _isListening = true);
-    SemanticsService.announce(
-        'Listening. Speak your Shloka.', TextDirection.ltr);
+    
 
     _speech.listen(
       pauseFor: const Duration(seconds: 5),
@@ -167,7 +162,7 @@ class _AntakshariScreenState extends State<AntakshariScreen> {
 
   void _validateAnswer() {
     setState(() => _state = _GameState.validating);
-    SemanticsService.announce('Validating your answer...', TextDirection.ltr);
+    
 
     final spoken = _userSpokenText.toLowerCase();
     final keyword = _challengeKeyword.toLowerCase();
@@ -229,7 +224,7 @@ class _AntakshariScreenState extends State<AntakshariScreen> {
       _currentAiraVerse = null;
     });
     _tts.speak(_resultMessage);
-    SemanticsService.announce(_resultMessage, TextDirection.ltr);
+    
   }
 
   @override

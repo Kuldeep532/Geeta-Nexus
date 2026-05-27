@@ -55,8 +55,7 @@ class _ScriptureLibraryScreenState
       _chaptersLoading = true;
       _chaptersError = false;
     });
-    SemanticsService.announce(
-        'Loading Bhagavad Gita chapters', TextDirection.ltr);
+    
     try {
       final data = await _service.fetchChapters();
       if (!mounted) return;
@@ -64,17 +63,14 @@ class _ScriptureLibraryScreenState
         _chapters = data;
         _chaptersLoading = false;
       });
-      SemanticsService.announce(
-          '${data.length} chapters loaded', TextDirection.ltr);
+      
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _chaptersLoading = false;
         _chaptersError = true;
       });
-      SemanticsService.announce(
-          'Failed to load chapters. Double tap Retry to try again.',
-          TextDirection.ltr);
+      
     }
   }
 
@@ -83,7 +79,7 @@ class _ScriptureLibraryScreenState
       _upanishadsLoading = true;
       _upanishadsError = false;
     });
-    SemanticsService.announce('Loading Upanishads', TextDirection.ltr);
+    
     try {
       final data = await _service.fetchUpanishads();
       if (!mounted) return;
@@ -91,16 +87,14 @@ class _ScriptureLibraryScreenState
         _upanishads = data;
         _upanishadsLoading = false;
       });
-      SemanticsService.announce('Upanishads loaded', TextDirection.ltr);
+      
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _upanishadsLoading = false;
         _upanishadsError = true;
       });
-      SemanticsService.announce(
-          'Failed to load Upanishads. Double tap Retry to try again.',
-          TextDirection.ltr);
+      
     }
   }
 

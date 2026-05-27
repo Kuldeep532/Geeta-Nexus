@@ -132,8 +132,7 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
       _isAdding = true;
     });
 
-    SemanticsService.announce("Getting Aira's encouragement for: $goal",
-        TextDirection.ltr);
+    
 
     try {
       final prompt =
@@ -167,8 +166,7 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
     await _saveHabits();
 
     if (habit.isComplete) {
-      SemanticsService.announce(
-          'Goal complete: ${habit.goal}', TextDirection.ltr);
+      
       await _tts.speak(
           'Excellent! You have completed: ${habit.goal}. Well done, seeker!');
     } else {
@@ -190,7 +188,7 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
     );
     if (!available) return;
     setState(() => _isListening = true);
-    SemanticsService.announce("Speak your spiritual goal", TextDirection.ltr);
+    
     _speech.listen(
       pauseFor: const Duration(seconds: 4),
       listenFor: const Duration(seconds: 30),
