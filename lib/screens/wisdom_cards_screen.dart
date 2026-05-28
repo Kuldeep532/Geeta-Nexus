@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart'; 
 import '../data/gita_data.dart';
@@ -62,7 +63,10 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
         leading: BackButton(
           color: kGold,
           // ACCESSIBILITY: Clear action label for the back button
-          onPressed: () => Navigator.maybePop(context),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            Navigator.maybePop(context);
+          },
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,

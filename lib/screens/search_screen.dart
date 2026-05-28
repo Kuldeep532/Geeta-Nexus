@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:speech_to_text/speech_to_text.dart';
 
 import '../models/scripture_model.dart';
 import '../services/scripture_repository.dart';
@@ -62,12 +60,9 @@ class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
   final ScriptureRepository _repo = ScriptureRepository();
-  final FlutterTts _tts = FlutterTts();
-  final SpeechToText _speech = SpeechToText();
 
   List<dynamic> _results = [];
   bool _isSearching = false;
-  bool _isListening = false;
   String _aiQuery = '';
 
   static const _suggestedQueries = [
@@ -78,17 +73,6 @@ class _SearchScreenState extends State<SearchScreen> {
     'My duty',
     'Soul and death',
   ];
-
-  @override
-  void initState() {
-    super.initState();
-    _initTts();
-  }
-
-  Future<void> _initTts() async {
-    await _tts.setLanguage('en-US');
-    await _tts.setSpeechRate(0.44);
-  }
 
   /// Semantic search: expands emotional/conceptual queries into
   /// multiple keyword searches, then de-duplicates results.
@@ -139,39 +123,6 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  Future<void> _startVoiceSearch() async {
-    final available = await _speech.initialize(
-      onStatus: (s) {
-        if (s == 'done' || s == 'notListening') {
-          setState(() => _isListening = false);
-          if (_controller.text.trim().isNotEmpty) {
-            _search(_controller.text.trim());
-          }
-        }
-      },
-      onError: (_) => setState(() => _isListening = false),
-    );
-    if (!available) return;
-    setState(() => _isListening = true);
-    
-    _speech.listen(
-      pauseFor: const Duration(seconds: 4),
-      listenFor: const Duration(seconds: 30),
-      partialResults: true,
-      onResult: (r) {
-        setState(() => _controller.text = r.recognizedWords);
-      },
-    );
-  }
-
-  Future<void> _stopVoiceSearch() async {
-    await _speech.stop();
-    setState(() => _isListening = false);
-    if (_controller.text.trim().isNotEmpty) {
-      _search(_controller.text.trim());
-    }
-  }
-
   void _navigateToDestination(BuildContext ctx, dynamic item) {
     if (item is ScriptureVerse) {
       Navigator.push(
@@ -190,8 +141,6 @@ class _SearchScreenState extends State<SearchScreen> {
   void dispose() {
     _controller.dispose();
     _searchFocus.dispose();
-    _tts.stop();
-    _speech.stop();
     super.dispose();
   }
 
@@ -275,19 +224,15 @@ class _SearchScreenState extends State<SearchScreen> {
                   prefixIcon: const Icon(Icons.search_rounded, color: kGold),
                   suffixIcon: Semantics(
                     button: true,
-                    label: _isListening
-                        ? 'Stop voice search'
-                        : 'Start voice search',
+                    label: 'Clear search',
                     child: IconButton(
-                      tooltip: _isListening ? 'Stop' : 'Voice search',
-                      icon: Icon(
-                        _isListening
-                            ? Icons.mic_rounded
-                            : Icons.mic_none_rounded,
-                        color: _isListening ? Colors.red : kGold,
-                      ),
-                      onPressed:
-                          _isListening ? _stopVoiceSearch : _startVoiceSearch,
+                      tooltip: 'Clear',
+                      icon: const Icon(Icons.clear_rounded, color: kGold),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        _controller.clear();
+                        setState(() => _results = []);
+                      },
                     ),
                   ),
                 ),
@@ -326,6 +271,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 ? kGold.withOpacity(0.12)
                                 : kGold.withOpacity(0.1),
                             onPressed: () {
+                              HapticFeedback.lightImpact();
                               _controller.text = q;
                               _search(q);
                             },
@@ -453,18 +399,6 @@ class _SearchScreenState extends State<SearchScreen> {
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Semantics(
-                                button: true,
-                                label: 'Listen to this verse',
-                                child: IconButton(
-                                  tooltip: 'Listen',
-                                  icon: const Icon(Icons.volume_up_rounded,
-                                      size: 18, color: kGold),
-                                  onPressed: () => _tts.speak(preview),
-                                  padding: EdgeInsets.zero,
-                                  constraints: const BoxConstraints(),
-                                ),
-                              ),
                               const SizedBox(width: 4),
                               const Icon(Icons.chevron_right_rounded,
                                   size: 20),

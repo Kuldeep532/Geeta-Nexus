@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../models/scripture_model.dart';
@@ -308,7 +309,10 @@ class _GitaTabView extends StatelessWidget {
                 title: Text(title),
                 subtitle: Text(ch.nameTransliterated),
                 trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () => onChapterTap(ch),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  onChapterTap(ch);
+                },
               ),
             ),
           ),
@@ -424,6 +428,7 @@ class _UpanishadTabView extends StatelessWidget {
                 title: const Text('Upanishad Collection'),
                 trailing: const Icon(Icons.chevron_right_rounded),
                 onTap: () {
+                  HapticFeedback.lightImpact();
                   Navigator.push(
                     context,
                     MaterialPageRoute(

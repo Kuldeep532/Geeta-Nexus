@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
@@ -117,12 +118,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           actions: [
             TextButton(
               onPressed: () {
+                HapticFeedback.lightImpact();
                 Navigator.pop(ctx);
               },
               child: const Text('Cancel'),
             ),
             ElevatedButton(
               onPressed: () {
+                HapticFeedback.lightImpact();
                 Navigator.pop(
                   ctx,
                   controller.text.trim(),
@@ -398,6 +401,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
               child: OutlinedButton.icon(
                 onPressed: () {
+                  HapticFeedback.lightImpact();
                   _editNameDialog(
                     context,
                     state,
@@ -578,6 +582,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
 
           onTap: () {
+            HapticFeedback.lightImpact();
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -615,6 +620,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onPressed: _isLoading
               ? null
               : () {
+                  HapticFeedback.lightImpact();
                   if (isLoggedIn) {
                     _handleLogout(
                       context,

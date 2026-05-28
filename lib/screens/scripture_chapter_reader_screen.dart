@@ -29,6 +29,7 @@ class _ScriptureChapterReaderScreenState
     extends State<ScriptureChapterReaderScreen> {
   final ScriptureService _service = ScriptureService();
   final AudioPlayer _audioPlayer = AudioPlayer();
+  final PageController _pageController = PageController();
 
   ScriptureChapterData? _chapter;
   List<ScriptureVerseData> _verses = [];
@@ -40,9 +41,7 @@ class _ScriptureChapterReaderScreenState
   int? _playingVerseNumber;
   bool _isChapterSummaryPlaying = false;
   String _liveAudioStatus = '';
-
-  final ScrollController _scrollController = ScrollController();
-  final Map<int, GlobalKey> _verseKeys = {};
+  int _currentPage = 0;
 
   @override
   void initState() {
@@ -60,7 +59,7 @@ class _ScriptureChapterReaderScreenState
   @override
   void dispose() {
     _audioPlayer.dispose();
-    _scrollController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -90,10 +89,13 @@ class _ScriptureChapterReaderScreenState
         _loading = false;
       });
 
-      // Scroll to initial verse after frame
-      if (widget.initialVerseNumber != null) {
+      // Jump to initial verse page after frame
+      if (widget.initialVerseNumber != null && widget.initialVerseNumber! > 1) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _scrollToVerse(widget.initialVerseNumber!);
+          if (_pageController.hasClients) {
+            _pageController.jumpToPage(widget.initialVerseNumber! - 1);
+            setState(() => _currentPage = widget.initialVerseNumber! - 1);
+          }
         });
       }
     } catch (_) {
@@ -106,7 +108,6 @@ class _ScriptureChapterReaderScreenState
   void _fallbackToLocalData() {
     final int targetNum = widget.chapter?.chapterNumber ?? widget.chapterNumber ?? 0;
 
-    // Find chapter in local data
     Chapter? localChapter;
     if (targetNum > 0) {
       for (final ch in kChapters) {
@@ -121,7 +122,6 @@ class _ScriptureChapterReaderScreenState
       return;
     }
 
-    // Convert local Chapter -> ScriptureChapterData
     _chapter = ScriptureChapterData(
       chapterNumber: localChapter.number,
       name: localChapter.nameSanskrit,
@@ -134,7 +134,6 @@ class _ScriptureChapterReaderScreenState
       imageName: '',
     );
 
-    // Convert local Verse list -> ScriptureVerseData list
     _verses = localChapter.verses.map((v) => ScriptureVerseData(
       chapterNumber: v.chapter,
       verseNumber: v.verse,
@@ -143,7 +142,6 @@ class _ScriptureChapterReaderScreenState
       wordMeanings: v.meaning,
     )).toList();
 
-    // Build translations from verse.translation
     _translations = localChapter.verses.map((v) => ScriptureTranslationData(
       chapterNumber: v.chapter,
       verseNumber: v.verse,
@@ -156,24 +154,14 @@ class _ScriptureChapterReaderScreenState
       setState(() { _loading = false; _error = null; });
     }
 
-    if (widget.initialVerseNumber != null) {
+    if (widget.initialVerseNumber != null && widget.initialVerseNumber! > 1) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollToVerse(widget.initialVerseNumber!);
+        if (_pageController.hasClients) {
+          _pageController.jumpToPage(widget.initialVerseNumber! - 1);
+          setState(() => _currentPage = widget.initialVerseNumber! - 1);
+        }
       });
     }
-  }
-
-  void _scrollToVerse(int verseNumber) {
-    final key = _verseKeys[verseNumber];
-    if (key == null) return;
-    final ctx = key.currentContext;
-    if (ctx == null) return;
-    Scrollable.ensureVisible(
-      ctx,
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeInOut,
-      alignment: 0.1,
-    );
   }
 
   void _onPlaybackComplete() {
@@ -301,7 +289,8 @@ class _ScriptureChapterReaderScreenState
                   children: [
                     _buildChapterHeader(isDark),
                     _buildFloatingAudioBar(theme),
-                    Expanded(child: _buildVerseList(theme, isDark)),
+                    _buildPageIndicator(theme),
+                    Expanded(child: _buildPageView(theme, isDark)),
                   ],
                 ),
     );
@@ -319,7 +308,10 @@ class _ScriptureChapterReaderScreenState
             const Text('Could not load verses.\nCheck your connection and try again.', textAlign: TextAlign.center),
             const SizedBox(height: 16),
             ElevatedButton.icon(
-              onPressed: _loadData,
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                _loadData();
+              },
               icon: const Icon(Icons.refresh),
               label: const Text('Retry'),
               style: ElevatedButton.styleFrom(backgroundColor: kGold, foregroundColor: Colors.black),
@@ -364,7 +356,10 @@ class _ScriptureChapterReaderScreenState
                 tooltip: _isChapterSummaryPlaying && _playerState == PlayerState.playing
                     ? 'Stop summary'
                     : 'Play summary audio',
-                onPressed: _playChapterSummaryAudio,
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  _playChapterSummaryAudio();
+                },
                 icon: Icon(
                   _isChapterSummaryPlaying && _playerState == PlayerState.playing
                       ? Icons.stop_circle_rounded
@@ -421,12 +416,18 @@ class _ScriptureChapterReaderScreenState
           ),
           IconButton(
             tooltip: isPlaying ? 'Pause' : 'Resume',
-            onPressed: _pauseResumeAudio,
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              _pauseResumeAudio();
+            },
             icon: Icon(isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, color: kGold),
           ),
           IconButton(
             tooltip: 'Stop',
-            onPressed: _stopAudio,
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              _stopAudio();
+            },
             icon: const Icon(Icons.stop_rounded, color: kGoldDim),
           ),
         ],
@@ -434,11 +435,33 @@ class _ScriptureChapterReaderScreenState
     );
   }
 
-  Widget _buildVerseList(ThemeData theme, bool isDark) {
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+  Widget _buildPageIndicator(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Verse ${_currentPage + 1} of ${_verses.length}',
+            style: GoogleFonts.cinzel(
+              fontSize: 12,
+              color: kGold,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPageView(ThemeData theme, bool isDark) {
+    return PageView.builder(
+      controller: _pageController,
       itemCount: _verses.length,
+      onPageChanged: (page) {
+        HapticFeedback.selectionClick();
+        setState(() => _currentPage = page);
+      },
       itemBuilder: (context, index) {
         final verse = _verses[index];
         final translation = _translationFor(verse.verseNumber);
@@ -446,93 +469,95 @@ class _ScriptureChapterReaderScreenState
             !_isChapterSummaryPlaying &&
             _playingVerseNumber == verse.verseNumber;
 
-        _verseKeys.putIfAbsent(verse.verseNumber, () => GlobalKey());
-
-        return Container(
-          key: _verseKeys[verse.verseNumber],
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-            color: isThisPlaying ? kGold.withOpacity(0.08) : theme.cardColor,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isThisPlaying ? kGold.withOpacity(0.5) : kGold.withOpacity(0.12),
-              width: isThisPlaying ? 1.5 : 1,
+        return SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: isThisPlaying ? kGold.withOpacity(0.08) : theme.cardColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isThisPlaying ? kGold.withOpacity(0.5) : kGold.withOpacity(0.12),
+                width: isThisPlaying ? 1.5 : 1,
+              ),
             ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: kGold.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        '${_chapter!.chapterNumber}.${verse.verseNumber}',
-                        style: GoogleFonts.cinzel(fontSize: 12, color: kGold, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: isThisPlaying ? 'Stop verse audio' : 'Play verse recitation',
-                      onPressed: () => _playVerseAudio(verse.verseNumber),
-                      icon: Icon(
-                        isThisPlaying ? Icons.stop_circle_rounded : Icons.record_voice_over_rounded,
-                        color: isThisPlaying ? kGold : kGoldDim,
-                        size: 26,
-                      ),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                // Sanskrit text — accessible, NOT excluded
-                Text(
-                  verse.text.trim(),
-                  style: GoogleFonts.lato(
-                    fontSize: 16,
-                    height: 1.8,
-                    fontStyle: FontStyle.italic,
-                    color: isDark ? kText : null,
-                  ),
-                ),
-                if (verse.transliteration.trim().isNotEmpty) ...[
-                  const Divider(height: 20, color: kDivider),
-                  Text(
-                    verse.transliteration.trim(),
-                    style: GoogleFonts.lato(fontSize: 13, height: 1.6, color: kGoldDim),
-                  ),
-                ],
-                if (translation.isNotEmpty) ...[
-                  const Divider(height: 20, color: kDivider),
-                  Text(
-                    translation,
-                    style: GoogleFonts.lato(fontSize: 13, height: 1.6, color: isDark ? kTextDim : null),
-                  ),
-                ],
-                if (verse.wordMeanings.trim().isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  ExpansionTile(
-                    tilePadding: EdgeInsets.zero,
-                    title: Text('Word meanings', style: GoogleFonts.lato(fontSize: 12, color: theme.hintColor)),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Text(
-                          verse.wordMeanings.trim(),
-                          style: GoogleFonts.lato(fontSize: 12, height: 1.6, color: theme.hintColor),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: kGold.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(8),
                         ),
+                        child: Text(
+                          '${_chapter!.chapterNumber}.${verse.verseNumber}',
+                          style: GoogleFonts.cinzel(fontSize: 12, color: kGold, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: isThisPlaying ? 'Stop verse audio' : 'Play verse recitation',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          _playVerseAudio(verse.verseNumber);
+                        },
+                        icon: Icon(
+                          isThisPlaying ? Icons.stop_circle_rounded : Icons.record_voice_over_rounded,
+                          color: isThisPlaying ? kGold : kGoldDim,
+                          size: 26,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 10),
+                  Text(
+                    verse.text.trim(),
+                    style: GoogleFonts.lato(
+                      fontSize: 16,
+                      height: 1.8,
+                      fontStyle: FontStyle.italic,
+                      color: isDark ? kText : null,
+                    ),
+                  ),
+                  if (verse.transliteration.trim().isNotEmpty) ...[
+                    const Divider(height: 20, color: kDivider),
+                    Text(
+                      verse.transliteration.trim(),
+                      style: GoogleFonts.lato(fontSize: 13, height: 1.6, color: kGoldDim),
+                    ),
+                  ],
+                  if (translation.isNotEmpty) ...[
+                    const Divider(height: 20, color: kDivider),
+                    Text(
+                      translation,
+                      style: GoogleFonts.lato(fontSize: 13, height: 1.6, color: isDark ? kTextDim : null),
+                    ),
+                  ],
+                  if (verse.wordMeanings.trim().isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    ExpansionTile(
+                      tilePadding: EdgeInsets.zero,
+                      title: Text('Word meanings', style: GoogleFonts.lato(fontSize: 12, color: theme.hintColor)),
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Text(
+                            verse.wordMeanings.trim(),
+                            style: GoogleFonts.lato(fontSize: 12, height: 1.6, color: theme.hintColor),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         );

@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:speech_to_text/speech_to_text.dart';
 
 import '../services/ai_service.dart';
-import '../services/huggingface_voice_service.dart';
+import '../services/kokoro_tts_service.dart';
 import '../theme.dart';
 
 class _AiraMessage {
@@ -39,13 +38,11 @@ class _AiraScreenState extends State<AiraScreen> {
   final FocusNode _inputFocus = FocusNode();
 
   final AIService _ai = AIService();
-  final HuggingFaceVoiceService _tts = HuggingFaceVoiceService();
-  final SpeechToText _speech = SpeechToText();
+  final KokoroTTSService _tts = KokoroTTSService();
 
   final List<_AiraMessage> _messages = [];
 
   bool _thinking = false;
-  bool _isListening = false;
   bool _aiSpeaking = false;
 
   static const _greetings = [
@@ -65,6 +62,7 @@ class _AiraScreenState extends State<AiraScreen> {
   @override
   void initState() {
     super.initState();
+    _tts.initialize();
     _loadGreeting();
   }
 
@@ -82,32 +80,7 @@ class _AiraScreenState extends State<AiraScreen> {
   }
 
   Future<void> _speak(String text) async {
-    await _tts.synthesize(text);
-  }
-
-  Future<void> _startListening() async {
-    final available = await _speech.initialize(
-      onStatus: (status) {
-        if (status == 'done') {
-          setState(() => _isListening = false);
-          if (_controller.text.trim().isNotEmpty) _sendMessage();
-        }
-      },
-      onError: (_) => setState(() => _isListening = false),
-    );
-    if (!available) return;
-    setState(() => _isListening = true);
-    _speech.listen(
-      pauseFor: const Duration(seconds: 3),
-      listenFor: const Duration(minutes: 1),
-      partialResults: true,
-      onResult: (r) => setState(() => _controller.text = r.recognizedWords),
-    );
-  }
-
-  Future<void> _stopListening() async {
-    await _speech.stop();
-    setState(() => _isListening = false);
+    await _tts.speak(text);
   }
 
   Future<void> _sendMessage() async {
@@ -160,7 +133,7 @@ class _AiraScreenState extends State<AiraScreen> {
     _controller.dispose();
     _scroll.dispose();
     _inputFocus.dispose();
-    _speech.stop();
+    _tts.dispose();
     super.dispose();
   }
 
@@ -176,7 +149,10 @@ class _AiraScreenState extends State<AiraScreen> {
         leading: IconButton(
           tooltip: 'Back',
           icon: const Icon(Icons.arrow_back_ios_rounded, color: kGold),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            Navigator.pop(context);
+          },
         ),
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -252,6 +228,7 @@ class _AiraScreenState extends State<AiraScreen> {
               backgroundColor:
                   isDark ? Colors.white10 : kGold.withOpacity(0.12),
               onPressed: () {
+                HapticFeedback.lightImpact();
                 _controller.text = q;
                 _sendMessage();
               },
@@ -267,7 +244,10 @@ class _AiraScreenState extends State<AiraScreen> {
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: GestureDetector(
-        onTap: () => _speak(msg.text),
+        onTap: () {
+          HapticFeedback.lightImpact();
+          _speak(msg.text);
+        },
         onLongPress: () async {
           await Clipboard.setData(ClipboardData(text: msg.text));
         },
@@ -343,15 +323,7 @@ class _AiraScreenState extends State<AiraScreen> {
         ),
         child: Row(
           children: [
-            IconButton(
-              tooltip: _isListening ? 'Stop listening' : 'Speak to Aira',
-              onPressed: _isListening ? _stopListening : _startListening,
-              icon: Icon(
-                _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
-                color: _isListening ? Colors.red : kGold,
-                size: 26,
-              ),
-            ),
+            const SizedBox(width: 8),
             Expanded(
               child: TextField(
                 controller: _controller,
@@ -380,7 +352,10 @@ class _AiraScreenState extends State<AiraScreen> {
               tooltip: 'Send',
               backgroundColor: kGold,
               heroTag: 'aira_send_fab',
-              onPressed: _thinking ? null : _sendMessage,
+              onPressed: _thinking ? null : () {
+                HapticFeedback.lightImpact();
+                _sendMessage();
+              },
               child: const Icon(Icons.send_rounded, color: Colors.black),
             ),
           ],

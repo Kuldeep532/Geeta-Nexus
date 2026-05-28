@@ -2,12 +2,11 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:speech_to_text/speech_to_text.dart';
 
 import '../data/gita_data.dart';
 import '../models/models.dart';
+import '../services/kokoro_tts_service.dart';
 import '../theme.dart';
 
 enum _GameState { idle, airaReciting, userTurn, validating, result }
@@ -23,8 +22,8 @@ class AntakshariScreen extends StatefulWidget {
 }
 
 class _AntakshariScreenState extends State<AntakshariScreen> {
-  final FlutterTts _tts = FlutterTts();
-  final SpeechToText _speech = SpeechToText();
+  final KokoroTTSService _tts = KokoroTTSService();
+  final TextEditingController _answerController = TextEditingController();
 
   _GameState _state = _GameState.idle;
   Verse? _currentAiraVerse;
@@ -34,7 +33,6 @@ class _AntakshariScreenState extends State<AntakshariScreen> {
   bool _isCorrect = false;
   int _score = 0;
   int _round = 0;
-  bool _isListening = false;
   Verse? _matchedVerse;
 
   static const int _maxRounds = 5;
@@ -42,19 +40,7 @@ class _AntakshariScreenState extends State<AntakshariScreen> {
   @override
   void initState() {
     super.initState();
-    _initTts();
-  }
-
-  Future<void> _initTts() async {
-    await _tts.setLanguage("en-US");
-    await _tts.setSpeechRate(0.40);
-    await _tts.setPitch(1.0);
-    _tts.setCompletionHandler(() {
-      if (_state == _GameState.airaReciting) {
-        setState(() => _state = _GameState.userTurn);
-        
-      }
-    });
+    _tts.initialize();
   }
 
   List<Verse> get _allVerses => allVerses;
@@ -105,12 +91,13 @@ class _AntakshariScreenState extends State<AntakshariScreen> {
 
     
 
-    await _tts.stop();
+    _tts.stop();
     final announcement =
         'Round $_round. I recite: Chapter ${verse.chapter}, Verse ${verse.verse}. '
         '${verse.transliteration.isNotEmpty ? verse.transliteration : verse.translation}. '
         'Now reply with a Shloka that contains the keyword: $keyword.';
     await _tts.speak(announcement);
+    setState(() => _state = _GameState.userTurn);
   }
 
   List<String> _extractKeywords(String text) {
@@ -129,35 +116,11 @@ class _AntakshariScreenState extends State<AntakshariScreen> {
         .toList();
   }
 
-  Future<void> _startListening() async {
-    final available = await _speech.initialize(
-      onStatus: (s) {
-        if (s == 'done' || s == 'notListening') {
-          setState(() => _isListening = false);
-          if (_userSpokenText.trim().isNotEmpty) _validateAnswer();
-        }
-      },
-      onError: (_) => setState(() => _isListening = false),
-    );
-    if (!available) return;
-
-    setState(() => _isListening = true);
-    
-
-    _speech.listen(
-      pauseFor: const Duration(seconds: 5),
-      listenFor: const Duration(seconds: 60),
-      partialResults: true,
-      onResult: (r) {
-        setState(() => _userSpokenText = r.recognizedWords);
-      },
-    );
-  }
-
-  Future<void> _stopListening() async {
-    await _speech.stop();
-    setState(() => _isListening = false);
-    if (_userSpokenText.trim().isNotEmpty) _validateAnswer();
+  void _submitAnswer() {
+    HapticFeedback.mediumImpact();
+    _userSpokenText = _answerController.text.trim();
+    _answerController.clear();
+    _validateAnswer();
   }
 
   void _validateAnswer() {
@@ -229,8 +192,8 @@ class _AntakshariScreenState extends State<AntakshariScreen> {
 
   @override
   void dispose() {
-    _tts.stop();
-    _speech.stop();
+    _answerController.dispose();
+    _tts.dispose();
     super.dispose();
   }
 
@@ -306,7 +269,7 @@ class _AntakshariScreenState extends State<AntakshariScreen> {
         ),
         child: Text(
           '🎵 Aira recites a Shloka, then gives you a keyword. '
-          'Speak a Bhagavad Gita verse containing that keyword to score a point!',
+          'Type a Bhagavad Gita verse containing that keyword to score a point!',
           style: GoogleFonts.poppins(
             fontSize: 13,
             height: 1.5,
@@ -490,52 +453,50 @@ class _AntakshariScreenState extends State<AntakshariScreen> {
 
   Widget _buildUserInput(bool isDark) {
     return Semantics(
-      label: _isListening
-          ? 'Listening — say your Shloka now'
-          : 'Tap the microphone to speak your Shloka',
+      label: 'Type a Bhagavad Gita verse containing the keyword',
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isDark ? Colors.white.withOpacity(0.05) : Colors.white,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: _isListening ? Colors.red : kGold.withOpacity(0.25),
-          ),
+          border: Border.all(color: kGold.withOpacity(0.25)),
         ),
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
-                  color: _isListening ? Colors.red : kGold,
-                  size: 28,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  _isListening ? 'Listening...' : 'Tap mic to speak',
-                  style: GoogleFonts.poppins(
-                    fontSize: 14,
-                    color: _isListening ? Colors.red : kGold,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-            if (_userSpokenText.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                _userSpokenText,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.lora(
-                  fontSize: 13,
-                  fontStyle: FontStyle.italic,
-                  color: isDark ? kText : Colors.black87,
-                  height: 1.5,
-                ),
+            TextField(
+              controller: _answerController,
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) => _submitAnswer(),
+              maxLines: 3,
+              style: GoogleFonts.lora(
+                fontSize: 14,
+                color: isDark ? kText : Colors.black87,
+                height: 1.5,
               ),
-            ],
+              decoration: InputDecoration(
+                hintText: 'Type a verse containing "$_challengeKeyword"...',
+                hintStyle: GoogleFonts.poppins(
+                    fontSize: 13,
+                    color: isDark ? kTextDim : Colors.grey.shade500),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kGold,
+                foregroundColor: Colors.black,
+                minimumSize: const Size.fromHeight(44),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              icon: const Icon(Icons.check_rounded),
+              label: Text('Submit',
+                  style: GoogleFonts.cinzel(
+                      fontWeight: FontWeight.bold, fontSize: 14)),
+              onPressed: _submitAnswer,
+            ),
           ],
         ),
       ),
@@ -638,26 +599,13 @@ class _AntakshariScreenState extends State<AntakshariScreen> {
 
       case _GameState.userTurn:
         return Semantics(
-          button: true,
-          label: _isListening
-              ? 'Stop speaking and submit your Shloka'
-              : 'Speak your Shloka',
-          child: ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _isListening ? Colors.red : kGold,
-              foregroundColor: Colors.white,
-              minimumSize: const Size.fromHeight(52),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16)),
+          label: 'Type your answer above and press Submit',
+          child: Container(
+            alignment: Alignment.center,
+            child: Text(
+              'Type your answer above',
+              style: GoogleFonts.poppins(color: kGold, fontSize: 14),
             ),
-            icon: Icon(
-                _isListening ? Icons.stop_rounded : Icons.mic_rounded),
-            label: Text(
-              _isListening ? 'Submit Answer' : 'Speak Your Shloka',
-              style: GoogleFonts.cinzel(
-                  fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            onPressed: _isListening ? _stopListening : _startListening,
           ),
         );
 

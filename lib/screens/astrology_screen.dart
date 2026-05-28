@@ -270,6 +270,7 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
                               ? 'Date of Birth'
                               : '${_dob!.day}/${_dob!.month}/${_dob!.year}'),
                           onPressed: () async {
+                            HapticFeedback.lightImpact();
                             final date = await showDatePicker(
                               context: context,
                               initialDate: _dob ?? DateTime(1990),
@@ -288,6 +289,7 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
                               ? 'Time of Birth'
                               : _tob!.format(context)),
                           onPressed: () async {
+                            HapticFeedback.lightImpact();
                             final time = await showTimePicker(
                               context: context,
                               initialTime: _tob ?? TimeOfDay.now(),
@@ -310,6 +312,7 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
                       ),
                       onPressed: _isProfileComplete
                           ? () async {
+                              HapticFeedback.lightImpact();
                               await _saveProfile();
                               if (mounted) Navigator.pop(context);
                             }
@@ -344,7 +347,10 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
           IconButton(
             tooltip: 'Edit Profile',
             icon: const Icon(Icons.edit_outlined, color: kGold),
-            onPressed: _openProfileSheet,
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              _openProfileSheet();
+            },
           ),
         ],
       ),
@@ -384,7 +390,10 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
                         minimumSize: const Size.fromHeight(52),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
-                      onPressed: _openProfileSheet,
+                      onPressed: () {
+              HapticFeedback.lightImpact();
+              _openProfileSheet();
+            },
                     ),
                   ],
                 ),
@@ -461,7 +470,10 @@ class _AstrologyScreenState extends State<AstrologyScreen> {
                       minimumSize: const Size.fromHeight(52),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
-                    onPressed: isGenerating ? null : _generateKundli,
+                    onPressed: isGenerating ? null : () {
+                      HapticFeedback.lightImpact();
+                      _generateKundli();
+                    },
                   );
                 },
               ),

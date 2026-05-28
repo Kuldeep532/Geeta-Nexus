@@ -428,12 +428,6 @@
       "languageVersion": "3.7"
     },
     {
-      "name": "flutter_tts",
-      "rootUri": "file:///home/runner/.pub-cache/hosted/pub.dev/flutter_tts-4.2.5",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
-    },
-    {
       "name": "flutter_web_plugins",
       "rootUri": "file:///nix/store/rga4z7r7x705lns431b89gwxx47zs1zp-flutter-wrapped-3.29.3-sdk-links/packages/flutter_web_plugins",
       "packageUri": "lib/",
@@ -932,24 +926,6 @@
       "languageVersion": "3.1"
     },
     {
-      "name": "speech_to_text",
-      "rootUri": "file:///home/runner/.pub-cache/hosted/pub.dev/speech_to_text-7.4.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.3"
-    },
-    {
-      "name": "speech_to_text_platform_interface",
-      "rootUri": "file:///home/runner/.pub-cache/hosted/pub.dev/speech_to_text_platform_interface-2.4.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
-      "name": "speech_to_text_windows",
-      "rootUri": "file:///home/runner/.pub-cache/hosted/pub.dev/speech_to_text_windows-1.0.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
       "name": "sqflite",
       "rootUri": "file:///home/runner/.pub-cache/hosted/pub.dev/sqflite-2.4.2",
       "packageUri": "lib/",
@@ -1202,7 +1178,7 @@
       "languageVersion": "3.3"
     }
   ],
-  "generated": "2026-05-27T08:36:53.000655Z",
+  "generated": "2026-05-28T07:00:51.391999Z",
   "generator": "pub",
   "generatorVersion": "3.7.2",
   "flutterRoot": "file:///nix/store/rga4z7r7x705lns431b89gwxx47zs1zp-flutter-wrapped-3.29.3-sdk-links",

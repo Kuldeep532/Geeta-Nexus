@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:speech_to_text/speech_to_text.dart';
 
 import '../services/ai_service.dart';
+import '../services/kokoro_tts_service.dart';
 import '../theme.dart';
 
 class _Habit {
@@ -47,24 +46,16 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
       TextEditingController(text: '1');
   final FocusNode _goalFocus = FocusNode();
   final AIService _ai = AIService();
-  final FlutterTts _tts = FlutterTts();
-  final SpeechToText _speech = SpeechToText();
+  final KokoroTTSService _tts = KokoroTTSService();
 
   final List<_Habit> _habits = [];
-  bool _isListening = false;
   bool _isAdding = false;
 
   @override
   void initState() {
     super.initState();
-    _initTts();
+    _tts.initialize();
     _loadHabits();
-  }
-
-  Future<void> _initTts() async {
-    await _tts.setLanguage("en-US");
-    await _tts.setSpeechRate(0.44);
-    await _tts.setPitch(1.0);
   }
 
   Future<void> _loadHabits() async {
@@ -166,7 +157,6 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
     await _saveHabits();
 
     if (habit.isComplete) {
-      
       await _tts.speak(
           'Excellent! You have completed: ${habit.goal}. Well done, seeker!');
     } else {
@@ -176,40 +166,12 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
     }
   }
 
-  Future<void> _startListening() async {
-    final available = await _speech.initialize(
-      onStatus: (s) {
-        if (s == 'done') {
-          setState(() => _isListening = false);
-          if (_goalController.text.trim().isNotEmpty) _addHabit();
-        }
-      },
-      onError: (_) => setState(() => _isListening = false),
-    );
-    if (!available) return;
-    setState(() => _isListening = true);
-    
-    _speech.listen(
-      pauseFor: const Duration(seconds: 4),
-      listenFor: const Duration(seconds: 30),
-      partialResults: true,
-      onResult: (r) =>
-          setState(() => _goalController.text = r.recognizedWords),
-    );
-  }
-
-  Future<void> _stopListening() async {
-    await _speech.stop();
-    setState(() => _isListening = false);
-  }
-
   @override
   void dispose() {
     _goalController.dispose();
     _countController.dispose();
     _goalFocus.dispose();
-    _tts.stop();
-    _speech.stop();
+    _tts.dispose();
     super.dispose();
   }
 
@@ -232,7 +194,10 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
           child: IconButton(
             tooltip: 'Back',
             icon: const Icon(Icons.arrow_back_ios_rounded, color: kGold),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.pop(context);
+            },
           ),
         ),
         title: Semantics(
@@ -330,15 +295,13 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
             children: [
               Semantics(
                 button: true,
-                label: _isListening ? 'Stop voice input' : 'Speak your goal',
                 child: IconButton(
-                  tooltip: _isListening ? 'Stop' : 'Speak goal',
-                  onPressed: _isListening ? _stopListening : _startListening,
-                  icon: Icon(
-                    _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
-                    color: _isListening ? Colors.red : kGold,
-                    size: 26,
-                  ),
+                  tooltip: 'Add goal',
+                  onPressed: () {
+                    HapticFeedback.lightImpact();
+                    _addHabit();
+                  },
+                  icon: const Icon(Icons.add_rounded, color: kGold, size: 26),
                 ),
               ),
               Expanded(
@@ -407,7 +370,10 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
                   tooltip: 'Add goal',
                   backgroundColor: kGold,
                   heroTag: 'habit_add_fab',
-                  onPressed: _isAdding ? null : _addHabit,
+                  onPressed: _isAdding ? null : () {
+                    HapticFeedback.lightImpact();
+                    _addHabit();
+                  },
                   child: _isAdding
                       ? const SizedBox(
                           width: 16,
@@ -519,7 +485,10 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
                         tooltip: 'Log completion',
                         icon: const Icon(Icons.add_circle_outline_rounded,
                             color: kGold, size: 22),
-                        onPressed: h.isComplete ? null : () => _increment(h),
+                        onPressed: h.isComplete ? null : () {
+                          HapticFeedback.lightImpact();
+                          _increment(h);
+                        },
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
@@ -534,6 +503,7 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
                             size: 18,
                             color: isDark ? Colors.grey : Colors.grey.shade400),
                         onPressed: () async {
+                          HapticFeedback.lightImpact();
                           setState(() => _habits.removeAt(i));
                           await _saveHabits();
                         },
@@ -559,7 +529,10 @@ class _HabitTrackerScreenState extends State<HabitTrackerScreen> {
                 if (h.airaEncouragement.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   GestureDetector(
-                    onTap: () => _tts.speak(h.airaEncouragement),
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      _tts.speak(h.airaEncouragement);
+                    },
                     child: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(

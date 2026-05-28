@@ -112,7 +112,13 @@ class _QuizScreenState extends State<QuizScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text('Gita Quiz', style: GoogleFonts.cinzel(color: kGold, fontWeight: FontWeight.bold)),
-        leading: BackButton(color: kGold, onPressed: () => Navigator.pop(context, _finished)),
+        leading: BackButton(
+          color: kGold,
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            Navigator.pop(context, _finished);
+          },
+        ),
       ),
       body: _dynamicQuestions.isEmpty
           ? const Center(child: CircularProgressIndicator(color: kGold))
@@ -150,7 +156,10 @@ class _QuizScreenState extends State<QuizScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: InkWell(
-        onTap: () => _select(index),
+        onTap: () {
+          HapticFeedback.lightImpact();
+          _select(index);
+        },
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: border, width: 2)),
@@ -171,7 +180,13 @@ class _QuizScreenState extends State<QuizScreen> {
           const SizedBox(height: 10),
           Text(q.explanation, textAlign: TextAlign.center),
           const SizedBox(height: 20),
-          ElevatedButton(onPressed: _next, child: const Text("NEXT QUESTION")),
+          ElevatedButton(
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              _next();
+            },
+            child: const Text("NEXT QUESTION")
+          ),
         ],
       ),
     );
@@ -184,7 +199,13 @@ class _QuizScreenState extends State<QuizScreen> {
         children: [
           Text('Quiz Finished!', style: GoogleFonts.cinzel(fontSize: 28, color: kGold)),
           Text('Score: $_score/5'),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('BACK TO VERSE')),
+          ElevatedButton(
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.pop(context, true);
+            },
+            child: const Text('BACK TO VERSE')
+          ),
         ],
       ),
     );

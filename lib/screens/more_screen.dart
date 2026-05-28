@@ -12,7 +12,7 @@ import 'contact_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'profile_screen.dart';
 import 'terms_screen.dart';
-import 'voice_support_screen.dart';
+
 
 class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
@@ -196,24 +196,6 @@ class _MoreScreenState extends State<MoreScreen> {
             minVerticalPadding: 12,
           ),
           const SizedBox(height: 4),
-          ListTile(
-            onTap: () => _open(const VoiceSupportScreen()),
-            leading: const Icon(Icons.phone_in_talk_rounded,
-                color: kGold, size: 26),
-            title: Text(
-              'Voice Call',
-              style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600, fontSize: 15),
-            ),
-            subtitle: Text(
-              'Voice call with Aira, your AI companion',
-              style: GoogleFonts.poppins(fontSize: 12),
-            ),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            minVerticalPadding: 12,
-          ),
           const SizedBox(height: 4),
           const Divider(indent: 16, endIndent: 16),
           Padding(

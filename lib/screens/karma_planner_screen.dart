@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:speech_to_text/speech_to_text.dart';
 
 import '../services/ai_service.dart';
+import '../services/kokoro_tts_service.dart';
 import '../theme.dart';
 
 class _Task {
@@ -36,11 +35,9 @@ class _KarmaPlannerScreenState extends State<KarmaPlannerScreen> {
   final TextEditingController _taskController = TextEditingController();
   final FocusNode _taskFocus = FocusNode();
   final AIService _ai = AIService();
-  final FlutterTts _tts = FlutterTts();
-  final SpeechToText _speech = SpeechToText();
+  final KokoroTTSService _tts = KokoroTTSService();
 
   final List<_Task> _tasks = [];
-  bool _isListening = false;
   bool _isGenerating = false;
   String _dailyBriefing = '';
   bool _briefingReady = false;
@@ -51,17 +48,10 @@ class _KarmaPlannerScreenState extends State<KarmaPlannerScreen> {
   @override
   void initState() {
     super.initState();
-    _initTts();
-  }
-
-  Future<void> _initTts() async {
-    await _tts.setLanguage("en-US");
-    await _tts.setSpeechRate(0.42);
-    await _tts.setPitch(0.95);
+    _tts.initialize();
   }
 
   Future<void> _speak(String text) async {
-    await _tts.stop();
     await _tts.speak(text);
   }
 
@@ -145,39 +135,11 @@ class _KarmaPlannerScreenState extends State<KarmaPlannerScreen> {
     }
   }
 
-  Future<void> _startListening() async {
-    final available = await _speech.initialize(
-      onStatus: (s) {
-        if (s == 'done') {
-          setState(() => _isListening = false);
-          if (_taskController.text.trim().isNotEmpty) _addTask();
-        }
-      },
-      onError: (_) => setState(() => _isListening = false),
-    );
-    if (!available) return;
-    setState(() => _isListening = true);
-    
-    _speech.listen(
-      pauseFor: const Duration(seconds: 4),
-      listenFor: const Duration(seconds: 30),
-      partialResults: true,
-      onResult: (r) =>
-          setState(() => _taskController.text = r.recognizedWords),
-    );
-  }
-
-  Future<void> _stopListening() async {
-    await _speech.stop();
-    setState(() => _isListening = false);
-  }
-
   @override
   void dispose() {
     _taskController.dispose();
     _taskFocus.dispose();
-    _tts.stop();
-    _speech.stop();
+    _tts.dispose();
     super.dispose();
   }
 
@@ -197,7 +159,10 @@ class _KarmaPlannerScreenState extends State<KarmaPlannerScreen> {
           child: IconButton(
             tooltip: 'Back',
             icon: const Icon(Icons.arrow_back_ios_rounded, color: kGold),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.pop(context);
+            },
           ),
         ),
         title: Semantics(
@@ -216,7 +181,10 @@ class _KarmaPlannerScreenState extends State<KarmaPlannerScreen> {
             child: IconButton(
               tooltip: 'Daily Briefing',
               icon: const Icon(Icons.play_circle_outline_rounded, color: kGold),
-              onPressed: _generateDailyBriefing,
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                _generateDailyBriefing();
+              },
             ),
           ),
         ],
@@ -284,20 +252,7 @@ class _KarmaPlannerScreenState extends State<KarmaPlannerScreen> {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Row(
         children: [
-          Semantics(
-            button: true,
-            label: _isListening ? 'Stop recording' : 'Speak a task',
-            hint: 'Double tap to add a task by voice',
-            child: IconButton(
-              tooltip: _isListening ? 'Stop' : 'Speak task',
-              onPressed: _isListening ? _stopListening : _startListening,
-              icon: Icon(
-                _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
-                color: _isListening ? Colors.red : kGold,
-                size: 26,
-              ),
-            ),
-          ),
+          const SizedBox(width: 8),
           Expanded(
             child: Semantics(
               textField: true,
@@ -335,7 +290,10 @@ class _KarmaPlannerScreenState extends State<KarmaPlannerScreen> {
               tooltip: 'Add task',
               backgroundColor: kGold,
               heroTag: 'karma_add_fab',
-              onPressed: _isGenerating ? null : _addTask,
+              onPressed: _isGenerating ? null : () {
+                HapticFeedback.lightImpact();
+                _addTask();
+              },
               child: _isGenerating
                   ? const SizedBox(
                       width: 16,
@@ -354,7 +312,10 @@ class _KarmaPlannerScreenState extends State<KarmaPlannerScreen> {
     return Semantics(
       label: 'Daily Karma Yoga briefing',
       child: GestureDetector(
-        onTap: () => _speak(_dailyBriefing),
+        onTap: () {
+          HapticFeedback.lightImpact();
+          _speak(_dailyBriefing);
+        },
         child: Container(
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           padding: const EdgeInsets.all(16),
@@ -492,9 +453,12 @@ class _KarmaPlannerScreenState extends State<KarmaPlannerScreen> {
                         tooltip: 'Listen to reflection',
                         icon: const Icon(Icons.volume_up_rounded,
                             size: 18, color: kGold),
-                        onPressed: () => _speak(task.karmaReflection.isNotEmpty
-                            ? task.karmaReflection
-                            : task.title),
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          _speak(task.karmaReflection.isNotEmpty
+                              ? task.karmaReflection
+                              : task.title);
+                        },
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),
@@ -507,8 +471,10 @@ class _KarmaPlannerScreenState extends State<KarmaPlannerScreen> {
                         icon: Icon(Icons.close_rounded,
                             size: 18,
                             color: isDark ? Colors.grey : Colors.grey.shade400),
-                        onPressed: () =>
-                            setState(() => _tasks.removeAt(i)),
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          setState(() => _tasks.removeAt(i));
+                        },
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                       ),

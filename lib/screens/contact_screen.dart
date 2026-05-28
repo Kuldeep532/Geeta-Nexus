@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import '../theme.dart';
@@ -96,7 +97,10 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
               width: double.infinity,
               height: 48,
               child: TextButton(
-                onPressed: () => Navigator.pop(ctx),
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.pop(ctx);
+                },
                 child: const Text('OK',
                     style: TextStyle(
                         fontWeight: FontWeight.bold,
@@ -228,7 +232,10 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                   child: SizedBox(
                     height: 56,
                     child: ElevatedButton(
-                      onPressed: _isSending ? null : _send,
+                      onPressed: _isSending ? null : () {
+                        HapticFeedback.lightImpact();
+                        _send();
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: kGold,
                         foregroundColor: Colors.black,

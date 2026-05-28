@@ -8,11 +8,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'package:just_audio/just_audio.dart';
-import 'package:flutter_tts/flutter_tts.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:string_similarity/string_similarity.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../theme.dart';
@@ -29,10 +26,7 @@ class ChantsScreen extends StatefulWidget {
 
 class _ChantsScreenState extends State<ChantsScreen> {
   final AudioPlayer _audioPlayer = AudioPlayer();
-  final FlutterTts _tts = FlutterTts();
-  final stt.SpeechToText _speech = stt.SpeechToText();
 
-  bool _isVoiceMode = false;
   bool _isPlaying = false;
   bool _isLoading = true;
 
@@ -43,12 +37,8 @@ class _ChantsScreenState extends State<ChantsScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeAudio();
     _loadMantras();
     WakelockPlus.enable();
-  }
-
-  Future<void> _initializeAudio() async {
   }
 
   Future<void> _loadMantras() async {
@@ -141,64 +131,12 @@ class _ChantsScreenState extends State<ChantsScreen> {
     });
   }
 
-  Future<void> _speakMeaning() async {
-    final mantra = _mantras[_selectedIndex];
-
-    await _tts.speak(
-      mantra['meaning'] ?? 'No meaning available',
-    );
-  }
-
-  Future<void> _toggleVoiceMode(AppState state) async {
-    if (!_isVoiceMode) {
-      bool available = await _speech.initialize();
-
-      if (!available) {
-        _showError('Speech recognition unavailable');
-        return;
-      }
-
-      setState(() {
-        _isVoiceMode = true;
-      });
-
-      _speech.listen(
-        onResult: (result) {
-          final spoken = result.recognizedWords.toLowerCase();
-
-          final mantraName = _mantras[_selectedIndex]['name']
-              .toString()
-              .toLowerCase();
-
-          final similarity =
-              spoken.similarityTo(mantraName);
-
-          if (similarity > 0.4) {
-            _incrementChant(state);
-          }
-        },
-      );
-    } else {
-      await _speech.stop();
-
-      setState(() {
-        _isVoiceMode = false;
-      });
-    }
-  }
-
   void _incrementChant(AppState state) {
     HapticFeedback.mediumImpact();
-
     SystemSound.play(SystemSoundType.click);
-
     state.incrementJapa();
-
-    if (state.japaCount % kMalaBeads == 0 &&
-        state.japaCount > 0) {
+    if (state.japaCount % kMalaBeads == 0 && state.japaCount > 0) {
       HapticFeedback.heavyImpact();
-
-      _tts.speak('One round completed');
     }
   }
 
@@ -213,8 +151,6 @@ class _ChantsScreenState extends State<ChantsScreen> {
   @override
   void dispose() {
     _audioPlayer.dispose();
-    _speech.stop();
-    _tts.stop();
     WakelockPlus.disable();
     super.dispose();
   }
@@ -261,6 +197,7 @@ class _ChantsScreenState extends State<ChantsScreen> {
             child: IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () {
+                HapticFeedback.lightImpact();
                 appState.resetJapa();
               },
             ),
@@ -385,6 +322,7 @@ class _ChantsScreenState extends State<ChantsScreen> {
                                               .play_arrow,
                                     ),
                                     onPressed: () {
+                                      HapticFeedback.lightImpact();
                                       if (_isPlaying) {
                                         _pauseAudio();
                                       } else {
@@ -393,13 +331,7 @@ class _ChantsScreenState extends State<ChantsScreen> {
                                     },
                                   ),
 
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.volume_up,
-                                    ),
-                                    onPressed:
-                                        _speakMeaning,
-                                  ),
+                                  const SizedBox(width: 8),
                                 ],
                               ),
                             ],
@@ -497,6 +429,7 @@ class _ChantsScreenState extends State<ChantsScreen> {
                               'CHANT',
                             ),
                             onPressed: () {
+                              HapticFeedback.lightImpact();
                               _incrementChant(
                                   appState);
                             },
@@ -514,21 +447,13 @@ class _ChantsScreenState extends State<ChantsScreen> {
         ),
       ),
 
-      floatingActionButton:
-          FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          _toggleVoiceMode(appState);
+          HapticFeedback.lightImpact();
+          _incrementChant(appState);
         },
-        label: Text(
-          _isVoiceMode
-              ? 'Listening'
-              : 'Voice Mode',
-        ),
-        icon: Icon(
-          _isVoiceMode
-              ? Icons.mic
-              : Icons.mic_none,
-        ),
+        label: const Text('CHANT'),
+        icon: const Icon(Icons.add),
       ),
     );
   }

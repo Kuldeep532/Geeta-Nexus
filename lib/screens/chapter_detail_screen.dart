@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,12 +7,13 @@ import 'package:provider/provider.dart';
 import '../data/gita_data.dart' show kChapters;
 import '../models/models.dart';
 import '../models/scripture_model.dart';
+import '../services/chapter_audio_service.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import 'scripture_chapter_reader_screen.dart';
 import 'aira_screen.dart';
 
-class ChapterDetailScreen extends StatelessWidget {
+class ChapterDetailScreen extends StatefulWidget {
   final Chapter chapter;
 
   const ChapterDetailScreen({
@@ -20,7 +22,108 @@ class ChapterDetailScreen extends StatelessWidget {
   });
 
   @override
+  State<ChapterDetailScreen> createState() => _ChapterDetailScreenState();
+}
+
+class _ChapterDetailScreenState extends State<ChapterDetailScreen> {
+  final ChapterAudioService _audioService = ChapterAudioService();
+  AudioReciter? _selectedReciter;
+  bool _isPlaying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _audioService.initialize();
+    _audioService.statusStream.listen((status) {
+      if (!mounted) return;
+      setState(() => _isPlaying = status.state == PlayerState.playing);
+    });
+  }
+
+  @override
+  void dispose() {
+    _audioService.dispose();
+    super.dispose();
+  }
+
+  String _chapterAudioUrl(int chapterNum, AudioReciter reciter) {
+    return 'https://www.everydaycodings.com/api/v1/audio/chapter/$chapterNum/${reciter.id}.mp3';
+  }
+
+  void _showReciterSheet() {
+    HapticFeedback.lightImpact();
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Text(
+                  'Select Reciter',
+                  style: GoogleFonts.cinzel(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: kGold,
+                  ),
+                ),
+              ),
+              const Divider(indent: 16, endIndent: 16),
+              ...kAvailableReciters.map((r) => ListTile(
+                leading: Icon(
+                  _selectedReciter?.id == r.id
+                      ? Icons.check_circle_rounded
+                      : Icons.radio_button_unchecked_rounded,
+                  color: kGold,
+                ),
+                title: Text(r.name, style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                subtitle: Text('${r.language} • ${r.accent}'),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.pop(ctx);
+                  setState(() => _selectedReciter = r);
+                  _audioService.play(_chapterAudioUrl(widget.chapter.number, r));
+                },
+              )),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _togglePlay() {
+    HapticFeedback.lightImpact();
+    if (_isPlaying) {
+      _audioService.pause();
+    } else if (_selectedReciter != null) {
+      _audioService.resume();
+    } else {
+      _showReciterSheet();
+    }
+  }
+
+  void _stopAudio() {
+    HapticFeedback.lightImpact();
+    _audioService.stop();
+  }
+
+  void _rewindAudio() {
+    HapticFeedback.lightImpact();
+    _audioService.rewind(10);
+  }
+
+  void _fastForwardAudio() {
+    HapticFeedback.lightImpact();
+    _audioService.fastForward(10);
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final chapter = widget.chapter;
     final theme = Theme.of(context);
 
     if (chapter.name.isEmpty) {
@@ -74,6 +177,7 @@ class ChapterDetailScreen extends StatelessWidget {
                   ),
 
                   onPressed: () {
+                    HapticFeedback.lightImpact();
                     Navigator.pop(context);
                   },
                 ),
@@ -124,6 +228,18 @@ class ChapterDetailScreen extends StatelessWidget {
 
                     _SummaryCard(
                       summary: chapter.summary,
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    _ChapterAudioPlayer(
+                      isPlaying: _isPlaying,
+                      selectedReciter: _selectedReciter,
+                      onTogglePlay: _togglePlay,
+                      onStop: _stopAudio,
+                      onRewind: _rewindAudio,
+                      onFastForward: _fastForwardAudio,
+                      onSelectReciter: _showReciterSheet,
                     ),
 
                     const SizedBox(height: 28),
@@ -527,6 +643,7 @@ class _VerseRowItem extends StatelessWidget {
           ),
 
           onTap: () {
+            HapticFeedback.lightImpact();
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -586,6 +703,7 @@ class _CompletionButton extends StatelessWidget {
           ),
 
           onPressed: () {
+            HapticFeedback.lightImpact();
             context
                 .read<AppState>()
                 .markChapterComplete(
@@ -768,6 +886,7 @@ class _ChapterNavButtons extends StatelessWidget {
 
               onPressed: hasPrevious
                   ? () {
+                      HapticFeedback.lightImpact();
                       Navigator
                           .pushReplacement(
                         context,
@@ -817,6 +936,7 @@ class _ChapterNavButtons extends StatelessWidget {
 
               onPressed: hasNext
                   ? () {
+                      HapticFeedback.lightImpact();
                       Navigator
                           .pushReplacement(
                         context,
@@ -844,6 +964,143 @@ class _ChapterNavButtons extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ChapterAudioPlayer extends StatelessWidget {
+  final bool isPlaying;
+  final AudioReciter? selectedReciter;
+  final VoidCallback onTogglePlay;
+  final VoidCallback onStop;
+  final VoidCallback onRewind;
+  final VoidCallback onFastForward;
+  final VoidCallback onSelectReciter;
+
+  const _ChapterAudioPlayer({
+    required this.isPlaying,
+    required this.selectedReciter,
+    required this.onTogglePlay,
+    required this.onStop,
+    required this.onRewind,
+    required this.onFastForward,
+    required this.onSelectReciter,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return Card(
+      elevation: 0,
+      color: isDark ? Colors.white.withOpacity(0.06) : kGold.withOpacity(0.08),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.headphones_rounded, color: kGold, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Chapter Audio',
+                  style: GoogleFonts.cinzel(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: kGold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const Spacer(),
+                if (selectedReciter != null)
+                  Chip(
+                    label: Text(
+                      selectedReciter!.name,
+                      style: GoogleFonts.poppins(fontSize: 11),
+                    ),
+                    backgroundColor: kGold.withOpacity(0.15),
+                    side: BorderSide.none,
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _AudioIconButton(
+                  tooltip: 'Rewind 10s',
+                  icon: Icons.replay_10_rounded,
+                  onPressed: onRewind,
+                ),
+                const SizedBox(width: 12),
+                _AudioIconButton(
+                  tooltip: isPlaying ? 'Pause' : 'Play',
+                  icon: isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_filled_rounded,
+                  size: 44,
+                  onPressed: onTogglePlay,
+                ),
+                const SizedBox(width: 12),
+                _AudioIconButton(
+                  tooltip: 'Stop',
+                  icon: Icons.stop_circle_rounded,
+                  onPressed: onStop,
+                ),
+                const SizedBox(width: 12),
+                _AudioIconButton(
+                  tooltip: 'Forward 10s',
+                  icon: Icons.forward_10_rounded,
+                  onPressed: onFastForward,
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.person_search_rounded, size: 18),
+                label: Text(
+                  selectedReciter == null ? 'Choose Reciter' : 'Change Reciter',
+                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: kGold,
+                  side: BorderSide(color: kGold.withOpacity(0.3)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                ),
+                onPressed: onSelectReciter,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AudioIconButton extends StatelessWidget {
+  final String tooltip;
+  final IconData icon;
+  final double size;
+  final VoidCallback onPressed;
+
+  const _AudioIconButton({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+    this.size = 32,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: tooltip,
+      icon: Icon(icon, color: kGold, size: size),
+      onPressed: onPressed,
     );
   }
 }

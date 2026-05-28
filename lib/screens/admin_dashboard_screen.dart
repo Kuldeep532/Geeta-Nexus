@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../state/app_state.dart';
@@ -31,7 +32,10 @@ class AdminDashboardScreen extends StatelessWidget {
           IconButton(
             tooltip: 'Admin actions',
             icon: const Icon(Icons.more_vert_rounded),
-            onPressed: () => _showAdminBottomSheet(context, isSuperAdmin),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              _showAdminBottomSheet(context, isSuperAdmin);
+            },
           ),
         ],
       ),
@@ -166,8 +170,8 @@ class AdminDashboardScreen extends StatelessWidget {
                   title: 'Push Notification',
                   subtitle: 'Send instant app updates',
                   onTap: () {
+                    HapticFeedback.lightImpact();
                     Navigator.pop(context);
-
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -182,6 +186,7 @@ class AdminDashboardScreen extends StatelessWidget {
                   title: 'Suspend User',
                   subtitle: 'Temporarily restrict account access',
                   onTap: () {
+                    HapticFeedback.lightImpact();
                     Navigator.pop(context);
                   },
                 ),
@@ -192,6 +197,7 @@ class AdminDashboardScreen extends StatelessWidget {
                   subtitle: 'Restart app services safely',
                   enabled: isSuperAdmin,
                   onTap: () {
+                    HapticFeedback.lightImpact();
                     Navigator.pop(context);
                   },
                 ),
@@ -201,6 +207,7 @@ class AdminDashboardScreen extends StatelessWidget {
                   title: 'Toggle Theme',
                   subtitle: 'Switch light or dark mode',
                   onTap: () {
+                    HapticFeedback.lightImpact();
                     Navigator.pop(context);
                   },
                 ),
@@ -210,6 +217,7 @@ class AdminDashboardScreen extends StatelessWidget {
                   title: 'Export Reports',
                   subtitle: 'Download analytics and logs',
                   onTap: () {
+                    HapticFeedback.lightImpact();
                     Navigator.pop(context);
                   },
                 ),
@@ -336,6 +344,7 @@ class _AdminCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(24),
             onTap: enabled
                 ? () {
+                    HapticFeedback.lightImpact();
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => destination),

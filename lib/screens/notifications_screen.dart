@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
@@ -82,7 +83,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ...state.notifications.map(
               (n) => _NotificationCard(
                 notification: n,
-                onTap: () => context.read<AppState>().markNotificationRead(n.id),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  context.read<AppState>().markNotificationRead(n.id);
+                },
               ),
             ),
         ],
@@ -145,7 +149,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             width: double.infinity,
             height: 45,
             child: ElevatedButton(
-              onPressed: _isSending ? null : () => _sendNotification(state),
+              onPressed: _isSending ? null : () {
+                HapticFeedback.lightImpact();
+                _sendNotification(state);
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: kGold,
                 foregroundColor: Colors.black,

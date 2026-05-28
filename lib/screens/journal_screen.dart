@@ -239,7 +239,10 @@ class _JournalScreenState extends State<JournalScreen> {
                       ? Icons.close
                       : Icons.search,
                 ),
-                onPressed: _toggleSearch,
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  _toggleSearch();
+                },
               ),
             ),
             Semantics(
@@ -256,7 +259,10 @@ class _JournalScreenState extends State<JournalScreen> {
                       ? Icons.expand_less
                       : Icons.add_comment_outlined,
                 ),
-                onPressed: _toggleForm,
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  _toggleForm();
+                },
               ),
             ),
           ],
@@ -341,7 +347,10 @@ class _JournalScreenState extends State<JournalScreen> {
                     label: 'Refresh prompt',
                     child: IconButton(
                       tooltip: 'Refresh Prompt',
-                      onPressed: _refreshPrompt,
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        _refreshPrompt();
+                      },
                       icon: const Icon(
                         Icons.refresh,
                       ),
@@ -401,6 +410,7 @@ class _JournalScreenState extends State<JournalScreen> {
                       'Double tap to save journal entry',
                   child: ElevatedButton.icon(
                     onPressed: () {
+                      HapticFeedback.lightImpact();
                       _submit(state);
                     },
                     icon: const Icon(Icons.save),
@@ -630,7 +640,10 @@ class _JournalScreenState extends State<JournalScreen> {
               ),
               const SizedBox(height: 28),
               FilledButton.icon(
-                onPressed: _toggleForm,
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  _toggleForm();
+                },
                 icon: const Icon(Icons.edit),
                 label:
                     const Text('Create Entry'),

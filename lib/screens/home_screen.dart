@@ -13,7 +13,7 @@ import 'astrology_screen.dart';
 import 'chants_screen.dart';
 import 'bookmarks_screen.dart';
 import 'breathing_screen.dart';
-import 'geeta_voice_practice_screen.dart';
+
 import 'glossary_screen.dart';
 import 'journal_screen.dart';
 import 'meditation_screen.dart';
@@ -125,12 +125,6 @@ class HomeScreen extends StatelessWidget {
       subtitle: 'Listen and practice sacred chants',
       icon: Icons.music_note_rounded,
       screen: ChantsScreen(),
-    ),
-    _NavItem(
-      title: 'Voice Practice',
-      subtitle: 'Practice Sanskrit pronunciation',
-      icon: Icons.record_voice_over_rounded,
-      screen: GeetaVoicePracticeScreen(),
     ),
   ];
 

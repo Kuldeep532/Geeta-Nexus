@@ -1,0 +1,25 @@
+Act as an expert Flutter developer and senior UI/UX engineer. I am completing a production-level Bhagavad Gita app for a stable Google Play Store release. Please follow these exact specifications carefully and remove all legacy configurations to avoid any confusion:
+
+### Core Architecture & App Context:
+
+1. Clean Up & "Aira AI" Voice Agent (Strictly Kokoro TTS Only):
+   - REMOVE all old voice models, legacy TTS configurations, and their related code completely to avoid any architectural confusion.
+   - For the "AI Voice Call" and "Aira AI" assistant feature, ONLY integrate the newly released, ultra-realistic "Kokoro" Text-to-Speech model (Kokoro-82M). 
+   - If possible, implement Kokoro TTS offline using an ONNX runtime or local TFLite plugin. If online Hugging Face API is needed, secure the API token using GitHub Secrets (`HF_API_TOKEN`) and pass it during build time via `--dart-define`.
+
+2. Existing Chapter Detail Screen (Pre-recorded Audio Narration):
+   - I ALREADY have multiple pre-recorded high-quality audio narration tracks/sources for the chapters. This is completely separate from the AI Voice Agent.
+   - Integrate this pre-recorded audio logic directly into the existing Chapter Detail Screen using the existing UI layout.
+   - Add an "Audio Source Selection" button (bottom sheet or dropdown) so users can switch between the available pre-recorded narration voices/reciters.
+   - Implement fully functional logic for the existing buttons: Previous, Next, Rewind (-10s), and Fast Forward (+10s).
+
+3. Haptic/Audio Feedback (Button Effects):
+   - Every single button press (Play, Pause, Next, Previous, Rewind, Forward, Source Selection) must have proper tactile feedback. Integrate standard haptic feedback (using `HapticFeedback.lightImpact()`) or click sound effects to make the UI feel premium and responsive.
+
+4. Reader Screen (Swipe Gesture):
+   - Keep the horizontal PageView/swipe gesture on the Reader Screen so users can swipe through Shlokas like pages. Ensure that swiping Shlokas does not interrupt or crash the pre-recorded chapter audio playing in the background.
+
+5. Production Optimization:
+   - Provide clean, robust, null-safe Dart code using a professional state management solution (Provider/Bloc/Riverpod). Handle buffering/loading states with a clean UI indicator and ensure proper memory disposal for all controllers.
+
+Please generate the structured Flutter code, audio player integration, and the Aira AI Kokoro TTS configuration based on these exact constraints.

@@ -107,6 +107,7 @@ class BookmarksScreen extends StatelessWidget {
         hint:
             'Double tap to open verse details. Swipe left to remove bookmark.',
         onTap: () {
+          HapticFeedback.lightImpact();
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -132,13 +133,17 @@ class BookmarksScreen extends StatelessWidget {
                       ),
                       actions: [
                         TextButton(
-                          onPressed: () =>
-                              Navigator.of(dialogContext).pop(false),
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            Navigator.of(dialogContext).pop(false);
+                          },
                           child: const Text('Cancel'),
                         ),
                         TextButton(
-                          onPressed: () =>
-                              Navigator.of(dialogContext).pop(true),
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            Navigator.of(dialogContext).pop(true);
+                          },
                           child: const Text('Remove'),
                         ),
                       ],
@@ -163,6 +168,7 @@ class BookmarksScreen extends StatelessWidget {
                 action: SnackBarAction(
                   label: 'UNDO',
                   onPressed: () {
+                    HapticFeedback.lightImpact();
                     appState.toggleBookmark(verse);
                   },
                 ),
@@ -174,6 +180,7 @@ class BookmarksScreen extends StatelessWidget {
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
               onTap: () {
+                HapticFeedback.lightImpact();
                 Navigator.push(
                   context,
                   MaterialPageRoute(

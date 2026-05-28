@@ -2,13 +2,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:speech_to_text/speech_to_text.dart';
 
 import '../services/ai_service.dart';
-import '../services/huggingface_voice_service.dart';
+import '../services/kokoro_tts_service.dart';
 import '../theme.dart';
 
-enum _AiraUiState { initializingModels, ready, speaking, listening, error }
+enum _AiraUiState { ready, speaking }
 
 class _ChatMessage {
   final String text;
@@ -24,79 +23,41 @@ class AiScreen extends StatefulWidget {
 
 class _AiScreenState extends State<AiScreen> {
   final AIService _aiService = AIService();
-  final HuggingFaceVoiceService _tts = HuggingFaceVoiceService();
-  final SpeechToText _stt = SpeechToText();
+  final KokoroTTSService _tts = KokoroTTSService();
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
   final List<_ChatMessage> _messages = <_ChatMessage>[];
-  StreamSubscription<VoiceStatus>? _ttsStatusSub;
 
-  _AiraUiState _uiState = _AiraUiState.initializingModels;
+  _AiraUiState _uiState = _AiraUiState.ready;
   bool _thinking = false;
-  bool _sttAvailable = false;
 
   @override
   void initState() {
     super.initState();
+    _tts.initialize();
     _messages.add(
       const _ChatMessage(
         text: 'Namaste. I am Aira AI. Ask me anything about the app or Bhagavad Gita.',
         fromUser: false,
       ),
     );
-    _initializeVoiceStack();
-  }
-
-  Future<void> _initializeVoiceStack() async {
-    _ttsStatusSub = _tts.statusStream.listen((status) {
-      if (!mounted) return;
-      setState(() {
-        if (status == VoiceStatus.synthesizing) {
-          _uiState = _AiraUiState.speaking;
-        } else if (status == VoiceStatus.error) {
-          _uiState = _AiraUiState.error;
-        } else if (_uiState != _AiraUiState.listening) {
-          _uiState = _AiraUiState.ready;
-        }
-      });
-    });
-
-    try {
-      _sttAvailable = await _stt.initialize(
-        onError: (_) {
-          if (!mounted) return;
-          setState(() => _uiState = _AiraUiState.error);
-        },
-      );
-      if (mounted) setState(() => _uiState = _AiraUiState.ready);
-    } catch (_) {
-      if (mounted) setState(() => _uiState = _AiraUiState.error);
-    }
   }
 
   @override
   void dispose() {
-    _ttsStatusSub?.cancel();
     _textController.dispose();
     _scrollController.dispose();
-    _stt.stop();
     _tts.dispose();
     super.dispose();
   }
 
   String get _statusText {
     switch (_uiState) {
-      case _AiraUiState.initializingModels:
-        return 'Initializing models';
       case _AiraUiState.ready:
         return 'Ready';
       case _AiraUiState.speaking:
         return 'Speaking';
-      case _AiraUiState.listening:
-        return 'Listening';
-      case _AiraUiState.error:
-        return 'Error';
     }
   }
 
@@ -119,34 +80,8 @@ class _AiScreenState extends State<AiScreen> {
       _thinking = false;
     });
 
-    await _tts.synthesize(reply);
+    await _tts.speak(reply);
     _scrollToBottom();
-  }
-
-  Future<void> _toggleMic() async {
-    if (!_sttAvailable) return;
-
-    if (_uiState == _AiraUiState.listening) {
-      await _stt.stop();
-      if (mounted) setState(() => _uiState = _AiraUiState.ready);
-      return;
-    }
-
-    if (mounted) setState(() => _uiState = _AiraUiState.listening);
-
-    await _stt.listen(
-      listenFor: const Duration(seconds: 25),
-      pauseFor: const Duration(seconds: 4),
-      onResult: (result) async {
-        if (!mounted) return;
-        setState(() => _textController.text = result.recognizedWords);
-        if (result.finalResult && result.recognizedWords.trim().isNotEmpty) {
-          await _stt.stop();
-          if (mounted) setState(() => _uiState = _AiraUiState.ready);
-          await _sendText();
-        }
-      },
-    );
   }
 
   void _scrollToBottom() {
@@ -210,13 +145,7 @@ class _AiScreenState extends State<AiScreen> {
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
               child: Row(
                 children: [
-                  IconButton(
-                    tooltip: _uiState == _AiraUiState.listening ? 'Stop microphone' : 'Start microphone',
-                    onPressed: _toggleMic,
-                    icon: Icon(
-                      _uiState == _AiraUiState.listening ? Icons.mic_off_rounded : Icons.mic_rounded,
-                    ),
-                  ),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: TextField(
                       controller: _textController,
@@ -230,7 +159,10 @@ class _AiScreenState extends State<AiScreen> {
                   ),
                   const SizedBox(width: 8),
                   ElevatedButton(
-                    onPressed: _sendText,
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      _sendText();
+                    },
                     child: const Text('Send'),
                   ),
                 ],

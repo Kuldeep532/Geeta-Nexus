@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme.dart'; // ERROR FIX: Theme import added
 
@@ -52,7 +53,13 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
           style: GoogleFonts.cinzel(color: kGold, fontSize: 18, fontWeight: FontWeight.bold)
         ),
         centerTitle: true,
-        leading: BackButton(color: kGold, onPressed: () => Navigator.pop(context)),
+        leading: BackButton(
+          color: kGold,
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            Navigator.pop(context);
+          },
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -98,6 +105,7 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
             ? IconButton(
                 icon: const Icon(Icons.clear, size: 18, color: kGold), 
                 onPressed: () {
+                  HapticFeedback.lightImpact();
                   _searchController.clear();
                   setState(() => _query = '');
                 }) 
@@ -136,6 +144,7 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
       ),
       child: InkWell(
         onTap: () {
+          HapticFeedback.lightImpact();
           setState(() => _expandedTerm = isExpanded ? null : term);
           if (_searchFocus.hasFocus) _searchFocus.unfocus();
         },
@@ -205,6 +214,7 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
           ),
           TextButton(
             onPressed: () {
+              HapticFeedback.lightImpact();
               _searchController.clear();
               setState(() => _query = '');
             },
