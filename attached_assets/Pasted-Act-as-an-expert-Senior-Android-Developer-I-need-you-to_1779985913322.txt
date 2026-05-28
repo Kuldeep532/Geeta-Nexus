@@ -1,0 +1,31 @@
+Act as an expert Senior Android Developer. I need you to optimize my application with a strict rule: "If it isn't broken, don't rewrite it from scratch." 
+
+Follow these precise structural and functional architectural instructions:
+
+### 1. Minimal UI Refactoring & Smart Jetpack Compose Usage
+- **CRITICAL RULE:** Do NOT blindly rewrite the entire app in Jetpack Compose. Use Jetpack Compose ONLY where the current XML layouts are completely broken, heavily cluttered, or unfixable. If the existing XML views are working, use a clean View/Layout Factory or XML refactoring to divide the single screen into Multiple Dedicated Screens.
+- **Task:** Eliminate the clutter of having all features on one screen. Split them into highly modular, lightweight separate screens using a robust, clean navigation system (like a TabHost or ViewPager/Bottom Navigation).
+
+### 2. Audio Player Upgradation to Advance Level
+- **Current State:** A basic audio player is already present in the app. Do not replace it completely.
+- **Task:** Upgrade the existing player's capabilities to an advanced system.
+- **Action:**
+  * Refactor its binding logic to integrate a persistent Mini Bottom Player that stays visible across all new screens during navigation.
+  * Deeply integrate the existing player with the Android System Notification Panel and Lock Screen, allowing users to play, pause, and skip tracks seamlessly in the background.
+
+### 3. Smart Offline TTS Investigation & Fix (Target: Kokoro / OuteTTS Architecture)
+- **CRITICAL RULE:** Check the codebase FIRST. If an offline TTS engine/wrapper is already integrated, DO NOT re-integrate or overwrite it. 
+- **Task 1 (Locate Folder):** Programmatically map and identify the exact directory where the offline multilingual TTS voice model files (such as .onnx, .bin, or config JSON files for models like Kokoro/OuteTTS/Sherpa) are stored. Search inside:
+  * `context.filesDir` (Internal storage)
+  * `context.getExternalFilesDir("models/")`
+  * `assets/` folder
+- **Task 2 (Fallback Download & Setup):** IF AND ONLY IF the TTS system is completely missing or the voice model files are not found, then automatically implement the download logic:
+  * Integrate the latest open-source, ultra-lightweight offline multilingual TTS framework (matching names like Kokoro-82M or similar ONNX-based open-source speech models).
+  * Create a safe background downloading task with a clean progress indicator to fetch missing language weights/models if they don't exist locally.
+
+### 4. Admin Screen & Mantra Feature Bug Fixes
+- **Task:** Fix the data-loading bottlenecks on the Mantra screen (where text/audio files are failing to load from the database or assets).
+- **Action:** Fix the state management on the Admin Screen to ensure all management controls and configurations work flawlessly without freezing or throwing UI errors.
+
+### Execution Output Requirement:
+Provide a clear analysis of where the TTS folder was found (or if it was missing), and share the exact file modifications done to split the screens and upgrade the audio player. Keep all code memory-efficient and screen-reader accessible.

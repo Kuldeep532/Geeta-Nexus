@@ -1,9 +1,11 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import '../services/chapter_audio_service.dart';
+import 'media_session.dart';
 
 /// Centralized global audio state for chapter narration playback.
 /// Single source of truth — prevents multiple simultaneous audio instances.
+/// Integrates with the Web Media Session API for OS / browser transport controls.
 class AudioState extends ChangeNotifier {
   final ChapterAudioService _service = ChapterAudioService();
 
@@ -25,9 +27,8 @@ class AudioState extends ChangeNotifier {
       ? (_position.inMilliseconds / _duration.inMilliseconds).clamp(0.0, 1.0)
       : 0.0;
 
-  String get currentTitle => _currentChapterNumber != null
-      ? 'Chapter $_currentChapterNumber'
-      : '';
+  String get currentTitle =>
+      _currentChapterNumber != null ? 'Chapter $_currentChapterNumber' : '';
 
   String get currentReciterName => _currentReciter?.name ?? '';
 
@@ -39,18 +40,40 @@ class AudioState extends ChangeNotifier {
       _isPlaying = status.state == PlayerState.playing;
       _position = status.position;
       _duration = status.duration;
+
+      // Keep the Media Session position state in sync
+      if (_duration.inSeconds > 0) {
+        MediaSessionService.setPositionState(
+          durationSeconds: _duration.inSeconds.toDouble(),
+          positionSeconds: _position.inSeconds.toDouble(),
+        );
+      }
+
+      MediaSessionService.setPlaybackState(
+        _isPlaying ? 'playing' : 'paused',
+      );
+
       notifyListeners();
     });
   }
 
-  static String audioUrl(int chapter, AudioReciter reciter) {
-    return 'https://www.everydaycodings.com/api/v1/audio/chapter/$chapter/${reciter.id}.mp3';
-  }
+  static String audioUrl(int chapter, AudioReciter reciter) =>
+      'https://www.everydaycodings.com/api/v1/audio/chapter/$chapter/${reciter.id}.mp3';
 
   Future<void> play(int chapterNumber, AudioReciter reciter) async {
     _currentChapterNumber = chapterNumber;
     _currentReciter = reciter;
     notifyListeners();
+
+    // Update Media Session metadata so the OS/browser notification shows
+    // the correct track info and transport controls.
+    MediaSessionService.setMetadata(
+      title: 'Chapter $chapterNumber',
+      artist: reciter.name,
+      album: 'Bhagavad Gita',
+    );
+    _registerMediaSessionHandlers();
+
     await _service.play(audioUrl(chapterNumber, reciter));
   }
 
@@ -61,6 +84,7 @@ class AudioState extends ChangeNotifier {
   Future<void> stop() async {
     await _service.stop();
     _position = Duration.zero;
+    MediaSessionService.setPlaybackState('none');
     notifyListeners();
   }
 
@@ -94,6 +118,21 @@ class AudioState extends ChangeNotifier {
       _currentChapterNumber != null && _currentChapterNumber! < 18;
   bool get canGoPrev =>
       _currentChapterNumber != null && _currentChapterNumber! > 1;
+
+  /// Register OS/browser transport key handlers so hardware media buttons
+  /// (keyboard, headset, lock screen) can control playback.
+  void _registerMediaSessionHandlers() {
+    MediaSessionService.setActionHandlers(
+      onPlay: () => resume(),
+      onPause: () => pause(),
+      onStop: () => stop(),
+      onPreviousTrack: canGoPrev ? () => prevChapter() : null,
+      onNextTrack: canGoNext ? () => nextChapter() : null,
+      onSeekBackward: () => rewind(),
+      onSeekForward: () => fastForward(),
+      onSeekTo: (seconds) => seekTo(Duration(seconds: seconds.round())),
+    );
+  }
 
   @override
   void dispose() {

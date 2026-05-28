@@ -1,0 +1,4 @@
+- [Flutter web audio architecture](audio-arch.md) — AudioState (ChangeNotifier) is single source of truth; ChapterAudioService is the low-level player; never create a second player instance.
+- [connectivity_plus v6 API change](connectivity-v6.md) — returns List<ConnectivityResult>, not a single value; always check with is List guard.
+- [Web Media Session API](media-session.md) — use dart:js to call navigator.mediaSession; gracefully no-ops on non-web or unsupported browsers.
+- [Mini player placement](mini-player.md) — MiniAudioPlayer lives in MainShell.bottomNavigationBar as a Column above the BottomNavigationBar; never use a Stack or Overlay.

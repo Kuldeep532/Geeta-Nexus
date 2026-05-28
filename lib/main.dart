@@ -7,6 +7,7 @@ import 'audio/audio_state.dart';
 import 'data/gita_data.dart';
 import 'state/app_state.dart';
 import 'theme.dart';
+import 'widgets/mini_audio_player.dart';
 import 'screens/home_screen.dart';
 import 'screens/chapters_screen.dart';
 import 'screens/ai_screen.dart';
@@ -75,6 +76,34 @@ class _MainShellState extends State<MainShell> {
     MoreScreen(),
   ];
 
+  static const List<BottomNavigationBarItem> _navItems = [
+    BottomNavigationBarItem(
+      icon: Icon(Icons.home_outlined),
+      activeIcon: Icon(Icons.home_rounded),
+      label: 'Home',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.menu_book_outlined),
+      activeIcon: Icon(Icons.menu_book_rounded),
+      label: 'Chapters',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.auto_awesome_outlined),
+      activeIcon: Icon(Icons.auto_awesome_rounded),
+      label: 'Ask Ira',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.trending_up_outlined),
+      activeIcon: Icon(Icons.trending_up_rounded),
+      label: 'Progress',
+    ),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.apps_outlined),
+      activeIcon: Icon(Icons.apps_rounded),
+      label: 'More',
+    ),
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -89,41 +118,29 @@ class _MainShellState extends State<MainShell> {
 
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (i) {
-          HapticFeedback.selectionClick();
-          setState(() => _currentIndex = i);
-        },
-        backgroundColor: theme.scaffoldBackgroundColor,
-        selectedItemColor: isDark ? kGold : kGoldDim,
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home_rounded),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.menu_book_outlined),
-            activeIcon: Icon(Icons.menu_book_rounded),
-            label: 'Chapters',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.auto_awesome_outlined),
-            activeIcon: Icon(Icons.auto_awesome_rounded),
-            label: 'Ask Ira',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.trending_up_outlined),
-            activeIcon: Icon(Icons.trending_up_rounded),
-            label: 'Progress',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.apps_outlined),
-            activeIcon: Icon(Icons.apps_rounded),
-            label: 'More',
+
+      // The bottomNavigationBar slot is replaced with a Column that stacks
+      // the persistent MiniAudioPlayer directly above the nav bar.
+      // This ensures the mini player is visible on every tab without any
+      // hero transitions or route-level state re-creation.
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Persistent mini player — visible whenever audio is loaded
+          const MiniAudioPlayer(),
+
+          // Standard bottom navigation bar
+          BottomNavigationBar(
+            currentIndex: _currentIndex,
+            onTap: (i) {
+              HapticFeedback.selectionClick();
+              setState(() => _currentIndex = i);
+            },
+            backgroundColor: theme.scaffoldBackgroundColor,
+            selectedItemColor: isDark ? kGold : kGoldDim,
+            unselectedItemColor: Colors.grey,
+            type: BottomNavigationBarType.fixed,
+            items: _navItems,
           ),
         ],
       ),

@@ -865,6 +865,8 @@ file:///home/runner/.pub-cache/hosted/pub.dev/web-1.1.1/lib/web.dart
 file:///home/runner/workspace/.dart_tool/flutter_build/d12e46422de5e2738ca11434eca92746/main.dart
 file:///home/runner/workspace/.dart_tool/flutter_build/d12e46422de5e2738ca11434eca92746/web_plugin_registrant.dart
 file:///home/runner/workspace/.dart_tool/package_config.json
+file:///home/runner/workspace/lib/audio/audio_state.dart
+file:///home/runner/workspace/lib/audio/media_session.dart
 file:///home/runner/workspace/lib/data/gita_data.dart
 file:///home/runner/workspace/lib/main.dart
 file:///home/runner/workspace/lib/models/models.dart
@@ -876,12 +878,13 @@ file:///home/runner/workspace/lib/screens/ai_screen.dart
 file:///home/runner/workspace/lib/screens/aira_screen.dart
 file:///home/runner/workspace/lib/screens/antakshari_screen.dart
 file:///home/runner/workspace/lib/screens/astrology_screen.dart
+file:///home/runner/workspace/lib/screens/audio_player_screen.dart
 file:///home/runner/workspace/lib/screens/bookmarks_screen.dart
 file:///home/runner/workspace/lib/screens/breathing_screen.dart
 file:///home/runner/workspace/lib/screens/chants_screen.dart
 file:///home/runner/workspace/lib/screens/chapter_detail_screen.dart
 file:///home/runner/workspace/lib/screens/chapters_screen.dart
-file:///home/runner/workspace/lib/screens/contact_screen.dart
+file:///home/runner/workspace/lib/screens/gita_audio_chapters_screen.dart
 file:///home/runner/workspace/lib/screens/glossary_screen.dart
 file:///home/runner/workspace/lib/screens/habit_tracker_screen.dart
 file:///home/runner/workspace/lib/screens/home_screen.dart
@@ -901,6 +904,7 @@ file:///home/runner/workspace/lib/screens/scripture_library_screen.dart
 file:///home/runner/workspace/lib/screens/scripture_upanishads_screen.dart
 file:///home/runner/workspace/lib/screens/search_screen.dart
 file:///home/runner/workspace/lib/screens/social_links.dart
+file:///home/runner/workspace/lib/screens/support_screen.dart
 file:///home/runner/workspace/lib/screens/terms_screen.dart
 file:///home/runner/workspace/lib/screens/update_checker.dart
 file:///home/runner/workspace/lib/screens/updates_screen.dart
@@ -912,6 +916,7 @@ file:///home/runner/workspace/lib/services/scripture_repository.dart
 file:///home/runner/workspace/lib/services/scripture_service.dart
 file:///home/runner/workspace/lib/state/app_state.dart
 file:///home/runner/workspace/lib/theme.dart
+file:///home/runner/workspace/lib/widgets/mini_audio_player.dart
 file:///nix/store/rga4z7r7x705lns431b89gwxx47zs1zp-flutter-wrapped-3.29.3-sdk-links/bin/cache/flutter_web_sdk/kernel/dart2js_platform.dill
 file:///nix/store/rga4z7r7x705lns431b89gwxx47zs1zp-flutter-wrapped-3.29.3-sdk-links/packages/flutter/lib/animation.dart
 file:///nix/store/rga4z7r7x705lns431b89gwxx47zs1zp-flutter-wrapped-3.29.3-sdk-links/packages/flutter/lib/cupertino.dart
