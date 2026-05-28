@@ -5,8 +5,7 @@ Single consolidated FastAPI backend for:
 - AI chat (Gemini + local KB + Hugging Face fallback)
 - Text-to-Speech (Hugging Face Inference API)
 - Speech-to-Text (Hugging Face Inference API)
-
-Deployable FREE on: Render, Hugging Face Spaces, Railway, Fly.io, or Replit.
+- Feedback email routing (SMTP or local log fallback)
 """
 
 import os
@@ -14,15 +13,22 @@ import json
 import re
 import base64
 import asyncio
+import smtplib
+import logging
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from pathlib import Path
 from typing import Optional
 from contextlib import asynccontextmanager
+from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, Header, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 import httpx
+
+logger = logging.getLogger("aira-backend")
 
 # ── Optional Gemini import (graceful degradation) ─────────────────────────
 try:
@@ -36,6 +42,16 @@ GEMINI_KEY = os.environ.get("GEMINI_AI_API_KEY", "")
 HF_API_KEY = os.environ.get("HF_API_KEY", "")
 ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "*").split(",")
 SECRET_TOKEN = os.environ.get("SECRET_TOKEN", "")
+
+# SMTP config for feedback email routing
+SMTP_HOST = os.environ.get("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
+SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
+FEEDBACK_DEST_EMAIL = os.environ.get("FEEDBACK_DEST_EMAIL", "kuldeepky538@gmail.com")
+
+# Path for fallback local feedback log
+_FEEDBACK_LOG = Path(__file__).parent / "feedback_log.json"
 
 if _GEMINI_AVAILABLE and GEMINI_KEY:
     genai.configure(api_key=GEMINI_KEY)
@@ -101,6 +117,12 @@ class TtsRequest(BaseModel):
 class SttRequest(BaseModel):
     audio_base64: str
     language: Optional[str] = "en"
+
+
+class FeedbackRequest(BaseModel):
+    name: str
+    email: str
+    feedback: str
 
 
 # ── Core logic: local keyword search ────────────────────────────────────────
@@ -175,11 +197,68 @@ async def _hf_chat_reply(query: str, context: Optional[str], persona: str) -> st
             data = resp.json()
             if isinstance(data, list) and len(data) > 0:
                 text = data[0].get("generated_text", "")
-                # Remove the prompt echo
                 if text.startswith(prompt):
                     text = text[len(prompt):].strip()
                 return text
         return "Hugging Face inference returned an unexpected response."
+
+
+# ── Feedback: send email via SMTP or log locally ─────────────────────────────
+def _send_feedback_email(name: str, email: str, feedback: str) -> bool:
+    """Send feedback email via SMTP. Returns True on success."""
+    if not SMTP_EMAIL or not SMTP_PASSWORD:
+        return False
+
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = f"[Gita Nexus Feedback] from {name}"
+        msg["From"] = SMTP_EMAIL
+        msg["To"] = FEEDBACK_DEST_EMAIL
+        msg["Reply-To"] = email
+
+        body = f"""
+Gita Nexus App — New Feedback Submission
+==========================================
+Name:     {name}
+Email:    {email}
+Time:     {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}
+
+Feedback:
+{feedback}
+==========================================
+        """.strip()
+
+        msg.attach(MIMEText(body, "plain"))
+
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SMTP_EMAIL, SMTP_PASSWORD)
+            server.sendmail(SMTP_EMAIL, FEEDBACK_DEST_EMAIL, msg.as_string())
+
+        logger.info(f"Feedback email sent from {email}")
+        return True
+    except Exception as e:
+        logger.error(f"SMTP error: {e}")
+        return False
+
+
+def _log_feedback_locally(name: str, email: str, feedback: str) -> None:
+    """Append feedback to a local JSON log as fallback."""
+    entry = {
+        "timestamp": datetime.now().isoformat(),
+        "name": name,
+        "email": email,
+        "feedback": feedback,
+    }
+    existing: list = []
+    if _FEEDBACK_LOG.exists():
+        try:
+            existing = json.loads(_FEEDBACK_LOG.read_text(encoding="utf-8"))
+        except Exception:
+            existing = []
+    existing.append(entry)
+    _FEEDBACK_LOG.write_text(json.dumps(existing, indent=2, ensure_ascii=False), encoding="utf-8")
+    logger.info(f"Feedback logged locally from {email}")
 
 
 # ── FastAPI lifespan ────────────────────────────────────────────────────────
@@ -191,8 +270,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Aira — Gita Nexus Unified Backend",
-    description="Single backend for AI chat, TTS, and STT via Hugging Face & Gemini.",
-    version="2.0.0",
+    description="Single backend for AI chat, TTS, STT, and feedback routing.",
+    version="2.1.0",
     lifespan=lifespan,
 )
 
@@ -213,6 +292,7 @@ def health():
         "kb_entries": len(_kb),
         "gemini": _GEMINI_AVAILABLE and bool(GEMINI_KEY),
         "huggingface": bool(HF_API_KEY),
+        "smtp_configured": bool(SMTP_EMAIL and SMTP_PASSWORD),
     }
 
 
@@ -289,6 +369,31 @@ async def stt(payload: SttRequest):
         data = resp.json()
         text = data.get("text", "") if isinstance(data, dict) else ""
         return {"text": text}
+
+
+@app.post("/feedback")
+async def submit_feedback(payload: FeedbackRequest):
+    """
+    Route feedback from the app directly to kuldeepky538@gmail.com.
+    Uses SMTP if SMTP_EMAIL + SMTP_PASSWORD are set; otherwise logs locally.
+    Returns 200 in both cases so the app always shows a success message.
+    """
+    name = payload.name.strip()
+    email = payload.email.strip()
+    feedback = payload.feedback.strip()
+
+    if not name or not email or not feedback:
+        raise HTTPException(status_code=400, detail="All fields are required")
+
+    sent_by_email = _send_feedback_email(name, email, feedback)
+    if not sent_by_email:
+        _log_feedback_locally(name, email, feedback)
+
+    return {
+        "status": "received",
+        "method": "email" if sent_by_email else "local_log",
+        "message": "Thank you for your feedback. We will review it shortly.",
+    }
 
 
 @app.post("/reload-kb", dependencies=[Depends(_check_token)])

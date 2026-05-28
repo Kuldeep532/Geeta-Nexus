@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-// Imports
-import 'data/gita_data.dart'; 
+import 'audio/audio_state.dart';
+import 'data/gita_data.dart';
 import 'state/app_state.dart';
 import 'theme.dart';
 import 'screens/home_screen.dart';
@@ -19,11 +19,17 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final appState = AppState();
+  final audioState = AudioState();
+  audioState.initialize();
+
   await Future.wait([appState.load(), loadGitaData()]);
 
   runApp(
-    ChangeNotifierProvider<AppState>.value(
-      value: appState,
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AppState>.value(value: appState),
+        ChangeNotifierProvider<AudioState>.value(value: audioState),
+      ],
       child: const MyApp(),
     ),
   );
@@ -42,7 +48,9 @@ class MyApp extends StatelessWidget {
           theme: buildLightTheme(),
           darkTheme: buildDarkTheme(),
           themeMode: state.themeMode,
-          home: state.onboardingComplete ? const MainShell() : const OnboardingScreen(),
+          home: state.onboardingComplete
+              ? const MainShell()
+              : const OnboardingScreen(),
         );
       },
     );
@@ -51,12 +59,14 @@ class MyApp extends StatelessWidget {
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
+
   @override
   State<MainShell> createState() => _MainShellState();
 }
 
 class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
+
   final List<Widget> _screens = const [
     HomeScreen(),
     ChaptersScreen(),
@@ -68,7 +78,8 @@ class _MainShellState extends State<MainShell> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => autoCheckForUpdates(context));
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => autoCheckForUpdates(context));
   }
 
   @override
@@ -80,17 +91,40 @@ class _MainShellState extends State<MainShell> {
       body: IndexedStack(index: _currentIndex, children: _screens),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (i) => setState(() => _currentIndex = i),
+        onTap: (i) {
+          HapticFeedback.selectionClick();
+          setState(() => _currentIndex = i);
+        },
         backgroundColor: theme.scaffoldBackgroundColor,
         selectedItemColor: isDark ? kGold : kGoldDim,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.menu_book_outlined), label: 'Chapters'),
-          BottomNavigationBarItem(icon: Icon(Icons.auto_awesome_outlined), label: 'Ask Ira'),
-          BottomNavigationBarItem(icon: Icon(Icons.trending_up_outlined), label: 'Progress'),
-          BottomNavigationBarItem(icon: Icon(Icons.apps_outlined), label: 'More'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home_rounded),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.menu_book_outlined),
+            activeIcon: Icon(Icons.menu_book_rounded),
+            label: 'Chapters',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.auto_awesome_outlined),
+            activeIcon: Icon(Icons.auto_awesome_rounded),
+            label: 'Ask Ira',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.trending_up_outlined),
+            activeIcon: Icon(Icons.trending_up_rounded),
+            label: 'Progress',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.apps_outlined),
+            activeIcon: Icon(Icons.apps_rounded),
+            label: 'More',
+          ),
         ],
       ),
     );
