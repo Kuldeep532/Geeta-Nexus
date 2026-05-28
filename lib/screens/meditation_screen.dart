@@ -705,48 +705,74 @@ class _MeditationScreenState extends State<MeditationScreen>
                           ),
                           const SizedBox(height: 12),
 
-                          // Start / Pause button
-                          Semantics(
-                            button: true,
-                            enabled: !_isLoading,
-                            label: _isLoading
-                                ? 'Loading audio, please wait'
-                                : (_running
-                                    ? 'Pause meditation'
-                                    : 'Start meditation'),
-                            excludeSemantics: true,
-                            child: SizedBox(
-                              width: double.infinity,
-                              height: 52,
-                              child: ElevatedButton.icon(
-                                onPressed: _isLoading
-                                    ? null
-                                    : (_running
-                                        ? _pauseMeditation
-                                        : _startMeditation),
-                                icon: _isLoading
-                                    ? const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                            color: Colors.black),
-                                      )
-                                    : Icon(_running
-                                        ? Icons.pause_rounded
-                                        : Icons.play_arrow_rounded),
-                                label: Text(
-                                  _isLoading
-                                      ? 'Loading...'
+                          // Start / Pause / Stop row
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Semantics(
+                                  button: true,
+                                  enabled: !_isLoading,
+                                  label: _isLoading
+                                      ? 'Loading audio, please wait'
                                       : (_running
-                                          ? 'Pause Meditation'
-                                          : 'Start Meditation'),
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16),
+                                          ? 'Pause meditation'
+                                          : 'Start meditation'),
+                                  excludeSemantics: true,
+                                  child: SizedBox(
+                                    height: 52,
+                                    child: ElevatedButton.icon(
+                                      onPressed: _isLoading
+                                          ? null
+                                          : (_running
+                                              ? _pauseMeditation
+                                              : _startMeditation),
+                                      icon: _isLoading
+                                          ? const SizedBox(
+                                              width: 18,
+                                              height: 18,
+                                              child: CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  color: Colors.black),
+                                            )
+                                          : Icon(_running
+                                              ? Icons.pause_rounded
+                                              : Icons.play_arrow_rounded),
+                                      label: Text(
+                                        _isLoading
+                                            ? 'Loading...'
+                                            : (_running
+                                                ? 'Pause'
+                                                : 'Start'),
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                              if (_running || _isLoading) ...[
+                                const SizedBox(width: 10),
+                                Semantics(
+                                  button: true,
+                                  label: 'Stop meditation and reset timer',
+                                  excludeSemantics: true,
+                                  child: SizedBox(
+                                    height: 52,
+                                    width: 52,
+                                    child: ElevatedButton(
+                                      onPressed: _resetMeditation,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.redAccent.withOpacity(0.9),
+                                        foregroundColor: Colors.white,
+                                        padding: EdgeInsets.zero,
+                                      ),
+                                      child: const Icon(Icons.stop_rounded),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                           const SizedBox(height: 10),
 

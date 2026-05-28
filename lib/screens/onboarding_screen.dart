@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../main.dart';
 import '../state/app_state.dart';
@@ -202,6 +203,38 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                   ),
                   const SizedBox(height: 40),
+                  // Repository link
+                  Semantics(
+                    button: true,
+                    label: 'View Gita Nexus source code on GitHub. Opens in browser.',
+                    child: GestureDetector(
+                      onTap: () async {
+                        HapticFeedback.lightImpact();
+                        final uri = Uri.parse('https://github.com/Geeta-ai/Geeta-Nexus');
+                        try {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        } catch (_) {
+                          _showSnack('Unable to open browser link.');
+                        }
+                      },
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.code_rounded, size: 14, color: kGold.withOpacity(0.6)),
+                          const SizedBox(width: 6),
+                          Text(
+                            'github.com/Geeta-ai/Geeta-Nexus',
+                            style: GoogleFonts.inter(
+                              fontSize: 12,
+                              color: kGold.withOpacity(0.6),
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 28),
                   Expanded(
                     child: _isGuestMode
                         ? _buildGuestForm()

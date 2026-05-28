@@ -35,7 +35,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
           widget.initialReciter ?? _audio.currentReciter ?? kAvailableReciters.first;
       if (_audio.currentChapterNumber != widget.chapterNumber ||
           _audio.currentReciter?.id != reciter.id) {
-        _audio.play(widget.chapterNumber, reciter);
+        _loadAndPlay(_audio, reciter);
       }
     });
   }
@@ -79,7 +79,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                     onTap: () {
                       HapticFeedback.lightImpact();
                       Navigator.pop(ctx);
-                      audio.play(widget.chapterNumber, r);
+                      _loadAndPlay(audio, r);
                     },
                   )),
             ],
@@ -95,6 +95,25 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
     return '$m:$s';
   }
 
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  Future<void> _loadAndPlay(AudioState audio, AudioReciter reciter) async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+    try {
+      await audio.play(widget.chapterNumber, reciter);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _errorMessage = 'Audio failed to load. Please check your connection and try again.');
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -108,6 +127,7 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
         final position = audio.position;
         final duration = audio.duration;
         final progress = audio.progress;
+        final hasDuration = duration.inSeconds > 0;
 
         return Scaffold(
           backgroundColor: theme.scaffoldBackgroundColor,
@@ -138,6 +158,44 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
           body: SafeArea(
             child: Column(
               children: [
+                if (_errorMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                    child: Semantics(
+                      liveRegion: true,
+                      label: _errorMessage,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.error_outline, color: Colors.redAccent, size: 20),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                _errorMessage!,
+                                style: GoogleFonts.inter(
+                                  fontSize: 13,
+                                  color: Colors.redAccent,
+                                ),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                final reciter = audio.currentReciter ?? kAvailableReciters.first;
+                                _loadAndPlay(audio, reciter);
+                              },
+                              child: Text('Retry', style: GoogleFonts.poppins(color: kGold)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 const Spacer(),
 
                 // Om / Album Art
@@ -259,7 +317,15 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                           ),
                           child: Slider(
                             value: progress,
-                            onChanged: duration.inSeconds > 0
+                            onChanged: hasDuration
+                                ? (v) {
+                                    final target = Duration(
+                                        milliseconds:
+                                            (v * duration.inMilliseconds).round());
+                                    audio.seekTo(target);
+                                  }
+                                : null,
+                            onChangeEnd: hasDuration
                                 ? (v) {
                                     final target = Duration(
                                         milliseconds:
@@ -345,19 +411,22 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                       // Play / Pause — large central button
                       Semantics(
                         button: true,
-                        label: audio.isPlaying ? 'Pause' : 'Play',
+                        label: _isLoading
+                            ? 'Loading audio'
+                            : audio.isPlaying
+                                ? 'Pause'
+                                : 'Play',
                         child: GestureDetector(
-                          onTap: () {
-                            HapticFeedback.mediumImpact();
-                            if (audio.hasTrack) {
-                              audio.togglePlay();
-                            } else {
-                              audio.play(
-                                widget.chapterNumber,
-                                kAvailableReciters.first,
-                              );
-                            }
-                          },
+                          onTap: _isLoading
+                              ? null
+                              : () {
+                                  HapticFeedback.mediumImpact();
+                                  if (audio.hasTrack) {
+                                    audio.togglePlay();
+                                  } else {
+                                    _loadAndPlay(audio, kAvailableReciters.first);
+                                  }
+                                },
                           child: Container(
                             width: 72,
                             height: 72,
@@ -372,13 +441,21 @@ class _AudioPlayerScreenState extends State<AudioPlayerScreen> {
                                 ),
                               ],
                             ),
-                            child: Icon(
-                              audio.isPlaying
-                                  ? Icons.pause_rounded
-                                  : Icons.play_arrow_rounded,
-                              color: Colors.black,
-                              size: 36,
-                            ),
+                            child: _isLoading
+                                ? const Padding(
+                                    padding: EdgeInsets.all(18),
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      color: Colors.black,
+                                    ),
+                                  )
+                                : Icon(
+                                    audio.isPlaying
+                                        ? Icons.pause_rounded
+                                        : Icons.play_arrow_rounded,
+                                    color: Colors.black,
+                                    size: 36,
+                                  ),
                           ),
                         ),
                       ),

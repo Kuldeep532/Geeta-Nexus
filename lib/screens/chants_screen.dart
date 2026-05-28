@@ -7,7 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import 'package:just_audio/just_audio.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
@@ -84,13 +84,16 @@ class _ChantsScreenState extends State<ChantsScreen> {
     _loadMantras();
     WakelockPlus.enable();
 
-    _audioPlayer.playerStateStream.listen((state) {
+    _audioPlayer.onPlayerStateChanged.listen((state) {
       if (!mounted) return;
       setState(() {
-        _isPlaying = state.playing;
-        _isLoadingAudio = state.processingState == ProcessingState.loading ||
-            state.processingState == ProcessingState.buffering;
+        _isPlaying = state == PlayerState.playing;
       });
+    });
+
+    _audioPlayer.onPlayerComplete.listen((_) {
+      if (!mounted) return;
+      setState(() => _isPlaying = false);
     });
   }
 
@@ -183,16 +186,14 @@ class _ChantsScreenState extends State<ChantsScreen> {
       _showSnack('No audio available for this mantra.');
       return;
     }
+    setState(() => _isLoadingAudio = true);
     try {
-      await _audioPlayer.setAudioSource(
-        ConcatenatingAudioSource(
-          children: [AudioSource.uri(Uri.parse(url))],
-        ),
-      );
-      await _audioPlayer.setLoopMode(LoopMode.all);
-      await _audioPlayer.play();
-    } catch (_) {
-      _showSnack('Audio playback failed. Check your connection.');
+      await _audioPlayer.setReleaseMode(ReleaseMode.loop);
+      await _audioPlayer.play(UrlSource(url));
+    } catch (e) {
+      _showSnack('Audio playback failed. Check your connection. $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingAudio = false);
     }
   }
 
