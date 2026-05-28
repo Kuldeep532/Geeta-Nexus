@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import '../audio/audio_state.dart';
@@ -11,8 +14,65 @@ import 'audio_player_screen.dart';
 
 /// Isolated screen dedicated to listening to Bhagavad Gita chapter audio.
 /// Completely independent from the text-reading flow.
-class GitaAudioChaptersScreen extends StatelessWidget {
+///
+/// Each chapter tile pings its audio endpoint once on init to determine
+/// availability. Dead endpoints show a muted state instead of the player.
+class GitaAudioChaptersScreen extends StatefulWidget {
   const GitaAudioChaptersScreen({super.key});
+
+  @override
+  State<GitaAudioChaptersScreen> createState() =>
+      _GitaAudioChaptersScreenState();
+}
+
+class _GitaAudioChaptersScreenState extends State<GitaAudioChaptersScreen> {
+  final Set<int> _availableChapters = {};
+  final Set<int> _pendingChapters = {};
+  bool _pingDone = false;
+
+  static const String _reciterId = 'sanskrit_original';
+  static const _pingTimeout = Duration(seconds: 4);
+
+  @override
+  void initState() {
+    super.initState();
+    _pingAllChapters();
+  }
+
+  Future<void> _pingAllChapters() async {
+    final futures = <Future<void>>[];
+    for (final ch in kChapters) {
+      _pendingChapters.add(ch.number);
+      futures.add(_pingChapter(ch.number));
+    }
+    await Future.wait(futures, eagerError: false);
+    if (mounted) setState(() => _pingDone = true);
+  }
+
+  Future<void> _pingChapter(int chapterNumber) async {
+    final url =
+        'https://www.everydaycodings.com/api/v1/audio/chapter/$chapterNumber/$_reciterId.mp3';
+    try {
+      final resp = await http
+          .head(Uri.parse(url))
+          .timeout(_pingTimeout);
+      if (resp.statusCode >= 200 && resp.statusCode < 400) {
+        if (mounted) {
+          setState(() => _availableChapters.add(chapterNumber));
+        }
+      }
+    } catch (_) {
+      // Endpoint unreachable — leave unavailable
+    } finally {
+      if (mounted) setState(() => _pendingChapters.remove(chapterNumber));
+    }
+  }
+
+  bool _isAvailable(int chapterNumber) =>
+      _availableChapters.contains(chapterNumber);
+
+  bool _isPending(int chapterNumber) =>
+      _pendingChapters.contains(chapterNumber);
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +117,9 @@ class GitaAudioChaptersScreen extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Select a chapter to begin listening. Audio plays in the background.',
+                      'Select a chapter to begin listening. '
+                      'Audio plays in the background. '
+                      '${_pingDone ? "Unavailable chapters are shown muted." : "Checking audio availability..."}',
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         color: theme.colorScheme.onSurface.withOpacity(0.75),
@@ -79,32 +141,39 @@ class GitaAudioChaptersScreen extends StatelessWidget {
               itemBuilder: (ctx, index) {
                 final chapter = kChapters[index];
                 final isActive = audio.currentChapterNumber == chapter.number;
+                final available = _isAvailable(chapter.number);
+                final pending = _isPending(chapter.number);
 
                 return Semantics(
-                  button: true,
+                  button: available || pending,
+                  enabled: available && !pending,
                   label:
-                      'Chapter ${chapter.number}, ${chapter.name}. ${chapter.nameSanskrit}. ${chapter.verses.length} verses. '
-                      '${isActive ? (audio.isPlaying ? "Currently playing." : "Paused.") : "Double-tap to listen."}',
+                      'Chapter ${chapter.number}, ${chapter.name}. '
+                      '${chapter.nameSanskrit}. ${chapter.verses.length} verses. '
+                      '${pending ? "Checking audio availability." : available ? (audio.isPlaying && isActive ? "Currently playing." : "Double-tap to listen.") : "Audio not available for this chapter."}',
                   child: Material(
                     color: isActive
                         ? kGold.withOpacity(0.12)
-                        : theme.colorScheme.surfaceContainerHighest.withOpacity(0.25),
+                        : theme.colorScheme.surfaceContainerHighest
+                            .withOpacity(0.25),
                     borderRadius: BorderRadius.circular(14),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(14),
-                      onTap: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.push(
-                          ctx,
-                          MaterialPageRoute(
-                            builder: (_) => AudioPlayerScreen(
-                              chapterNumber: chapter.number,
-                              initialReciter:
-                                  audio.currentReciter ?? kAvailableReciters.first,
-                            ),
-                          ),
-                        );
-                      },
+                      onTap: (!available || pending)
+                          ? null
+                          : () {
+                              HapticFeedback.lightImpact();
+                              Navigator.push(
+                                ctx,
+                                MaterialPageRoute(
+                                  builder: (_) => AudioPlayerScreen(
+                                    chapterNumber: chapter.number,
+                                    initialReciter: audio.currentReciter ??
+                                        kAvailableReciters.first,
+                                  ),
+                                ),
+                              );
+                            },
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 14),
@@ -118,24 +187,37 @@ class GitaAudioChaptersScreen extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   color: isActive
                                       ? kGold
-                                      : kGold.withOpacity(0.12),
+                                      : available
+                                          ? kGold.withOpacity(0.12)
+                                          : Colors.grey.withOpacity(0.12),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: isActive && audio.isPlaying
                                     ? const Icon(Icons.volume_up_rounded,
                                         color: Colors.black, size: 22)
-                                    : Center(
-                                        child: Text(
-                                          '${chapter.number}',
-                                          style: GoogleFonts.cinzel(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: isActive
-                                                ? Colors.black
-                                                : kGold,
+                                    : pending
+                                        ? const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: kGoldDim,
+                                            ),
+                                          )
+                                        : Center(
+                                            child: Text(
+                                              '${chapter.number}',
+                                              style: GoogleFonts.cinzel(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: isActive
+                                                    ? Colors.black
+                                                    : available
+                                                        ? kGold
+                                                        : Colors.grey,
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                      ),
                               ),
                             ),
 
@@ -151,7 +233,12 @@ class GitaAudioChaptersScreen extends StatelessWidget {
                                     style: GoogleFonts.poppins(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w600,
-                                      color: isActive ? kGold : null,
+                                      color: isActive
+                                          ? kGold
+                                          : available
+                                              ? null
+                                              : theme.colorScheme.onSurface
+                                                  .withOpacity(0.4),
                                     ),
                                   ),
                                   const SizedBox(height: 2),
@@ -159,8 +246,11 @@ class GitaAudioChaptersScreen extends StatelessWidget {
                                     chapter.nameSanskrit,
                                     style: GoogleFonts.poppins(
                                       fontSize: 12,
-                                      color: theme.colorScheme.onSurface
-                                          .withOpacity(0.55),
+                                      color: available
+                                          ? theme.colorScheme.onSurface
+                                              .withOpacity(0.55)
+                                          : theme.colorScheme.onSurface
+                                              .withOpacity(0.3),
                                       fontStyle: FontStyle.italic,
                                     ),
                                   ),
@@ -169,26 +259,46 @@ class GitaAudioChaptersScreen extends StatelessWidget {
                                     '${chapter.verses.length} verses',
                                     style: GoogleFonts.inter(
                                       fontSize: 11,
-                                      color: kGold.withOpacity(0.7),
+                                      color: available
+                                          ? kGold.withOpacity(0.7)
+                                          : Colors.grey.withOpacity(0.5),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
 
-                            // Play indicator
+                            // Availability / Play indicator
                             ExcludeSemantics(
-                              child: Icon(
-                                isActive
-                                    ? (audio.isPlaying
-                                        ? Icons.pause_circle_outline_rounded
-                                        : Icons.play_circle_outline_rounded)
-                                    : Icons.play_circle_outline_rounded,
-                                color: isActive
-                                    ? kGold
-                                    : theme.colorScheme.onSurface.withOpacity(0.3),
-                                size: 28,
-                              ),
+                              child: pending
+                                  ? SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: kGold.withOpacity(0.5),
+                                      ),
+                                    )
+                                  : !available
+                                      ? Icon(
+                                          Icons.headset_off_outlined,
+                                          color: Colors.grey.withOpacity(0.4),
+                                          size: 24,
+                                        )
+                                      : Icon(
+                                          isActive
+                                              ? (audio.isPlaying
+                                                  ? Icons
+                                                      .pause_circle_outline_rounded
+                                                  : Icons
+                                                      .play_circle_outline_rounded)
+                                              : Icons.play_circle_outline_rounded,
+                                          color: isActive
+                                              ? kGold
+                                              : theme.colorScheme.onSurface
+                                                  .withOpacity(0.3),
+                                          size: 28,
+                                        ),
                             ),
                           ],
                         ),

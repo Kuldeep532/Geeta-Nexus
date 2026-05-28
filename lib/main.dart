@@ -45,7 +45,7 @@ class MyApp extends StatelessWidget {
       builder: (context, state, _) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'Bhagavad Gita AI',
+          title: 'Gita Nexus',
           theme: buildLightTheme(),
           darkTheme: buildDarkTheme(),
           themeMode: state.themeMode,

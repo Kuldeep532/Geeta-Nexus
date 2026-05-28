@@ -1,0 +1,43 @@
+Role: You are an expert Principal Flutter Engineer, Security Architect, and Accessibility Specialist (WCAG 2.1 AAA). This is the final production version of "Gita Nexus". After 6 months of development, we must implement an unbreakable architecture that is globally unique. Your goal is to make the app incredibly fast, perfectly clean, resilient to all logic breaks, and 100% accessible to blind users.
+
+---
+
+### 1. UNMATCHED PERFORMANCE ARCHITECTURE (Rust, Flutter Bridge & ML Kit)
+* New System Integration - Flutter Rust Bridge (frb): To ensure handling 40+ dynamic URLs and a massive structure library never breaks the logic or slows down the UI, you must integrate a Rust native layer. Use the `flutter_rust_bridge` package to offload all JSON parsing, dynamic data routing, heavy caching, and local database (using Rust's 'sled' or 'rusqlite') handling to Rust. This ensures zero lag and native performance.
+* Google ML Kit Native Plugins: Integrate `google_ml_kit` for super-fast, on-device translation and text processing, allowing instant language switching without network calls.
+
+### 2. UI/UX REDESIGN: SCRIPTURE LIBRARY & Dynamic Mapping
+* Redesign Requirement: The existing Scripture Library UI must be completely redesigned to handle the massive input from 40+ data sources without appearing cluttered. It must be minimal, clean, and focus-driven.
+* Implementation:
+    1. The main library screen should only show top-level categories (e.g., "The Vedas", "The Puranas", "The Itihasas").
+    2. When a category is tapped, use a custom, highly accessible Flutter Modal Bottom Sheet (`showModalBottomSheet` with custom physics) or a dedicated sub-navigation screen (controlled by Rust) to show the specific texts (e.g., within Itihasas: Ramayan, Mahabharat).
+    3. This ensures the main screen remains perfectly clean while dynamically mapping all 40 URLs.
+* Audio Selector & Conditional Bypass: On the Audio Chapter screen, optimize the selection logic using BLoC. Use the new Rust layer to ping URLs; if audio is live, show the player; otherwise, hide the audio option for that text without affecting other features.
+
+### 3. ADVANCED ACCESSIBILITY Fixes (For Blind Users)
+* Branding Cleanup: Set the official title to "Gita Nexus". Remove generic "Screen" suffix from all headers.
+* Critical Reader Fix (Semantic Granularity): Break down verses, chaupais, translations, and commentaries on the reader screen into separate, granular `Semantics` widgets with `focusable: true` and `importantForAccessibility: true`. Blind users must be able to swipe horizontally to hear elements step-by-step, not as one single block.
+* Native Swiping: Implement horizontal swipe gesture navigation (left/right) with spring physics. Maintain fully functional Next/Previous buttons as alternative accessibility touch targets.
+
+### 4. DYNAMIC DATA ARCHITECTURE (40 Remote URLs)
+* Minimal APK Size: Do not bundle massive databases. Stream all data dynamically, managed by the Rust caching layer, from these 40 structured repositories:
+
+* [URLs 1-10: Core Scriptures & Metadata]
+1-10. Gita, Ramayan, Shiv Mahapuran Core JSON & Translations: Integrate existing verified public raw JSON links from GitHub/Hugging Face (e.g., gita/master/data/verse.json, vedabase/ramayana/data.json).
+
+* [URLs 11-20: Krishna Baal Leela & Puranic Stories]
+11-20. Integrate verified JSON and audio sources for Canto 10 of Srimad Bhagavatam, childhood story datasets, and Krishna bhajans.
+
+* [URLs 21-40: Extended Spiritual Libraries]
+21-40. Map raw content dynamic routing for Hugging Face Scripture Collections and Open-Source GitHub Digital Sanskrit Libraries.
+
+### 5. AI INTEGRATION & APK Security
+* Gemini + Local Fallback: Integrate `google_generative_ai` for online context. For offline voice calls and help queries, use a free local AI library running via the native layer.
+* Anti-Reverse Engineering: Implement ProGuard/R8 obfuscation. Secure the Gemini API key using hardware-backed `flutter_secure_storage`. Block emulation, tampering, and unauthorized APK repackaging.
+
+### 6. CI/CD Pipeline: Manual GitHub Actions (APK Build Only)
+* Provide the COMPLETE, standalone production-ready GitHub Actions `.yml` workflow file.
+* Target: Compiles the Flutter app (including the Rust native layer bridge), configures Java, sets up Flutter SDK, optimizes caching, and outputs a signed release APK (`build/app/outputs/flutter-apk/app-release.apk`) as a direct download artifact.
+
+---
+Output Requirement: Provide clean, unbreakable, and optimized Flutter/Dart code blocks for the frb (Rust bridge) integration, the granular accessibility controls, the Redesigned Scripture Library data mapping layer, and the full copy-pasteable GitHub Actions .yml file for APK generation.

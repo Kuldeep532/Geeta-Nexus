@@ -3,108 +3,37 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../data/scripture_sources.dart';
 import '../models/scripture_model.dart';
-import '../services/scripture_repository.dart';
 import '../services/scripture_service.dart';
 import '../theme.dart';
 
 import 'scripture_chapter_reader_screen.dart';
 import 'scripture_dharmicdata_verse_list_screen.dart';
 import 'scripture_upanishads_screen.dart';
+import 'chapters_screen.dart';
 
-class ScriptureLibraryScreen extends StatefulWidget {
+/// Redesigned Scripture Library — top-level categories only on the main screen.
+/// Tapping a category opens a custom bottom sheet with texts in that category.
+/// Clean, minimal, and handles 40+ sources without clutter.
+class ScriptureLibraryScreen extends StatelessWidget {
   const ScriptureLibraryScreen({super.key});
 
-  @override
-  State<ScriptureLibraryScreen> createState() =>
-      _ScriptureLibraryScreenState();
-}
-
-class _ScriptureLibraryScreenState
-    extends State<ScriptureLibraryScreen>
-    with SingleTickerProviderStateMixin {
-  final ScriptureService _service = ScriptureService();
-  late final TabController _tabController;
-
-  List<ScriptureChapterData> _chapters = [];
-  List<UpanishadVerseData> _upanishads = [];
-
-  bool _chaptersLoading = true;
-  bool _upanishadsLoading = true;
-  bool _chaptersError = false;
-  bool _upanishadsError = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    _loadAllData();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadAllData() async {
-    await Future.wait([_loadChapters(), _loadUpanishads()]);
-  }
-
-  Future<void> _loadChapters() async {
-    setState(() {
-      _chaptersLoading = true;
-      _chaptersError = false;
-    });
-    
-    try {
-      final data = await _service.fetchChapters();
-      if (!mounted) return;
-      setState(() {
-        _chapters = data;
-        _chaptersLoading = false;
-      });
-      
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _chaptersLoading = false;
-        _chaptersError = true;
-      });
-      
-    }
-  }
-
-  Future<void> _loadUpanishads() async {
-    setState(() {
-      _upanishadsLoading = true;
-      _upanishadsError = false;
-    });
-    
-    try {
-      final data = await _service.fetchUpanishads();
-      if (!mounted) return;
-      setState(() {
-        _upanishads = data;
-        _upanishadsLoading = false;
-      });
-      
-    } catch (_) {
-      if (!mounted) return;
-      setState(() {
-        _upanishadsLoading = false;
-        _upanishadsError = true;
-      });
-      
-    }
+  void _openCategory(BuildContext context, ScriptureCategory cat) {
+    HapticFeedback.lightImpact();
+    showModalBottomSheet(
+      context: context,
+      useSafeArea: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _CategorySheet(category: cat),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final goldColor = isDark ? Colors.amberAccent : kGold;
-    final saffronColor = isDark ? Colors.orangeAccent : kSaffron;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -115,404 +44,416 @@ class _ScriptureLibraryScreenState
         title: Semantics(
           header: true,
           namesRoute: true,
+          label: 'Scripture Library',
           child: Text(
             'Scripture Library',
             style: GoogleFonts.cinzel(
               fontWeight: FontWeight.bold,
-              color: goldColor,
+              color: isDark ? kGold : kGoldDim,
             ),
           ),
-        ),
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          indicatorColor: goldColor,
-          labelColor: goldColor,
-          unselectedLabelColor: theme.hintColor,
-          tabs: const [
-            Tab(text: 'Gita'),
-            Tab(text: 'Upanishads'),
-            Tab(text: 'Ramayana'),
-            Tab(text: 'Manas'),
-          ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _GitaTabView(
-            chapters: _chapters,
-            isLoading: _chaptersLoading,
-            hasError: _chaptersError,
-            onRetry: _loadChapters,
-            onChapterTap: (chapter) => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) =>
-                    ScriptureChapterReaderScreen(chapter: chapter),
-              ),
-            ),
-          ),
-          _UpanishadTabView(
-            verses: _upanishads,
-            isLoading: _upanishadsLoading,
-            hasError: _upanishadsError,
-            onRetry: _loadUpanishads,
-          ),
-          _DharmicSectionListView(
-            source: ScriptureSource.ramayanaValmiki,
-            sections: kRamayanaSections,
-            title: 'Valmiki Ramayana',
-            accent: saffronColor,
-          ),
-          _DharmicSectionListView(
-            source: ScriptureSource.ramcharitmanas,
-            sections: kRamchariSections,
-            title: 'Ramcharitmanas',
-            accent: goldColor,
-          ),
-        ],
+      body: ListView.separated(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        itemCount: kScriptureCatalog.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 14),
+        itemBuilder: (ctx, index) {
+          final cat = kScriptureCatalog[index];
+          return _CategoryCard(
+            category: cat,
+            onTap: () => _openCategory(ctx, cat),
+          );
+        },
       ),
     );
   }
 }
 
-// ─── Gita tab ────────────────────────────────────────────────────────────────
+// ── Category Card (main screen) ───────────────────────────────────────────
 
-class _GitaTabView extends StatelessWidget {
-  final List<ScriptureChapterData> chapters;
-  final bool isLoading;
-  final bool hasError;
-  final VoidCallback onRetry;
-  final void Function(ScriptureChapterData) onChapterTap;
+class _CategoryCard extends StatelessWidget {
+  final ScriptureCategory category;
+  final VoidCallback onTap;
 
-  const _GitaTabView({
-    required this.chapters,
-    required this.isLoading,
-    required this.hasError,
-    required this.onRetry,
-    required this.onChapterTap,
-  });
+  const _CategoryCard({required this.category, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading) {
-      return Semantics(
-        label: 'Loading Bhagavad Gita chapters, please wait.',
-        liveRegion: true,
-        child: const Center(
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Semantics(
+      button: true,
+      label:
+          '${category.title}. ${category.subtitle.replaceAll('•', ',')}. '
+          '${category.texts.length} texts available. Double-tap to explore.',
+      hint: 'Opens a list of texts in this category.',
+      child: Material(
+        color: isDark
+            ? category.accent.withOpacity(0.08)
+            : category.accent.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                // Category icon
+                ExcludeSemantics(
+                  child: Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: category.accent.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(
+                      category.icon,
+                      color: category.accent,
+                      size: 28,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+
+                // Text info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        category.title,
+                        style: GoogleFonts.cinzel(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? kGold : kGoldDim,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        category.subtitle,
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          height: 1.4,
+                          color: theme.colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Text count chip
+                      ExcludeSemantics(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: category.accent.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${category.texts.length} texts',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: category.accent,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Chevron
+                ExcludeSemantics(
+                  child: Icon(
+                    Icons.chevron_right_rounded,
+                    color: theme.colorScheme.onSurface.withOpacity(0.3),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Category Bottom Sheet (text list) ──────────────────────────────────────
+
+class _CategorySheet extends StatelessWidget {
+  final ScriptureCategory category;
+
+  const _CategorySheet({required this.category});
+
+  void _openText(BuildContext context, ScriptureTextDef text) {
+    HapticFeedback.lightImpact();
+    Navigator.pop(context); // close sheet
+
+    // Route to the appropriate reader based on text type
+    switch (text.type) {
+      case ScriptureTextType.chapterVerse:
+      case ScriptureTextType.mixed:
+        if (text.id == 'gita') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ChaptersScreen()),
+          );
+        } else {
+          // For other chapter-verse texts, show a placeholder
+          _showComingSoon(context, text.title);
+        }
+        break;
+      case ScriptureTextType.sectionVerse:
+        if (text.id == 'ramayana_valmiki') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => const ChaptersScreen(),
+            ),
+          );
+        } else {
+          _showComingSoon(context, text.title);
+        }
+        break;
+      case ScriptureTextType.verseList:
+        if (text.id == 'upanishads') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ScriptureUpanishadsScreen(
+                name: text.title,
+                verses: const [],
+              ),
+            ),
+          );
+        } else {
+          _showComingSoon(context, text.title);
+        }
+        break;
+    }
+  }
+
+  void _showComingSoon(BuildContext context, String title) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text('$title is coming soon in a future update.'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Semantics(
+      container: true,
+      label: '${category.title} texts. ${category.texts.length} texts listed.',
+      child: Container(
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(color: kGold),
-              SizedBox(height: 16),
+              // Drag handle
               ExcludeSemantics(
-                child: Text('Loading chapters…'),
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 12, bottom: 4),
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.onSurface.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Sheet header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                child: Row(
+                  children: [
+                    ExcludeSemantics(
+                      child: Icon(category.icon,
+                          color: category.accent, size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Semantics(
+                        header: true,
+                        child: Text(
+                          category.title,
+                          style: GoogleFonts.cinzel(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Semantics(
+                      button: true,
+                      label: 'Close',
+                      child: IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              Divider(
+                indent: 20,
+                endIndent: 20,
+                color: theme.colorScheme.onSurface.withOpacity(0.1),
+              ),
+
+              // Text list
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                  itemCount: category.texts.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 6),
+                  itemBuilder: (ctx, i) {
+                    final text = category.texts[i];
+                    return _TextTile(
+                      text: text,
+                      accent: category.accent,
+                      onTap: () => _openText(ctx, text),
+                    );
+                  },
+                ),
               ),
             ],
           ),
         ),
-      );
-    }
-
-    if (hasError) {
-      return Semantics(
-        label: 'Failed to load chapters.',
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const ExcludeSemantics(
-                  child: Icon(Icons.wifi_off_rounded,
-                      size: 48, color: kGoldDim),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Could not load chapters.\nCheck your connection.',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                Semantics(
-                  button: true,
-                  label: 'Retry loading chapters',
-                  hint: 'Double tap to try again',
-                  excludeSemantics: true,
-                  child: ElevatedButton.icon(
-                    onPressed: onRetry,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Retry'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: kGold,
-                      foregroundColor: Colors.black,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (chapters.isEmpty) {
-      return Semantics(
-        label: 'No chapters found. Double tap Retry to reload.',
-        child: Center(
-          child: Semantics(
-            button: true,
-            label: 'Retry loading chapters',
-            hint: 'Double tap to try again',
-            excludeSemantics: true,
-            child: ElevatedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: chapters.length,
-      itemBuilder: (context, index) {
-        final ch = chapters[index];
-        final title = ch.nameTranslation.isNotEmpty
-            ? ch.nameTranslation
-            : ch.name;
-        final label =
-            'Chapter ${ch.chapterNumber}: $title. ${ch.nameTransliterated}. '
-            '${ch.versesCount} verses. Double tap to open.';
-
-        return Semantics(
-          button: true,
-          label: label,
-          hint: 'Double tap to read this chapter',
-          child: ExcludeSemantics(
-            child: Card(
-              child: ListTile(
-                leading: ExcludeSemantics(
-                  child: CircleAvatar(
-                    backgroundColor: kGold.withOpacity(0.15),
-                    child: Text(
-                      '${ch.chapterNumber}',
-                      style: const TextStyle(
-                        color: kGold,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-                title: Text(title),
-                subtitle: Text(ch.nameTransliterated),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  onChapterTap(ch);
-                },
-              ),
-            ),
-          ),
-        );
-      },
+      ),
     );
   }
 }
 
-// ─── Upanishad tab ───────────────────────────────────────────────────────────
-
-class _UpanishadTabView extends StatelessWidget {
-  final List<UpanishadVerseData> verses;
-  final bool isLoading;
-  final bool hasError;
-  final VoidCallback onRetry;
-
-  const _UpanishadTabView({
-    required this.verses,
-    required this.isLoading,
-    required this.hasError,
-    required this.onRetry,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (isLoading) {
-      return Semantics(
-        label: 'Loading Upanishads, please wait.',
-        liveRegion: true,
-        child: const Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(color: kGold),
-              SizedBox(height: 16),
-              ExcludeSemantics(child: Text('Loading Upanishads…')),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (hasError) {
-      return Semantics(
-        label: 'Failed to load Upanishads.',
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const ExcludeSemantics(
-                  child: Icon(Icons.wifi_off_rounded,
-                      size: 48, color: kGoldDim),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Could not load Upanishads.\nCheck your connection.',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                Semantics(
-                  button: true,
-                  label: 'Retry loading Upanishads',
-                  hint: 'Double tap to try again',
-                  excludeSemantics: true,
-                  child: ElevatedButton.icon(
-                    onPressed: onRetry,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('Retry'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: kGold,
-                      foregroundColor: Colors.black,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (verses.isEmpty) {
-      return Semantics(
-        label: 'No Upanishads found. Double tap Retry to reload.',
-        child: Center(
-          child: Semantics(
-            button: true,
-            label: 'Retry loading Upanishads',
-            excludeSemantics: true,
-            child: ElevatedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Semantics(
-          button: true,
-          label: 'Upanishad Collection. Tap to explore all Upanishad verses.',
-          hint: 'Double tap to open',
-          child: ExcludeSemantics(
-            child: Card(
-              child: ListTile(
-                title: const Text('Upanishad Collection'),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ScriptureUpanishadsScreen(
-                        name: 'Upanishads',
-                        verses: verses,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─── Dharmic section list ────────────────────────────────────────────────────
-
-class _DharmicSectionListView extends StatelessWidget {
-  final ScriptureSource source;
-  final List<ScriptureSectionDef> sections;
-  final String title;
+class _TextTile extends StatelessWidget {
+  final ScriptureTextDef text;
   final Color accent;
+  final VoidCallback onTap;
 
-  const _DharmicSectionListView({
-    required this.source,
-    required this.sections,
-    required this.title,
+  const _TextTile({
+    required this.text,
     required this.accent,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final repo = ScriptureRepository();
+    final theme = Theme.of(context);
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: sections.length,
-      itemBuilder: (context, index) {
-        final sec = sections[index];
-        final label =
-            'Section ${sec.index}: ${sec.englishName}. Double tap to read.';
+    String countLabel = '';
+    if (text.knownChapterCount != null) {
+      countLabel = '${text.knownChapterCount} chapters';
+    } else if (text.knownVerseCount != null) {
+      countLabel = '${text.knownVerseCount} verses';
+    }
 
-        return Semantics(
-          button: true,
-          label: label,
-          hint: 'Double tap to open',
-          child: ExcludeSemantics(
-            child: Card(
-              child: ListTile(
-                leading: Text(
-                  '${sec.index}',
-                  style: TextStyle(
-                    color: accent,
-                    fontWeight: FontWeight.bold,
+    return Semantics(
+      button: true,
+      label:
+          '${text.title}. ${text.devanagariTitle.isNotEmpty ? text.devanagariTitle + ". " : ""}'
+          '${text.subtitle}. ${countLabel.isNotEmpty ? countLabel + ". " : ""}'
+          'Double-tap to open.',
+      hint: 'Opens the reader for this text.',
+      child: Material(
+        color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                ExcludeSemantics(
+                  child: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: accent.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(text.icon, color: accent, size: 20),
                   ),
                 ),
-                title: Text(sec.englishName),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ScriptureDharmicVerseListScreen(
-                        section: sec,
-                        source: source,
-                        fetchVerses: () {
-                          if (source == ScriptureSource.ramayanaValmiki) {
-                            return repo.fetchRamayanaKanda(sec);
-                          }
-                          return repo.fetchRamchariKanda(sec);
-                        },
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              text.title,
+                              style: GoogleFonts.poppins(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          if (text.audioBaseUrl != null)
+                            ExcludeSemantics(
+                              child: Icon(
+                                Icons.headphones_outlined,
+                                size: 16,
+                                color: accent.withOpacity(0.7),
+                              ),
+                            ),
+                        ],
                       ),
-                    ),
-                  );
-                },
-              ),
+                      const SizedBox(height: 2),
+                      Text(
+                        text.subtitle,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurface.withOpacity(0.55),
+                        ),
+                      ),
+                      if (countLabel.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        ExcludeSemantics(
+                          child: Text(
+                            countLabel,
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: accent.withOpacity(0.8),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                ExcludeSemantics(
+                  child: Icon(
+                    Icons.chevron_right_rounded,
+                    color: theme.colorScheme.onSurface.withOpacity(0.25),
+                  ),
+                ),
+              ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

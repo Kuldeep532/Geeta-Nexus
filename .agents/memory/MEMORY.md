@@ -2,3 +2,6 @@
 - [connectivity_plus v6 API change](connectivity-v6.md) — returns List<ConnectivityResult>, not a single value; always check with is List guard.
 - [Web Media Session API](media-session.md) — use dart:js to call navigator.mediaSession; gracefully no-ops on non-web or unsupported browsers.
 - [Mini player placement](mini-player.md) — MiniAudioPlayer lives in MainShell.bottomNavigationBar as a Column above the BottomNavigationBar; never use a Stack or Overlay.
+- [40-source scripture catalog](scripture-sources.md) — URLs are declared in lib/data/scripture_sources.dart; actual data fetching for non-Gita texts is stubbed with "Coming Soon" to prevent broken reader crashes.
+- [Spring physics for PageView](spring-pageview.md) — Custom ScrollPhysics subclass for verse reader swipe; spring mass 60, stiffness 120, damping 18.
+- [Audio endpoint health ping](audio-ping.md) — GitaAudioChaptersScreen pings all 18 chapters on init; unavailable chapters are disabled with headset_off icon.
