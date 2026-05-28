@@ -112,12 +112,16 @@ class _QuizScreenState extends State<QuizScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         title: Text('Gita Quiz', style: GoogleFonts.cinzel(color: kGold, fontWeight: FontWeight.bold)),
-        leading: BackButton(
-          color: kGold,
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Navigator.pop(context, _finished);
-          },
+        leading: Semantics(
+          button: true,
+          label: 'Go back',
+          child: BackButton(
+            color: kGold,
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.pop(context, _finished);
+            },
+          ),
         ),
       ),
       body: _dynamicQuestions.isEmpty

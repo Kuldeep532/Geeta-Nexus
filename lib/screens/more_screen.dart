@@ -10,7 +10,8 @@ import '../theme.dart';
 import 'about_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'profile_screen.dart';
-import 'support_screen.dart';
+// Support screen renamed to Customer Support for a11y clarity
+import 'support_screen.dart' as support_import;
 import 'terms_screen.dart';
 
 class MoreScreen extends StatefulWidget {
@@ -211,12 +212,12 @@ class _MoreScreenState extends State<MoreScreen> {
           ),
 
           _MenuTile(
-            title: 'Support',
+            title: 'Customer Support',
             subtitle: 'Chat support, voice help, and feedback',
             semanticLabel:
-                'Support. Chat support, voice assistance, and send feedback.',
+                'Customer Support. Chat support, voice assistance, and send feedback.',
             icon: Icons.support_agent_rounded,
-            onTap: () => _open(const SupportScreen()),
+            onTap: () => _open(const support_import.SupportScreen()),
           ),
           _MenuTile(
             title: 'Profile',

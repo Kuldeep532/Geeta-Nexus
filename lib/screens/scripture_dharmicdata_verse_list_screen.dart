@@ -70,7 +70,11 @@ class _ScriptureDharmicVerseListScreenState
       appBar: AppBar(
         backgroundColor: theme.appBarTheme.backgroundColor ?? theme.scaffoldBackgroundColor,
         elevation: 0,
-        leading: BackButton(color: accent),
+        leading: Semantics(
+          button: true,
+          label: 'Go back',
+          child: BackButton(color: accent),
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

@@ -79,6 +79,10 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _search(String query) async {
     if (query.length < 2) {
       setState(() => _results = []);
+      SemanticsService.announce(
+        'Search cleared.',
+        TextDirection.ltr,
+      );
       return;
     }
 
@@ -87,7 +91,10 @@ class _SearchScreenState extends State<SearchScreen> {
       _aiQuery = query;
     });
 
-    
+    SemanticsService.announce(
+      'Searching for $query.',
+      TextDirection.ltr,
+    );
 
     final expandedTerms = _expandQuery(query);
 
@@ -116,10 +123,17 @@ class _SearchScreenState extends State<SearchScreen> {
         _isSearching = false;
       });
 
-      
+      SemanticsService.announce(
+        'Search results updated. ${merged.length} ${merged.length == 1 ? "item" : "items"} found.',
+        TextDirection.ltr,
+      );
     } catch (_) {
       if (!mounted) return;
       setState(() => _isSearching = false);
+      SemanticsService.announce(
+        'Search failed. Please check your connection and try again.',
+        TextDirection.ltr,
+      );
     }
   }
 

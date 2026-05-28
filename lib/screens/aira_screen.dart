@@ -146,13 +146,17 @@ class _AiraScreenState extends State<AiraScreen> {
       appBar: AppBar(
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
-        leading: IconButton(
-          tooltip: 'Back',
-          icon: const Icon(Icons.arrow_back_ios_rounded, color: kGold),
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Navigator.pop(context);
-          },
+        leading: Semantics(
+          button: true,
+          label: 'Go back',
+          child: IconButton(
+            tooltip: 'Back',
+            icon: const Icon(Icons.arrow_back_ios_rounded, color: kGold),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.pop(context);
+            },
+          ),
         ),
         title: Row(
           mainAxisSize: MainAxisSize.min,

@@ -28,7 +28,11 @@ class PrivacyPolicyScreen extends StatelessWidget {
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
-        leading: const BackButton(color: kGold),
+        leading: Semantics(
+          button: true,
+          label: 'Go back',
+          child: const BackButton(color: kGold),
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(

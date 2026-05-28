@@ -53,12 +53,16 @@ class _GlossaryScreenState extends State<GlossaryScreen> {
           style: GoogleFonts.cinzel(color: kGold, fontSize: 18, fontWeight: FontWeight.bold)
         ),
         centerTitle: true,
-        leading: BackButton(
-          color: kGold,
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Navigator.pop(context);
-          },
+        leading: Semantics(
+          button: true,
+          label: 'Go back',
+          child: BackButton(
+            color: kGold,
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.pop(context);
+            },
+          ),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/models.dart';
@@ -264,6 +265,11 @@ class AppState extends ChangeNotifier {
 
   Future<void> load() async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      _onboardingComplete = prefs.getBool('onboarding_completed') ?? false;
+      _userName = prefs.getString('user_name') ?? '';
+      _userEmail = prefs.getString('user_email') ?? '';
+      _isAdmin = prefs.getBool('is_admin') ?? false;
       notifyListeners();
     } catch (e) {
       debugPrint('Load error: $e');

@@ -60,13 +60,16 @@ class _WisdomCardsScreenState extends State<WisdomCardsScreen> {
           ),
         ),
         centerTitle: true,
-        leading: BackButton(
-          color: kGold,
-          // ACCESSIBILITY: Clear action label for the back button
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Navigator.maybePop(context);
-          },
+        leading: Semantics(
+          button: true,
+          label: 'Go back',
+          child: BackButton(
+            color: kGold,
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.maybePop(context);
+            },
+          ),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,

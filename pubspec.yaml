@@ -63,7 +63,7 @@ dependencies:
   audio_video_progress_bar: ^2.0.3
   wakelock_plus: ^1.2.8
   vibration: ^2.0.0
-  flutter_cache_manager: ^3.4.1
+  # flutter_cache_manager: ^3.4.1  # Removed — web-safe direct URL loading replaces cached audio
 
 dev_dependencies:
   flutter_test:

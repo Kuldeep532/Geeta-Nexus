@@ -52,7 +52,11 @@ class ReadingPlanScreen extends StatelessWidget {
       backgroundColor: kBg,
       appBar: AppBar(
         title: const Text('30-Day Reading Plan'),
-        leading: const BackButton(),
+        leading: Semantics(
+          button: true,
+          label: 'Go back',
+          child: const BackButton(),
+        ),
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),

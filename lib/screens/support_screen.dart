@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
@@ -89,12 +90,18 @@ class _SupportScreenState extends State<SupportScreen> {
     HapticFeedback.mediumImpact();
     _inputCtrl.clear();
 
+    // Announce field clear so screen-reader users know input is reset
+    SemanticsService.announce(
+      'Message sent. Text field cleared, ready for next input.',
+      TextDirection.ltr,
+    );
+
     if (_hasFeedbackIntent(raw)) {
       _messages.add(_SupportMessage(text: raw, isUser: true));
       setState(() {});
       _scrollToBottom();
       Future.delayed(const Duration(milliseconds: 400), () {
-        if (mounted) _showFeedbackDialog();
+        if (mounted) _showFeedbackBottomSheet();
       });
       return;
     }
@@ -123,7 +130,7 @@ class _SupportScreenState extends State<SupportScreen> {
       if (lower.contains(entry.key)) {
         if (entry.value == "__TRIGGER_FEEDBACK__") {
           Future.delayed(const Duration(milliseconds: 500), () {
-            if (mounted) _showFeedbackDialog();
+            if (mounted) _showFeedbackBottomSheet();
           });
           return "Opening the feedback form for you now. Please fill in your name, email, and message.";
         }
@@ -144,24 +151,36 @@ class _SupportScreenState extends State<SupportScreen> {
     });
   }
 
-  void _showFeedbackDialog() {
+  void _showFeedbackBottomSheet() {
     HapticFeedback.mediumImpact();
-    showDialog(
+    final sheetFocus = FocusNode();
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: false,
-      builder: (ctx) => _FeedbackDialog(
-        onSubmitted: () {
-          if (!mounted) return;
-          setState(() {
-            _messages.add(_SupportMessage(
-              text: "Your feedback has been submitted. Thank you for helping us improve Gita Nexus!",
-              isUser: false,
-            ));
-          });
-          _scrollToBottom();
-        },
+      useSafeArea: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Semantics(
+        container: true,
+        explicitChildNodes: true,
+        label: 'Send Feedback form. Fill in your name, email, and feedback message.',
+        child: _FeedbackBottomSheet(
+          focusNode: sheetFocus,
+          onSubmitted: () {
+            if (!mounted) return;
+            setState(() {
+              _messages.add(_SupportMessage(
+                text: "Your feedback has been submitted. Thank you for helping us improve Gita Nexus!",
+                isUser: false,
+              ));
+            });
+            _scrollToBottom();
+          },
+        ),
       ),
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      sheetFocus.requestFocus();
+    });
   }
 
   @override
@@ -175,7 +194,7 @@ class _SupportScreenState extends State<SupportScreen> {
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
         title: Text(
-          'Support',
+          'Customer Support',
           style: GoogleFonts.cinzel(
             color: kGold,
             fontSize: 20,
@@ -187,7 +206,7 @@ class _SupportScreenState extends State<SupportScreen> {
             button: true,
             label: 'Send feedback',
             child: TextButton.icon(
-              onPressed: _showFeedbackDialog,
+              onPressed: _showFeedbackBottomSheet,
               icon: const Icon(Icons.feedback_outlined, color: kGold, size: 18),
               label: Text(
                 'Feedback',
@@ -381,17 +400,18 @@ class _SupportScreenState extends State<SupportScreen> {
   }
 }
 
-// ── Feedback Dialog ────────────────────────────────────────────────────────────
+// ── Feedback Bottom Sheet (focus-trapped, accessible) ────────────────────────────
 
-class _FeedbackDialog extends StatefulWidget {
+class _FeedbackBottomSheet extends StatefulWidget {
   final VoidCallback onSubmitted;
-  const _FeedbackDialog({required this.onSubmitted});
+  final FocusNode? focusNode;
+  const _FeedbackBottomSheet({required this.onSubmitted, this.focusNode});
 
   @override
-  State<_FeedbackDialog> createState() => _FeedbackDialogState();
+  State<_FeedbackBottomSheet> createState() => _FeedbackBottomSheetState();
 }
 
-class _FeedbackDialogState extends State<_FeedbackDialog> {
+class _FeedbackBottomSheetState extends State<_FeedbackBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
@@ -406,6 +426,7 @@ class _FeedbackDialogState extends State<_FeedbackDialog> {
 
   @override
   void dispose() {
+    widget.focusNode?.dispose();
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _feedbackCtrl.dispose();
@@ -444,149 +465,183 @@ class _FeedbackDialogState extends State<_FeedbackDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
-    if (_submitted) {
-      return AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 12),
-            const Icon(Icons.check_circle_rounded, color: kSuccess, size: 56),
-            const SizedBox(height: 16),
-            Text(
-              'Feedback Submitted!',
-              style: GoogleFonts.cinzel(
-                  fontSize: 18, fontWeight: FontWeight.bold, color: kGold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Thank you for your feedback. We will review it and get back to you soon.',
-              style: GoogleFonts.inter(fontSize: 14, height: 1.5),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-          ],
+    return Semantics(
+      container: true,
+      explicitChildNodes: true,
+      label: _submitted
+          ? 'Feedback submitted successfully. Tap done to close.'
+          : 'Send Feedback form. Fill in your name, email, and feedback message.',
+      child: Container(
+        padding: EdgeInsets.fromLTRB(20, 16, 20, 20 + bottomInset),
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
         ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kGold,
-                foregroundColor: Colors.black,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                Navigator.pop(context);
-              },
-              child: Text('Done',
-                  style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-            ),
+        child: SafeArea(
+          minimum: const EdgeInsets.only(bottom: 16),
+          child: SingleChildScrollView(
+            child: _submitted ? _buildSuccessView(theme) : _buildFormView(theme, isDark),
           ),
-        ],
-      );
-    }
+        ),
+      ),
+    );
+  }
 
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Semantics(
-        header: true,
-        child: Text(
-          'Send Feedback',
+  Widget _buildSuccessView(ThemeData theme) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 12),
+        const Icon(Icons.check_circle_rounded, color: kSuccess, size: 56),
+        const SizedBox(height: 16),
+        Text(
+          'Feedback Submitted!',
           style: GoogleFonts.cinzel(
               fontSize: 18, fontWeight: FontWeight.bold, color: kGold),
+          textAlign: TextAlign.center,
         ),
-      ),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 4),
-              _buildField(
-                isDark: isDark,
-                controller: _nameCtrl,
-                label: 'Name',
-                hint: 'Your full name',
-                icon: Icons.person_outline_rounded,
-                action: TextInputAction.next,
-                validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Please enter your name'
-                    : null,
-              ),
-              const SizedBox(height: 14),
-              _buildField(
-                isDark: isDark,
-                controller: _emailCtrl,
-                label: 'Email',
-                hint: 'you@example.com',
-                icon: Icons.email_outlined,
-                keyboardType: TextInputType.emailAddress,
-                action: TextInputAction.next,
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) return 'Please enter your email';
-                  if (!v.contains('@') || !v.contains('.')) {
-                    return 'Please enter a valid email';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 14),
-              _buildField(
-                isDark: isDark,
-                controller: _feedbackCtrl,
-                label: 'Feedback',
-                hint: 'Describe your feedback or issue...',
-                icon: Icons.message_outlined,
-                maxLines: 4,
-                action: TextInputAction.newline,
-                validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Please enter your feedback'
-                    : null,
-              ),
-            ],
-          ),
+        const SizedBox(height: 10),
+        Text(
+          'Thank you for your feedback. We will review it and get back to you soon.',
+          style: GoogleFonts.inter(fontSize: 14, height: 1.5),
+          textAlign: TextAlign.center,
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            HapticFeedback.lightImpact();
-            Navigator.pop(context);
-          },
-          child: Text('Cancel',
-              style: GoogleFonts.poppins(
-                  color: theme.colorScheme.onSurface.withOpacity(0.5))),
-        ),
-        Semantics(
-          button: true,
-          enabled: !_submitting,
-          label: _submitting ? 'Submitting feedback, please wait.' : 'Submit feedback.',
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: kGold,
               foregroundColor: Colors.black,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
+                  borderRadius: BorderRadius.circular(12)),
             ),
-            onPressed: _submitting ? null : _submit,
-            child: _submitting
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.black),
-                  )
-                : Text('Submit',
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              Navigator.pop(context);
+            },
+            child: Text('Done',
+                style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildFormView(ThemeData theme, bool isDark) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Drag handle
+          Center(
+            child: ExcludeSemantics(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: theme.dividerColor,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+          ),
+          Semantics(
+            header: true,
+            child: Text(
+              'Send Feedback',
+              style: GoogleFonts.cinzel(
+                  fontSize: 18, fontWeight: FontWeight.bold, color: kGold),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildField(
+            isDark: isDark,
+            controller: _nameCtrl,
+            label: 'Name',
+            hint: 'Your full name',
+            icon: Icons.person_outline_rounded,
+            action: TextInputAction.next,
+            validator: (v) => (v == null || v.trim().isEmpty)
+                ? 'Please enter your name'
+                : null,
+          ),
+          const SizedBox(height: 14),
+          _buildField(
+            isDark: isDark,
+            controller: _emailCtrl,
+            label: 'Email',
+            hint: 'you@example.com',
+            icon: Icons.email_outlined,
+            keyboardType: TextInputType.emailAddress,
+            action: TextInputAction.next,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'Please enter your email';
+              if (!v.contains('@') || !v.contains('.')) {
+                return 'Please enter a valid email';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 14),
+          _buildField(
+            isDark: isDark,
+            controller: _feedbackCtrl,
+            label: 'Feedback',
+            hint: 'Describe your feedback or issue...',
+            icon: Icons.message_outlined,
+            maxLines: 4,
+            action: TextInputAction.newline,
+            validator: (v) => (v == null || v.trim().isEmpty)
+                ? 'Please enter your feedback'
+                : null,
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            child: Semantics(
+              button: true,
+              enabled: !_submitting,
+              label: _submitting ? 'Submitting feedback, please wait.' : 'Submit feedback.',
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: kGold,
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: _submitting ? null : _submit,
+                child: _submitting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.black),
+                      )
+                    : Text('Submit',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                Navigator.pop(context);
+              },
+              child: Text('Cancel',
+                  style: GoogleFonts.poppins(
+                      color: theme.colorScheme.onSurface.withOpacity(0.5))),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
