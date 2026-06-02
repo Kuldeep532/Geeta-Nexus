@@ -19,11 +19,11 @@ pluginManagement {
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
     
-    // ✅ 8.3.0 ko hata kar 8.7.0 kiya gaya hai (Latest & Stable)
-    id("com.android.application") version "8.7.0" apply false
+    // AGP version ko 8.7.0 se badhakar 8.11.1 kiya gaya hai
+    id("com.android.application") version "8.11.1" apply false
     
-    // ✅ Kotlin 2.1.0 naye plugins ke liye zaroori hai
-    id("org.jetbrains.kotlin.android") version "2.1.0" apply false
+    // Kotlin version ko 2.1.0 se badhakar 2.2.20 kiya gaya hai
+    id("org.jetbrains.kotlin.android") version "2.2.20" apply false
     
     id("com.google.gms.google-services") version "4.4.1" apply false
 }
