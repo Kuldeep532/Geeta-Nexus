@@ -206,7 +206,7 @@ class HomeScreen extends StatelessWidget {
         backgroundColor: theme.scaffoldBackgroundColor,
         title: Semantics(
           header: true,
-          label: 'Gita Nexus, home screen.',
+          label: 'Geeta Nexus',
           child: Text(
             'Gita Nexus',
             style: GoogleFonts.cinzel(

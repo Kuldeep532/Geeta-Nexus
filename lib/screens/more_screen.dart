@@ -137,7 +137,7 @@ class _MoreScreenState extends State<MoreScreen> {
         automaticallyImplyLeading: false,
         title: Semantics(
           header: true,
-          label: 'Explore screen.',
+          label: 'Geeta Nexus',
           child: Text(
             'Explore',
             style: GoogleFonts.cinzel(
