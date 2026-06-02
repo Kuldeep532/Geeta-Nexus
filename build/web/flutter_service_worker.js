@@ -7,6 +7,7 @@ const RESOURCES = {"assets/AssetManifest.bin": "b15a79570fda6e4815d4748a2c1f9c7f
 "assets/AssetManifest.bin.json": "8a4c76824720d0c7826c3b800033ff93",
 "assets/AssetManifest.json": "599adcedbca685d1009a21c4c932b501",
 "assets/FontManifest.json": "ac9af9276a4415acc5209f45f17d6f5e",
+"assets/NOTICES": "c7b88b0b3449265ecb0ae4afbf4d16a5",
 "assets/assets/data/Bhagwad_Gita.csv": "7fc3ed860dba8076d5f6cb59d0580695",
 "assets/assets/data/ai_knowledge_base.json": "acce0a5d5cb51b02ee034e612f44320e",
 "assets/assets/data/training_data.csv": "c8f25ced2191baf7cf450b5555a05a6f",
@@ -20,7 +21,6 @@ const RESOURCES = {"assets/AssetManifest.bin": "b15a79570fda6e4815d4748a2c1f9c7f
 "assets/packages/font_awesome_flutter/lib/fonts/fa-solid-900.ttf": "269f971cec0d5dc864fe9ae080b19e23",
 "assets/packages/wakelock_plus/assets/no_sleep.js": "7748a45cd593f33280669b29c2c8919a",
 "assets/shaders/ink_sparkle.frag": "ecc85a2e95f5e9f53123dcaf8cb9b6ce",
-"assets/NOTICES": "c7b88b0b3449265ecb0ae4afbf4d16a5",
 "canvaskit/canvaskit.js": "86e461cf471c1640fd2b461ece4589df",
 "canvaskit/canvaskit.js.symbols": "68eb703b9a609baef8ee0e413b442f33",
 "canvaskit/canvaskit.wasm": "efeeba7dcc952dae57870d4df3111fad",
@@ -35,16 +35,16 @@ const RESOURCES = {"assets/AssetManifest.bin": "b15a79570fda6e4815d4748a2c1f9c7f
 "canvaskit/skwasm_st.wasm": "56c3973560dfcbf28ce47cebe40f3206",
 "favicon.png": "5dcef449791fa27946b3d35ad8803796",
 "flutter.js": "76f08d47ff9f5715220992f993002504",
+"flutter_bootstrap.js": "d71f5697c7a2d0c33af3bb2d085cf2db",
 "icons/Icon-192.png": "ac9a721a12bbc803b44f645561ecb1e1",
 "icons/Icon-512.png": "96e752610906ba2a93c65f8abe1645f1",
 "icons/Icon-maskable-192.png": "c457ef57daa1d16f64b27b786ec2ea3c",
 "icons/Icon-maskable-512.png": "301a7604d45b3e739efc881eb04896ea",
 "index.html": "6c081d857f34eba520c702030e486475",
 "/": "6c081d857f34eba520c702030e486475",
+"main.dart.js": "90f1bcbdb69ec1473da5576fa1194be8",
 "manifest.json": "b048cc359970f016a80a7d0cfb140213",
-"version.json": "956f32bff5f030a17f49bef06b32cbe5",
-"flutter_bootstrap.js": "2445e15a98048d5ed6a123e505100053",
-"main.dart.js": "90f1bcbdb69ec1473da5576fa1194be8"};
+"version.json": "956f32bff5f030a17f49bef06b32cbe5"};
 // The application shell files that are downloaded before a service worker can
 // start.
 const CORE = ["main.dart.js",
