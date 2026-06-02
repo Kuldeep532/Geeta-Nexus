@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/semantics.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/satsang_post.dart';
-import '../services/satsang_service.dart';
+import '../services/firebase_satsang_service.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 
@@ -17,13 +16,13 @@ class SatsangConnectScreen extends StatefulWidget {
 }
 
 class _SatsangConnectScreenState extends State<SatsangConnectScreen> {
-  late SatsangService _service;
+  late FirebaseSatsangService _service;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _service = SatsangService();
+    _service = FirebaseSatsangService();
     _load();
   }
 

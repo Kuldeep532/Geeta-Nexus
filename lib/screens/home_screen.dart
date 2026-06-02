@@ -10,19 +10,17 @@ import 'antakshari_screen.dart';
 import 'scripture_library_screen.dart';
 import 'affirmations_screen.dart';
 import 'astrology_screen.dart';
-import 'chants_screen.dart';
 import 'bookmarks_screen.dart';
-import 'breathing_screen.dart';
 import 'gita_audio_chapters_screen.dart';
 import 'glossary_screen.dart';
 import 'journal_screen.dart';
-import 'meditation_screen.dart';
 import 'reading_plan_screen.dart';
 import 'wisdom_cards_screen.dart';
 import 'daily_sadhana_screen.dart';
 import 'satsang_connect_screen.dart';
 import 'gita_comparison_screen.dart';
 import 'daily_guidance_screen.dart';
+import 'dhyana_hub_screen.dart';
 
 class _NavItem {
   final String title;
@@ -126,19 +124,12 @@ class HomeScreen extends StatelessWidget {
       screen: ScriptureLibraryScreen(),
     ),
     _NavItem(
-      title: 'Meditation',
-      subtitle: 'Guided meditation sessions',
-      semanticLabel: 'Meditation. Guided meditation sessions.',
-      icon: Icons.self_improvement_rounded,
-      screen: MeditationScreen(),
-    ),
-    _NavItem(
-      title: 'Breathing Practice',
-      subtitle: 'Improve calmness and focus',
+      title: 'Dhyana Hub',
+      subtitle: 'Meditation, Pranayama & Mantra',
       semanticLabel:
-          'Breathing Practice. Improve calmness and focus.',
-      icon: Icons.air_rounded,
-      screen: BreathingScreen(),
+          'Dhyana Hub. A unified spiritual practice space with meditation, breathing exercises, and sacred chanting.',
+      icon: Icons.self_improvement_rounded,
+      screen: DhyanaHubScreen(),
     ),
     _NavItem(
       title: 'Affirmations',
@@ -194,14 +185,6 @@ class HomeScreen extends StatelessWidget {
           'Astrology. Discover cosmic and spiritual insights.',
       icon: Icons.auto_awesome_rounded,
       screen: AstrologyScreen(),
-    ),
-    _NavItem(
-      title: 'Chants',
-      subtitle: 'Listen and practice sacred chants',
-      semanticLabel:
-          'Chants. Listen and practice sacred spiritual chants.',
-      icon: Icons.music_note_rounded,
-      screen: ChantsScreen(),
     ),
   ];
 

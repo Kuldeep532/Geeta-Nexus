@@ -1,64 +1,24 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import 'package:audioplayers/audioplayers.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../theme.dart';
 import '../state/app_state.dart';
+import '../services/mantra_service.dart';
 
 const int kMalaBeads = 108;
 
-/// Rich offline-first mantra list used when the remote API is unavailable.
-const List<Map<String, String>> _kOfflineMantras = [
-  {
-    'name': 'Maha Mantra',
-    'mantra':
-        'Hare Krishna Hare Krishna\nKrishna Krishna Hare Hare\nHare Rama Hare Rama\nRama Rama Hare Hare',
-    'meaning': 'Prayer for divine consciousness and liberation',
-    'audio':
-        'https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3',
-  },
-  {
-    'name': 'Gayatri Mantra',
-    'mantra':
-        'ॐ भूर्भुवः स्वः\nतत्सवितुर्वरेण्यं\nभर्गो देवस्य धीमहि\nधियो यो नः प्रचोदयात्',
-    'meaning': 'Prayer to the Sun-God for divine intellect and spiritual light',
-    'audio':
-        'https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3',
-  },
-  {
-    'name': 'Om Namah Shivaya',
-    'mantra': 'ॐ नमः शिवाय',
-    'meaning': 'I bow to Lord Shiva — the auspicious one within all beings',
-    'audio':
-        'https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3',
-  },
-  {
-    'name': 'Om Namo Bhagavate',
-    'mantra': 'ॐ नमो भगवते\nवासुदेवाय',
-    'meaning': 'I bow to Lord Vasudeva — the all-pervading supreme person',
-    'audio':
-        'https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3',
-  },
-  {
-    'name': 'Shanti Mantra',
-    'mantra':
-        'ॐ सर्वे भवन्तु सुखिनः\nसर्वे सन्तु निरामयाः\nसर्वे भद्राणि पश्यन्तु\nमा कश्चिद् दुःखभाग्भवेत्',
-    'meaning':
-        'May all beings be happy, free from illness, and see auspiciousness',
-    'audio':
-        'https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3',
-  },
-];
-
+/// Chants Screen — sacred mantra chanting with japa bead counter.
+///
+/// Mantra loading is now delegated to [MantraService], which provides a
+/// single offline-first flow that eliminates the duplication between
+/// `_loadMantras` and `_applyOfflineMantras` that existed previously.
 class ChantsScreen extends StatefulWidget {
   const ChantsScreen({super.key});
 
@@ -72,23 +32,18 @@ class _ChantsScreenState extends State<ChantsScreen> {
   bool _isPlaying = false;
   bool _isLoadingAudio = false;
   bool _isLoadingMantras = true;
-  String? _mantraError;
-
   int _selectedIndex = 0;
-
   List<Map<String, dynamic>> _mantras = [];
 
   @override
   void initState() {
     super.initState();
-    _loadMantras();
+    _loadMantrasUnified();
     WakelockPlus.enable();
 
     _audioPlayer.onPlayerStateChanged.listen((state) {
       if (!mounted) return;
-      setState(() {
-        _isPlaying = state == PlayerState.playing;
-      });
+      setState(() => _isPlaying = state == PlayerState.playing);
     });
 
     _audioPlayer.onPlayerComplete.listen((_) {
@@ -97,88 +52,17 @@ class _ChantsScreenState extends State<ChantsScreen> {
     });
   }
 
-  Future<bool> _hasConnection() async {
-    try {
-      final results = await Connectivity().checkConnectivity();
-      // connectivity_plus v6+ returns a List<ConnectivityResult>
-      if (results is List) {
-        return results.isNotEmpty &&
-            !results.every((r) => r == ConnectivityResult.none);
-      }
-      return results != ConnectivityResult.none;
-    } catch (_) {
-      return true; // assume online if we can't check
+  /// Unified mantra loading via MantraService (offline-first, no duplication).
+  Future<void> _loadMantrasUnified() async {
+    setState(() => _isLoadingMantras = true);
+    final mantras = await MantraService.loadMantras();
+    if (mounted) {
+      setState(() {
+        _mantras = mantras;
+        _isLoadingMantras = false;
+        _selectedIndex = 0;
+      });
     }
-  }
-
-  Future<void> _loadMantras() async {
-    setState(() {
-      _isLoadingMantras = true;
-      _mantraError = null;
-    });
-
-    final online = await _hasConnection();
-
-    if (!online) {
-      _applyOfflineMantras();
-      return;
-    }
-
-    try {
-      final response = await http
-          .get(
-            Uri.parse(
-              'https://havyaka-rest-api-gaonkarbhai.vercel.app/api/v1/mantras?limit=500',
-            ),
-          )
-          .timeout(const Duration(seconds: 12));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final List<dynamic> list = (data['mantras'] ?? []) as List<dynamic>;
-
-        if (list.isEmpty) {
-          _applyOfflineMantras();
-          return;
-        }
-
-        final parsed = list
-            .map<Map<String, dynamic>>((m) => {
-                  'name': (m['name'] ?? 'Unknown').toString(),
-                  'mantra': (m['shloka'] ?? '').toString(),
-                  'meaning':
-                      (m['purpose'] ?? 'Sacred Mantra').toString(),
-                  'audio': (m['audio'] ?? '').toString(),
-                })
-            .where((m) => m['mantra']!.toString().isNotEmpty)
-            .toList();
-
-        if (parsed.isEmpty) {
-          _applyOfflineMantras();
-          return;
-        }
-
-        if (mounted) {
-          setState(() {
-            _mantras = parsed;
-            _isLoadingMantras = false;
-          });
-        }
-      } else {
-        _applyOfflineMantras();
-      }
-    } catch (_) {
-      _applyOfflineMantras();
-    }
-  }
-
-  void _applyOfflineMantras() {
-    if (!mounted) return;
-    setState(() {
-      _mantras = _kOfflineMantras.cast<Map<String, dynamic>>();
-      _isLoadingMantras = false;
-      _selectedIndex = 0;
-    });
   }
 
   Future<void> _playAudio(String url) async {
@@ -249,16 +133,13 @@ class _ChantsScreenState extends State<ChantsScreen> {
   Widget build(BuildContext context) {
     final appState = context.watch<AppState>();
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
     final currentBead = appState.japaCount % kMalaBeads;
     final rounds = appState.japaCount ~/ kMalaBeads;
 
     if (_isLoadingMantras) {
       return Scaffold(
         backgroundColor: theme.scaffoldBackgroundColor,
-        appBar: AppBar(
-          title: Text('Sacred Chants', style: GoogleFonts.cinzel()),
-        ),
+        appBar: AppBar(title: Text('Sacred Chants', style: GoogleFonts.cinzel())),
         body: Center(
           child: Semantics(
             label: 'Loading mantras, please wait.',
@@ -267,8 +148,7 @@ class _ChantsScreenState extends State<ChantsScreen> {
               children: [
                 const CircularProgressIndicator(color: kGold),
                 const SizedBox(height: 16),
-                Text('Loading mantras…',
-                    style: GoogleFonts.poppins(color: kGoldDim)),
+                Text('Loading mantras…', style: GoogleFonts.poppins(color: kGoldDim)),
               ],
             ),
           ),
@@ -317,7 +197,6 @@ class _ChantsScreenState extends State<ChantsScreen> {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  // Mantra selector chips
                   SizedBox(
                     height: 52,
                     child: ListView.builder(
@@ -333,8 +212,7 @@ class _ChantsScreenState extends State<ChantsScreen> {
                             label: '$name mantra. ${selected ? "Currently selected." : "Tap to select."}',
                             button: true,
                             child: ChoiceChip(
-                              label: Text(name,
-                                  style: GoogleFonts.poppins(fontSize: 12)),
+                              label: Text(name, style: GoogleFonts.poppins(fontSize: 12)),
                               selected: selected,
                               selectedColor: kGold,
                               onSelected: (_) => _selectMantra(index),
@@ -344,10 +222,7 @@ class _ChantsScreenState extends State<ChantsScreen> {
                       },
                     ),
                   ),
-
                   const SizedBox(height: 16),
-
-                  // Mantra card
                   Card(
                     elevation: 0,
                     shape: RoundedRectangleBorder(
@@ -376,20 +251,15 @@ class _ChantsScreenState extends State<ChantsScreen> {
                               style: GoogleFonts.inter(
                                 fontSize: 13,
                                 height: 1.5,
-                                color: theme.colorScheme.onSurface
-                                    .withOpacity(0.65),
+                                color: theme.colorScheme.onSurface.withOpacity(0.65),
                                 fontStyle: FontStyle.italic,
                               ),
                             ),
                           ),
                           const SizedBox(height: 20),
-
-                          // Audio control
                           Semantics(
                             button: true,
-                            label: _isPlaying
-                                ? 'Pause mantra audio.'
-                                : 'Play mantra audio.',
+                            label: _isPlaying ? 'Pause mantra audio.' : 'Play mantra audio.',
                             child: GestureDetector(
                               onTap: _toggleAudio,
                               child: Container(
@@ -413,63 +283,47 @@ class _ChantsScreenState extends State<ChantsScreen> {
                                             color: Colors.black, strokeWidth: 2.5),
                                       )
                                     : Icon(
-                                        _isPlaying
-                                            ? Icons.pause_rounded
-                                            : Icons.play_arrow_rounded,
+                                        _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
                                         color: Colors.black,
                                         size: 32,
                                       ),
                               ),
                             ),
                           ),
-
                           if (audioUrl.isEmpty) ...[
                             const SizedBox(height: 8),
                             Text(
                               'Audio not available for this mantra',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                color: theme.hintColor,
-                              ),
+                              style: GoogleFonts.inter(fontSize: 11, color: theme.hintColor),
                             ),
                           ],
                         ],
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 32),
-
-                  // Rounds counter
                   Semantics(
                     container: true,
                     label: 'Japa rounds completed: $rounds.',
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          'Rounds: ',
-                          style: GoogleFonts.cinzel(
-                              fontSize: 18, color: kGoldDim),
-                        ),
+                        Text('Rounds: ', style: GoogleFonts.cinzel(fontSize: 18, color: kGoldDim)),
                         Text(
                           '$rounds',
                           style: GoogleFonts.cinzel(
-                              fontSize: 28,
-                              color: kGold,
-                              fontWeight: FontWeight.bold),
+                            fontSize: 28,
+                            color: kGold,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
-                  // Mala circle
                   Semantics(
                     container: true,
-                    label:
-                        'Japa bead counter: $currentBead of $kMalaBeads.',
+                    label: 'Japa bead counter: $currentBead of $kMalaBeads.',
                     child: Center(
                       child: Container(
                         width: 160,
@@ -492,13 +346,9 @@ class _ChantsScreenState extends State<ChantsScreen> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
-                  // Progress bar
                   Semantics(
-                    label:
-                        'Japa progress: $currentBead out of $kMalaBeads beads.',
+                    label: 'Japa progress: $currentBead out of $kMalaBeads beads.',
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(6),
                       child: LinearProgressIndicator(
@@ -509,10 +359,7 @@ class _ChantsScreenState extends State<ChantsScreen> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 32),
-
-                  // Manual chant button
                   Semantics(
                     button: true,
                     label: 'Chant button. Tap to count one bead.',
@@ -525,7 +372,8 @@ class _ChantsScreenState extends State<ChantsScreen> {
                           backgroundColor: kGold,
                           foregroundColor: Colors.black,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18)),
+                            borderRadius: BorderRadius.circular(18),
+                          ),
                           elevation: 3,
                           shadowColor: kGold.withOpacity(0.4),
                         ),
@@ -548,7 +396,6 @@ class _ChantsScreenState extends State<ChantsScreen> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 20),
                 ]),
               ),
@@ -556,8 +403,6 @@ class _ChantsScreenState extends State<ChantsScreen> {
           ],
         ),
       ),
-
-      // Floating chant button for one-thumb reach
       floatingActionButton: Semantics(
         button: true,
         label: 'Quick chant button.',

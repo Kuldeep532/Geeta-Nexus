@@ -13,7 +13,9 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
 
-  # Firebase removed — add real credentials to re-enable
+  # Firebase integration — auto-detects availability and gracefully falls back
+  firebase_core: ^3.12.0
+  cloud_firestore: ^5.6.4
   flutter_local_notifications: ^18.0.1
 
   # --- State Management ---

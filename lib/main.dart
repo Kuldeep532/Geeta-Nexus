@@ -6,7 +6,8 @@ import 'audio/audio_state.dart';
 import 'data/gita_data.dart';
 import 'state/app_state.dart';
 import 'services/sadhana_service.dart';
-import 'services/satsang_service.dart';
+import 'services/firebase_satsang_service.dart';
+import 'services/firebase_core_service.dart';
 import 'theme.dart';
 import 'widgets/mini_audio_player.dart';
 import 'screens/home_screen.dart';
@@ -23,16 +24,22 @@ void main() async {
   final appState = AppState();
   final audioState = AudioState();
   final sadhanaService = SadhanaService();
-  final satsangService = SatsangService();
+  final satsangService = FirebaseSatsangService();
+  final firebaseCore = FirebaseCoreService();
 
   audioState.initialize();
 
+  // Load local data first (zero data loss guarantee)
   await Future.wait([
     appState.load(),
     loadGitaData(),
     sadhanaService.load(),
-    satsangService.load(),
   ]);
+
+  // Firebase initialization is non-blocking. If it fails, services
+  // gracefully fall back to local storage with zero data loss.
+  await firebaseCore.initialize();
+  await satsangService.load();
 
   runApp(
     MultiProvider(
@@ -40,7 +47,8 @@ void main() async {
         ChangeNotifierProvider<AppState>.value(value: appState),
         ChangeNotifierProvider<AudioState>.value(value: audioState),
         ChangeNotifierProvider<SadhanaService>.value(value: sadhanaService),
-        ChangeNotifierProvider<SatsangService>.value(value: satsangService),
+        ChangeNotifierProvider<FirebaseSatsangService>.value(value: satsangService),
+        ChangeNotifierProvider<FirebaseCoreService>.value(value: firebaseCore),
       ],
       child: const MyApp(),
     ),
@@ -130,17 +138,10 @@ class _MainShellState extends State<MainShell> {
     return Scaffold(
       body: IndexedStack(index: _currentIndex, children: _screens),
 
-      // The bottomNavigationBar slot is replaced with a Column that stacks
-      // the persistent MiniAudioPlayer directly above the nav bar.
-      // This ensures the mini player is visible on every tab without any
-      // hero transitions or route-level state re-creation.
       bottomNavigationBar: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Persistent mini player — visible whenever audio is loaded
           const MiniAudioPlayer(),
-
-          // Standard bottom navigation bar
           BottomNavigationBar(
             currentIndex: _currentIndex,
             onTap: (i) {
