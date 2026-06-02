@@ -1,7 +1,9 @@
 // ignore_for_file: avoid_web_libraries_in_flutter
-import 'dart:js' as js;
-
 import 'package:flutter/foundation.dart';
+
+// Android build ko pass karwane ke liye compiler-level safe check
+// Agar web hai toh hi 'dart:js' load hoga, nahi toh dummy placeholder chalega
+import 'dart:js' if (dart.library.io) 'package:flutter/foundation.dart' as js;
 
 /// Integrates with the Web Media Session API so the browser notification
 /// panel and OS lock screen can display "now playing" metadata and expose
@@ -12,16 +14,19 @@ class MediaSessionService {
   static bool get _supported {
     if (!kIsWeb) return false;
     try {
-      final nav = js.context['navigator'];
+      // kIsWeb true hone par hi yeh execute hoga
+      final context = (js.context as dynamic);
+      if (context == null) return false;
+      final nav = context['navigator'];
       return nav != null && nav['mediaSession'] != null;
     } catch (_) {
       return false;
     }
   }
 
-  static js.JsObject? get _ms {
+  static dynamic get _ms {
     try {
-      return js.context['navigator']['mediaSession'] as js.JsObject?;
+      return (js.context as dynamic)['navigator']['mediaSession'];
     } catch (_) {
       return null;
     }
@@ -39,20 +44,22 @@ class MediaSessionService {
       final ms = _ms;
       if (ms == null) return;
 
+      final context = (js.context as dynamic);
+      
       final artwork = artworkUrl.isNotEmpty
-          ? js.JsArray.from([
-              js.JsObject.jsify({
+          ? (js.context['JsArray'] as dynamic).from([
+              (js.context['JsObject'] as dynamic).jsify({
                 'src': artworkUrl,
                 'sizes': '512x512',
                 'type': 'image/png',
               })
             ])
-          : js.JsArray.from([]);
+          : [];
 
-      final metadata = js.JsObject(
-        js.context['MediaMetadata'] as js.JsFunction,
+      final metadata = (js.context['JsObject'] as dynamic)(
+        context['MediaMetadata'],
         [
-          js.JsObject.jsify({
+          (js.context['JsObject'] as dynamic).jsify({
             'title': title,
             'artist': artist,
             'album': album,
@@ -101,7 +108,7 @@ class MediaSessionService {
       if (onSeekTo != null) {
         ms.callMethod('setActionHandler', [
           'seekto',
-          js.allowInterop((js.JsObject details) {
+          (js.context['allowInterop'] as dynamic)((dynamic details) {
             final seekTime =
                 (details['seekTime'] as num?)?.toDouble() ?? 0.0;
             onSeekTo(seekTime);
@@ -124,7 +131,7 @@ class MediaSessionService {
       final ms = _ms;
       if (ms == null) return;
       ms.callMethod('setPositionState', [
-        js.JsObject.jsify({
+        (js.context['JsObject'] as dynamic).jsify({
           'duration': durationSeconds,
           'position': positionSeconds.clamp(0.0, durationSeconds),
           'playbackRate': playbackRate,
@@ -134,10 +141,10 @@ class MediaSessionService {
   }
 
   static void _setHandler(
-      js.JsObject ms, String action, VoidCallback? handler) {
+      dynamic ms, String action, VoidCallback? handler) {
     ms.callMethod('setActionHandler', [
       action,
-      handler != null ? js.allowInterop(handler) : null,
+      handler != null ? (js.context['allowInterop'] as dynamic)(handler) : null,
     ]);
   }
 }
