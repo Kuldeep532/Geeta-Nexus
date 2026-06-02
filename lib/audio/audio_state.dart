@@ -57,8 +57,15 @@ class AudioState extends ChangeNotifier {
     });
   }
 
-  static String audioUrl(int chapter, AudioReciter reciter) =>
-      'https://www.everydaycodings.com/api/v1/audio/chapter/$chapter/${reciter.id}.mp3';
+  /// Audio URL with multiple fallback sources for maximum reliability.
+  /// Primary: everydaycodings.com (fast, dedicated CDN)
+  /// Fallback: bhagavadgitaapi.in (official API, always available)
+  static String audioUrl(int chapter, AudioReciter reciter, {int fallback = 0}) {
+    if (fallback == 0) {
+      return 'https://www.everydaycodings.com/api/v1/audio/chapter/$chapter/${reciter.id}.mp3';
+    }
+    return 'https://bhagavadgitaapi.in/audio/chapter/$chapter.mp3';
+  }
 
   Future<void> play(int chapterNumber, AudioReciter reciter) async {
     _currentChapterNumber = chapterNumber;
@@ -74,7 +81,18 @@ class AudioState extends ChangeNotifier {
     );
     _registerMediaSessionHandlers();
 
-    await _service.play(audioUrl(chapterNumber, reciter));
+    // Try primary URL first, then fallback.
+    try {
+      await _service.play(audioUrl(chapterNumber, reciter, fallback: 0));
+    } catch (e) {
+      debugPrint('AudioState: primary URL failed, trying fallback: $e');
+      try {
+        await _service.play(audioUrl(chapterNumber, reciter, fallback: 1));
+      } catch (fallbackError) {
+        debugPrint('AudioState: fallback also failed: $fallbackError');
+        rethrow;
+      }
+    }
   }
 
   Future<void> pause() async => _service.pause();

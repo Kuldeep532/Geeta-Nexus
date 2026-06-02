@@ -780,6 +780,7 @@ file:///home/runner/workspace/lib/audio/media_session.dart
 file:///home/runner/workspace/lib/data/gita_data.dart
 file:///home/runner/workspace/lib/data/scripture_sources.dart
 file:///home/runner/workspace/lib/main.dart
+file:///home/runner/workspace/lib/models/dynamic_scripture.dart
 file:///home/runner/workspace/lib/models/models.dart
 file:///home/runner/workspace/lib/models/satsang_post.dart
 file:///home/runner/workspace/lib/models/scripture_model.dart
@@ -799,6 +800,8 @@ file:///home/runner/workspace/lib/screens/chapters_screen.dart
 file:///home/runner/workspace/lib/screens/daily_guidance_screen.dart
 file:///home/runner/workspace/lib/screens/daily_sadhana_screen.dart
 file:///home/runner/workspace/lib/screens/dhyana_hub_screen.dart
+file:///home/runner/workspace/lib/screens/dynamic_chapter_list_screen.dart
+file:///home/runner/workspace/lib/screens/dynamic_verse_reader_screen.dart
 file:///home/runner/workspace/lib/screens/gita_audio_chapters_screen.dart
 file:///home/runner/workspace/lib/screens/gita_comparison_screen.dart
 file:///home/runner/workspace/lib/screens/glossary_screen.dart
@@ -816,7 +819,6 @@ file:///home/runner/workspace/lib/screens/progress_screen.dart
 file:///home/runner/workspace/lib/screens/reading_plan_screen.dart
 file:///home/runner/workspace/lib/screens/satsang_connect_screen.dart
 file:///home/runner/workspace/lib/screens/scripture_chapter_reader_screen.dart
-file:///home/runner/workspace/lib/screens/scripture_dharmicdata_verse_list_screen.dart
 file:///home/runner/workspace/lib/screens/scripture_library_screen.dart
 file:///home/runner/workspace/lib/screens/scripture_upanishads_screen.dart
 file:///home/runner/workspace/lib/screens/search_screen.dart

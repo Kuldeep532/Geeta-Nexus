@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../data/scripture_sources.dart';
-import '../models/scripture_model.dart';
-import '../services/scripture_service.dart';
 import '../theme.dart';
 
-import 'scripture_chapter_reader_screen.dart';
-import 'scripture_dharmicdata_verse_list_screen.dart';
 import 'scripture_upanishads_screen.dart';
 import 'chapters_screen.dart';
+import 'dynamic_chapter_list_screen.dart';
 
 /// Redesigned Scripture Library — top-level categories only on the main screen.
 /// Tapping a category opens a custom bottom sheet with texts in that category.
@@ -201,8 +197,14 @@ class _CategorySheet extends StatelessWidget {
             context,
             MaterialPageRoute(builder: (_) => const ChaptersScreen()),
           );
+        } else if (text.chaptersUrl != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => DynamicChapterListScreen(text: text),
+            ),
+          );
         } else {
-          // For other chapter-verse texts, show a placeholder
           _showComingSoon(context, text.title);
         }
         break;
@@ -212,6 +214,13 @@ class _CategorySheet extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (_) => const ChaptersScreen(),
+            ),
+          );
+        } else if (text.chaptersUrl != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => DynamicChapterListScreen(text: text),
             ),
           );
         } else {
@@ -227,6 +236,13 @@ class _CategorySheet extends StatelessWidget {
                 name: text.title,
                 verses: const [],
               ),
+            ),
+          );
+        } else if (text.chaptersUrl != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => DynamicChapterListScreen(text: text),
             ),
           );
         } else {

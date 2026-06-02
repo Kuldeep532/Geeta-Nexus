@@ -8,6 +8,7 @@ import '../models/models.dart';
 import '../models/scripture_model.dart';
 import '../services/scripture_service.dart';
 import '../theme.dart';
+import 'aira_screen.dart';
 
 /// Clean verse-by-verse reader — text only, no audio contamination.
 ///
@@ -240,6 +241,39 @@ class _ScriptureChapterReaderScreenState
                     _buildNavBar(theme),
                   ],
                 ),
+
+      // Ask Aira FAB
+      floatingActionButton: ch == null
+          ? null
+          : Semantics(
+              button: true,
+              label: 'Ask Aira about Chapter ${ch.chapterNumber}: ${ch.nameTranslation}.',
+              hint: 'Double-tap to open the AI assistant with this chapter as context.',
+              child: FloatingActionButton.extended(
+                heroTag: 'reader_aira_fab',
+                backgroundColor: kGold,
+                foregroundColor: Colors.black,
+                icon: const Icon(Icons.support_agent_rounded),
+                label: Text('Ask Aira',
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                tooltip: 'Ask Aira about this chapter',
+                onPressed: () {
+                  HapticFeedback.mediumImpact();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AiraScreen(
+                        contextShloka:
+                            '${ch.nameTranslation} (Chapter ${ch.chapterNumber}): ${ch.chapterSummary}',
+                        contextVerse:
+                            'Bhagavad Gita, Chapter ${ch.chapterNumber} — ${ch.name}',
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 
