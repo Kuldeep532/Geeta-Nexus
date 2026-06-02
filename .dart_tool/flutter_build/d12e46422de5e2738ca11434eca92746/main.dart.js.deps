@@ -775,11 +775,12 @@ file:///home/runner/.pub-cache/hosted/pub.dev/web-1.1.1/lib/web.dart
 file:///home/runner/workspace/.dart_tool/flutter_build/d12e46422de5e2738ca11434eca92746/app.dill
 file:///home/runner/workspace/.dart_tool/flutter_build/d12e46422de5e2738ca11434eca92746/main.dart
 file:///home/runner/workspace/.dart_tool/flutter_build/d12e46422de5e2738ca11434eca92746/web_plugin_registrant.dart
-file:///home/runner/workspace/lib/audio/audio_state.dart
+file:///home/runner/workspace/lib/audio/audio_streaming_state.dart
 file:///home/runner/workspace/lib/audio/media_session.dart
 file:///home/runner/workspace/lib/data/gita_data.dart
 file:///home/runner/workspace/lib/data/scripture_sources.dart
 file:///home/runner/workspace/lib/main.dart
+file:///home/runner/workspace/lib/models/audio_source.dart
 file:///home/runner/workspace/lib/models/dynamic_scripture.dart
 file:///home/runner/workspace/lib/models/models.dart
 file:///home/runner/workspace/lib/models/satsang_post.dart
@@ -791,7 +792,7 @@ file:///home/runner/workspace/lib/screens/ai_screen.dart
 file:///home/runner/workspace/lib/screens/aira_screen.dart
 file:///home/runner/workspace/lib/screens/antakshari_screen.dart
 file:///home/runner/workspace/lib/screens/astrology_screen.dart
-file:///home/runner/workspace/lib/screens/audio_player_screen.dart
+file:///home/runner/workspace/lib/screens/audio_streaming_player_screen.dart
 file:///home/runner/workspace/lib/screens/bookmarks_screen.dart
 file:///home/runner/workspace/lib/screens/breathing_screen.dart
 file:///home/runner/workspace/lib/screens/chants_screen.dart
@@ -829,7 +830,6 @@ file:///home/runner/workspace/lib/screens/update_checker.dart
 file:///home/runner/workspace/lib/screens/updates_screen.dart
 file:///home/runner/workspace/lib/screens/wisdom_cards_screen.dart
 file:///home/runner/workspace/lib/services/ai_service.dart
-file:///home/runner/workspace/lib/services/chapter_audio_service.dart
 file:///home/runner/workspace/lib/services/firebase_core_service.dart
 file:///home/runner/workspace/lib/services/firebase_satsang_service.dart
 file:///home/runner/workspace/lib/services/kokoro_tts_service.dart

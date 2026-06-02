@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import 'audio/audio_state.dart';
+import 'audio/audio_streaming_state.dart';
 import 'data/gita_data.dart';
 import 'state/app_state.dart';
 import 'services/sadhana_service.dart';
@@ -22,7 +22,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final appState = AppState();
-  final audioState = AudioState();
+  final audioState = AudioStreamingState();
   final sadhanaService = SadhanaService();
   final satsangService = FirebaseSatsangService();
   final firebaseCore = FirebaseCoreService();
@@ -45,7 +45,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider<AppState>.value(value: appState),
-        ChangeNotifierProvider<AudioState>.value(value: audioState),
+        ChangeNotifierProvider<AudioStreamingState>.value(value: audioState),
         ChangeNotifierProvider<SadhanaService>.value(value: sadhanaService),
         ChangeNotifierProvider<FirebaseSatsangService>.value(value: satsangService),
         ChangeNotifierProvider<FirebaseCoreService>.value(value: firebaseCore),
@@ -64,7 +64,7 @@ class MyApp extends StatelessWidget {
       builder: (context, state, _) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'Gita Nexus',
+          title: '',
           theme: buildLightTheme(),
           darkTheme: buildDarkTheme(),
           themeMode: state.themeMode,

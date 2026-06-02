@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../audio/audio_state.dart';
-import '../screens/audio_player_screen.dart';
+import '../audio/audio_streaming_state.dart';
+import '../screens/audio_streaming_player_screen.dart';
 import '../theme.dart';
 
 /// Persistent mini audio player bar that floats above the bottom nav bar
@@ -20,7 +20,7 @@ class MiniAudioPlayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<AudioState>(
+    return Consumer<AudioStreamingState>(
       builder: (context, audio, _) {
         // Only show when we have a track loaded
         final visible = audio.hasTrack;
@@ -50,7 +50,7 @@ class MiniAudioPlayer extends StatelessWidget {
 }
 
 class _MiniPlayerBar extends StatelessWidget {
-  final AudioState audio;
+  final AudioStreamingState audio;
   final String Function(Duration) fmt;
 
   const _MiniPlayerBar({required this.audio, required this.fmt});
@@ -61,12 +61,12 @@ class _MiniPlayerBar extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final progress = audio.progress;
     final chapter = audio.currentChapterNumber ?? 0;
-    final reciter = audio.currentReciterName;
+    final sourceName = audio.currentSourceName;
 
     return Semantics(
       container: true,
       label:
-          'Now playing: Chapter $chapter, $reciter. ${audio.isPlaying ? "Playing." : "Paused."} '
+          'Now playing: Chapter $chapter, $sourceName. ${audio.isPlaying ? "Playing." : "Paused."} '
           'Tap to open full player.',
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
@@ -76,7 +76,7 @@ class _MiniPlayerBar extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (_) =>
-                  AudioPlayerScreen(chapterNumber: chapter),
+                  AudioStreamingPlayerScreen(chapterNumber: chapter),
             ),
           );
         },
@@ -154,8 +154,8 @@ class _MiniPlayerBar extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                           Text(
-                            reciter.isNotEmpty
-                                ? reciter
+                            sourceName.isNotEmpty
+                                ? sourceName
                                 : 'Bhagavad Gita',
                             style: GoogleFonts.inter(
                               fontSize: 11,

@@ -8,7 +8,7 @@ import '../models/models.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import 'aira_screen.dart';
-import 'audio_player_screen.dart';
+import 'audio_streaming_player_screen.dart';
 import 'scripture_chapter_reader_screen.dart';
 
 /// Chapter Detail Screen — text and metadata only.
@@ -39,7 +39,7 @@ class ChapterDetailScreen extends StatelessWidget {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => AudioPlayerScreen(chapterNumber: chapter.number),
+        builder: (_) => AudioStreamingPlayerScreen(chapterNumber: chapter.number),
       ),
     );
   }

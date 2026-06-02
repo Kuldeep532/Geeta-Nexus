@@ -1,0 +1,32 @@
+You are an expert Flutter developer specializing in clean state management, accessibility (a11y), and Replit cloud-IDE optimization. I am building a Bhagavad Gita application that streams all audio dynamically via network URLs; I do NOT use any local audio assets.
+
+Please refactor my project code to implement the following changes in a single go:
+
+### 1. REPLIT OPTIMIZATION & FLEXIBLE FILE ARCHITECTURE
+- Note: I do not remember the exact name of my audio screen file (it could be 'chapter_audio.dart', 'audio_reader.dart', or similar). Provide the solution in a modular, clean structure so I can easily plug it into whichever screen file exists in my project.
+- Optimize the code specifically for Replit deployment. Use efficient memory management, avoid heavy widget rebuilding, and ensure streaming connections are properly disposed of to prevent performance lags or crashes in the Replit cloud environment.
+
+### 2. CLEAN MULTI-LANGUAGE AUDIO MODEL (USING WORKING NETWORK ENDPOINTS)
+Completely replace my old, broken/concatenated audio selection logic. Create a robust Dart Model/Map that maps chapters to these exact, verified network streaming URLs:
+
+* Original Source Repositories:
+  - https://huggingface.co/datasets/JDhruv14/Bhagavad-Gita_Audio/resolve/main/README.md
+  - https://github.com/shub39/Dharmik/tree/master/composeApp/gita_audio
+  - https://github.com/everydaycodings/Bhagavad-Gita
+
+* Multilingual Internet Archive Streaming Endpoints:
+  - English (Yatharth Geeta): https://archive.org/details/YatharthGeetaEnglishAudio
+  - Hindi & Sanskrit (T S Ranganathan): https://archive.org/details/SrimadBhagavadGita_201712
+  - Gujarati (Yatharth Geeta): https://archive.org/details/YatharthGeetaGujratiAudio
+  - Marathi (Nitya Path): https://archive.org/details/BhagavadGitaMarathi
+  - English Classic (LibriVox): https://archive.org/details/bhagavad_gita_0803_librivox
+
+### 3. AUDIO CHAPTER SCREEN UI & PLAYBACK
+- Modify the Chapter Selection Screen UI (ListView/GridView) so a user can filter by Language, then select a Chapter.
+- When tapped, pass the pristine network URL dynamically to an audio player package (like 'just_audio' or 'audioplayers') for online streaming.
+
+### 4. ACCESSIBILITY FIX: REPETITIVE TITLE ANNOUNCEMENT
+- Screen readers (like TalkBack) are currently announcing the app title multiple times repeatedly (e.g., "Geeta Nexus Geeta Nexus Geeta Nexus explorer").
+- Fix this duplication issue. Ensure the root MaterialApp title and the main AppBar header do not conflict. Use 'ExcludeSemantics' or wrap decorative widgets inside a single unified semantic block so the screen reader announces "Geeta Nexus Explorer" exactly once.
+
+Provide the complete, clean, refactored Dart code combining the updated Audio Model, the fixed Chapter Screen UI, and the accessible layout optimized for Replit.
