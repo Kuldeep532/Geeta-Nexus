@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart'; // Google fonts integrated for dynamic icons
 import 'package:url_launcher/url_launcher.dart';
 import '../theme.dart';
 
-// Font Awesome ka import completely removed taaki enterprise build fail na ho
+// Kisi bhi third-party fonts ya icons package ka import nahi hai — 100% stable
 
 const String kInstagramUrl =
     'https://www.instagram.com/_kuldeep_kumar_yadav';
@@ -26,28 +25,28 @@ class SocialLinksRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         _IconBtn(
-          iconName: 'photo_camera', // Material Symbol name for Instagram alternative
+          icon: Icons.camera_alt_outlined, // Safe alternative for Instagram
           color: const Color(0xFFE1306C),
           tooltip: 'Instagram',
           onTap: () => openUrl(kInstagramUrl),
         ),
         const SizedBox(width: 16),
         _IconBtn(
-          iconName: 'facebook', // Material Symbol name for Facebook
+          icon: Icons.facebook,            // Native Material Facebook Icon
           color: const Color(0xFF1877F2),
           tooltip: 'Facebook',
           onTap: () => openUrl(kFacebookUrl),
         ),
         const SizedBox(width: 16),
         _IconBtn(
-          iconName: 'business_center', // Material Symbol name for LinkedIn alternative
+          icon: Icons.business_center,     // Native corporate briefcase for LinkedIn
           color: const Color(0xFF0A66C2),
           tooltip: 'LinkedIn',
           onTap: () => openUrl(kLinkedInUrl),
         ),
         const SizedBox(width: 16),
         _IconBtn(
-          iconName: 'mail', // Material Symbol name for Envelope/Email
+          icon: Icons.mail_outlined,       // Native Envelope/Mail Icon
           color: kGold,
           tooltip: 'Email',
           onTap: () => openUrl('mailto:$kContactEmail'),
@@ -58,13 +57,13 @@ class SocialLinksRow extends StatelessWidget {
 }
 
 class _IconBtn extends StatelessWidget {
-  final String iconName; // Changed from IconData to String to match Google Fonts lookup
+  final IconData icon; // Reverted back to stable IconData
   final Color color;
   final String tooltip;
   final VoidCallback onTap;
 
   const _IconBtn({
-    required this.iconName,
+    required this.icon,
     required this.color,
     required this.tooltip,
     required this.onTap,
@@ -84,15 +83,11 @@ class _IconBtn extends StatelessWidget {
             color: kCard,
             border: Border.all(color: color.withOpacity(0.5)),
           ),
-          // Replaced FaIcon with dynamic Text-based Material Symbols using Google Fonts
-          child: Text(
-            iconName,
-            textDirection: TextDirection.ltr,
-            style: GoogleFonts.materialSymbolsOutlined(
-              color: color,
-              fontSize: 22,
-              fontWeight: FontWeight.w400,
-            ),
+          // Using core Flutter Icon widget which NEVER fails compilation
+          child: Icon(
+            icon,
+            color: color,
+            size: 22,
           ),
         ),
       ),
