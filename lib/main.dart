@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'audio/audio_state.dart';
 import 'data/gita_data.dart';
 import 'state/app_state.dart';
+import 'services/sadhana_service.dart';
+import 'services/satsang_service.dart';
 import 'theme.dart';
 import 'widgets/mini_audio_player.dart';
 import 'screens/home_screen.dart';
@@ -21,15 +22,25 @@ void main() async {
 
   final appState = AppState();
   final audioState = AudioState();
+  final sadhanaService = SadhanaService();
+  final satsangService = SatsangService();
+
   audioState.initialize();
 
-  await Future.wait([appState.load(), loadGitaData()]);
+  await Future.wait([
+    appState.load(),
+    loadGitaData(),
+    sadhanaService.load(),
+    satsangService.load(),
+  ]);
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider<AppState>.value(value: appState),
         ChangeNotifierProvider<AudioState>.value(value: audioState),
+        ChangeNotifierProvider<SadhanaService>.value(value: sadhanaService),
+        ChangeNotifierProvider<SatsangService>.value(value: satsangService),
       ],
       child: const MyApp(),
     ),

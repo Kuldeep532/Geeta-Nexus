@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
-import '../audio/audio_state.dart';
 import '../data/gita_data.dart' show kChapters;
 import '../models/models.dart';
 import '../state/app_state.dart';

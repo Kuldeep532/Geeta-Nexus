@@ -19,6 +19,10 @@ import 'journal_screen.dart';
 import 'meditation_screen.dart';
 import 'reading_plan_screen.dart';
 import 'wisdom_cards_screen.dart';
+import 'daily_sadhana_screen.dart';
+import 'satsang_connect_screen.dart';
+import 'gita_comparison_screen.dart';
+import 'daily_guidance_screen.dart';
 
 class _NavItem {
   final String title;
@@ -70,13 +74,48 @@ class HomeScreen extends StatelessWidget {
 
   static const List<_NavItem> _guideItems = [
     _NavItem(
+      title: 'Daily Sadhana',
+      subtitle: 'Track your spiritual routine and build streaks',
+      semanticLabel:
+          'Daily Sadhana. Track your morning and evening spiritual routine with Japa, meditation, Gita reading, and prayer.',
+      icon: Icons.self_improvement_rounded,
+      screen: DailySadhanaScreen(),
+      isNew: true,
+    ),
+    _NavItem(
+      title: 'Daily Guidance',
+      subtitle: 'Personalized wisdom from Aira',
+      semanticLabel:
+          'Daily Guidance. Personalized spiritual messages from Aira based on your mood and progress.',
+      icon: Icons.wb_sunny_rounded,
+      screen: DailyGuidanceScreen(),
+      isNew: true,
+    ),
+    _NavItem(
+      title: 'Satsang Connect',
+      subtitle: 'Community of spiritual seekers',
+      semanticLabel:
+          'Satsang Connect. Join a community of seekers to share reflections, ask questions, and grow together.',
+      icon: Icons.people_rounded,
+      screen: SatsangConnectScreen(),
+      isNew: true,
+    ),
+    _NavItem(
+      title: 'Gita Comparison',
+      subtitle: 'Compare translations side by side',
+      semanticLabel:
+          'Gita Comparison. Compare multiple translations of the same verse side by side for deeper understanding.',
+      icon: Icons.compare_rounded,
+      screen: GitaComparisonScreen(),
+      isNew: true,
+    ),
+    _NavItem(
       title: 'Gita Audio Chapters',
       subtitle: 'Listen to all 18 chapters narrated',
       semanticLabel:
           'Gita Audio Chapters. Listen to all 18 chapters narrated. Choose your reciter and listen in the background.',
       icon: Icons.headphones_rounded,
       screen: GitaAudioChaptersScreen(),
-      isNew: true,
     ),
     _NavItem(
       title: 'Scripture Library',

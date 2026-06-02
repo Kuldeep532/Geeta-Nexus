@@ -1,5 +1,3 @@
-import 'package:flutter/material.dart';
-
 class Verse {
   final String id;
   final int chapter; // Backend store
