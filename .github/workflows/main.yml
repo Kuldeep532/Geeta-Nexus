@@ -30,8 +30,10 @@ jobs:
           flutter pub cache clean --force
           flutter pub get
 
-      - name: Configure Google Services
-        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" > android/app/google-services.json
+      # Solid Fix: Raw JSON bina kisi decoding ke direct target folder mein safe write hoga
+      - name: Setup Firebase Google Services Config
+        run: |
+          echo '${{ secrets.FIREBASE_SECRET_JSON }}' > android/app/google-services.json
 
       - name: Configure Production Keystore
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
@@ -43,27 +45,20 @@ jobs:
           echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/key.properties
           echo "storeFile=upload-keystore.jks" >> android/key.properties
 
-      - name: Auto-Detect Secrets & Build APK
+      - name: Build Production APK
         env:
           GEMINI_AI_API_KEY: ${{ secrets.GEMINI_AI_API_KEY }}
           HF_API_TOKEN: ${{ secrets.HF_API_TOKEN }}
-          ALL_SECRETS_JSON: ${{ toJson(secrets) }}
         run: |
-          echo "$ALL_SECRETS_JSON" | jq -r 'to_entries|map("\(.key)=\(.value)")|.[]' > .env
+          # JQ parser aur dynamic loop ko completely remove kar diya hai taaki crash na ho
+          # Environment variables ko direct Dart-Define mein secure pass kiya gaya hai
           
-          DYNAMIC_DART_DEFINES=""
-          while IFS= read -r line || [ -n "$line" ]; do
-            if [[ "$line" != GOOGLE_SERVICES_JSON=* && "$line" != KEYSTORE_BASE64=* && "$line" != KEYSTORE_PASSWORD=* && "$line" != KEY_PASSWORD=* && "$line" != KEY_ALIAS=* && -n "$line" ]]; then
-              DYNAMIC_DART_DEFINES="$DYNAMIC_DART_DEFINES --dart-define=$line"
-            fi
-          done < .env
-
-          # Global Web Bypass Engine active kiya gaya hai
           flutter build apk --release \
             --android-skip-build-dependency-validation \
             --dart-define=dart.library.js=false \
             --dart-define=dart.library.html=false \
-            $DYNAMIC_DART_DEFINES
+            --dart-define=GEMINI_AI_API_KEY=$GEMINI_AI_API_KEY \
+            --dart-define=HF_API_TOKEN=$HF_API_TOKEN
 
       - name: Upload Production APK
         uses: actions/upload-artifact@v4
