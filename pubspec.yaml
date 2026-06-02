@@ -33,8 +33,6 @@ dependencies:
   dynamic_color: ^1.7.0
 
   # --- Data & Utilities ---
-  # intl is transitively provided by flutter_localizations from the SDK.
-  # Do NOT pin it explicitly — version is controlled by the Flutter SDK.
   uuid: ^4.5.1
   collection: ^1.19.0
   dartz: ^0.10.1
@@ -66,7 +64,6 @@ dependencies:
   audio_video_progress_bar: ^2.0.3
   wakelock_plus: ^1.2.8
   vibration: ^2.0.0
-  # flutter_cache_manager: ^3.4.1  # Removed — web-safe direct URL loading replaces cached audio
 
 dev_dependencies:
   flutter_test:
@@ -74,6 +71,10 @@ dev_dependencies:
   flutter_lints: ^4.0.0
   build_runner: ^2.4.14
   flutter_launcher_icons: ^0.14.3
+
+# Forcefully upgrade breaking internal dependencies without removing them for web
+dependency_overrides:
+  font_awesome_flutter: ^10.8.0
 
 # --- LAUNCHER ICON ENGINE CONFIG ---
 flutter_launcher_icons:
