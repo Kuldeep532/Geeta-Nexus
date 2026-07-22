@@ -1,1 +1,44 @@
-.github/workflows/
+# ── Local / secrets (NEVER commit) ──────────────────────────────────────────
+local.properties
+*.jks
+*.keystore
+*.pem
+*.key
+.env
+
+# ── Gradle ───────────────────────────────────────────────────────────────────
+.gradle/
+build/
+*.class
+out/
+
+# ── Android / KMP build outputs ──────────────────────────────────────────────
+androidApp/build/
+shared/build/
+iosApp/build/
+*.aar
+*.apk
+*.aab
+XCFramework/
+
+# ── Xcode / iOS ──────────────────────────────────────────────────────────────
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+Pods/
+.DS_Store
+
+# ── Dart / Flutter (legacy — kept for reference) ─────────────────────────────
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+
+# ── IDE ──────────────────────────────────────────────────────────────────────
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# ── OS ───────────────────────────────────────────────────────────────────────
+Thumbs.db

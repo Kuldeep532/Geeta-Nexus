@@ -1,0 +1,21 @@
+# ── local.properties.template ────────────────────────────────────────────────
+# Copy this file to local.properties and fill in your values.
+# NEVER commit local.properties to source control.
+
+# Android SDK location (auto-set by Android Studio)
+sdk.dir=/path/to/Android/Sdk
+
+# ── Ed25519 private key (REQUIRED for Cloudflare gateway) ────────────────────
+# Raw 32-byte seed, base64-encoded.
+# Steps to generate a key pair:
+#   1. openssl genpkey -algorithm ed25519 -out private.pem
+#   2. openssl pkey -in private.pem -outform DER | tail -c 32 | base64
+#      → paste the output below as ed25519.private.key
+#   3. Verify the matching public key matches what's in your Cloudflare Worker:
+#      openssl pkey -in private.pem -pubout | openssl pkey -pubin -outform DER | base64
+#      Expected: MCowBQYDK2VwAyEAa4ZxuobCuaSe+HMbCc7YW7AG/W5SELvpc7NNBVX9ab4=
+ed25519.private.key=PASTE_YOUR_32_BYTE_SEED_BASE64_HERE
+
+# ── Google OAuth (optional override) ─────────────────────────────────────────
+# Defaults to the value in AppConfig.GOOGLE_WEB_CLIENT_ID
+# google.web.client.id=479687771729-c2k3cfiv50m6h7agj0nkckj6i1tm9pkh.apps.googleusercontent.com
