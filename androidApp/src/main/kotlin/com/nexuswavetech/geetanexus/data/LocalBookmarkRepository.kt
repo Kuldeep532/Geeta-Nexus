@@ -23,7 +23,7 @@ class LocalBookmarkRepository(private val context: Context) : BookmarkRepository
             val parts = id.split(".")
             val ch = parts.getOrNull(0)?.toIntOrNull() ?: return@mapNotNull null
             val vr = parts.getOrNull(1)?.toIntOrNull() ?: return@mapNotNull null
-            Verse(chapterNumber = ch, verseNumber = vr, sanskrit = "")
+            Verse(chapterNumber = ch, verseNumber = vr, text = "")
         }
     }
 

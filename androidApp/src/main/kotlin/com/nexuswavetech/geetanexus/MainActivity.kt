@@ -4,8 +4,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.*
-import androidx.compose.foundation.layout.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -13,14 +16,31 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.*
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.nexuswavetech.geetanexus.ui.navigation.GeetaNexusNavGraph
 import com.nexuswavetech.geetanexus.ui.navigation.Screen
+import com.nexuswavetech.geetanexus.ui.navigation.fullScreenRoutes
 import com.nexuswavetech.geetanexus.ui.theme.GeetaNexusTheme
+import com.nexuswavetech.geetanexus.ui.viewmodel.AudioViewModel
+import org.koin.androidx.compose.koinViewModel
+
+data class BottomNavItem(
+    val screen: Screen,
+    val label: String,
+    val icon: ImageVector,
+    val selectedIcon: ImageVector = icon
+)
+
+val bottomNavItems = listOf(
+    BottomNavItem(Screen.Home,       "Home",       Icons.Default.Home,        Icons.Filled.Home),
+    BottomNavItem(Screen.Scriptures, "Scriptures", Icons.Default.MenuBook,    Icons.Filled.MenuBook),
+    BottomNavItem(Screen.AiChat,     "Aira",       Icons.Default.AutoAwesome, Icons.Filled.AutoAwesome),
+    BottomNavItem(Screen.Bookmarks,  "Saved",      Icons.Default.Bookmark,    Icons.Filled.Bookmark),
+    BottomNavItem(Screen.More,       "More",       Icons.Default.MoreHoriz,   Icons.Filled.MoreHoriz),
+)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,59 +48,39 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             GeetaNexusTheme {
-                GeetaNexusScaffold()
+                GeetaNexusApp()
             }
         }
     }
 }
 
-private data class NavItem(
-    val screen: Screen,
-    val label: String,
-    val icon: ImageVector,
-    val contentDescription: String
-)
-
-private val bottomNavItems = listOf(
-    NavItem(Screen.Home,      "Home",      Icons.Default.Home,           "Navigate to Home"),
-    NavItem(Screen.Chapters,  "Gita",      Icons.Default.MenuBook,       "Navigate to Bhagavad Gita chapters"),
-    NavItem(Screen.AiChat,    "Aira",      Icons.Default.AutoAwesome,    "Open AI spiritual assistant"),
-    NavItem(Screen.Bookmarks, "Saved",     Icons.Default.Bookmark,       "View bookmarked verses"),
-    NavItem(Screen.Profile,   "Profile",   Icons.Default.AccountCircle,  "View your profile"),
-)
-
-// Screens that should NOT show the bottom bar
-private val fullScreenRoutes = setOf(
-    Screen.VerseReader.route,
-    Screen.Onboarding.route
-)
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GeetaNexusScaffold() {
-    val navController = rememberNavController()
-    val navBackStack  by navController.currentBackStackEntryAsState()
-    val currentRoute  = navBackStack?.destination?.route
+fun GeetaNexusApp() {
+    val navController      = rememberNavController()
+    val audioViewModel     = koinViewModel<AudioViewModel>()
+    val backStackEntry     by navController.currentBackStackEntryAsState()
+    val currentDestination  = backStackEntry?.destination
+    val currentRoute        = currentDestination?.route ?: ""
 
-    val showBottomBar = currentRoute !in fullScreenRoutes &&
-        !currentRoute.orEmpty().startsWith("verse/")
+    val showBottomBar = fullScreenRoutes.none { currentRoute.startsWith(it.substringBefore("{")) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             AnimatedVisibility(
-                visible = showBottomBar,
-                enter   = slideInVertically { it },
-                exit    = slideOutVertically { it }
+                visible   = showBottomBar,
+                enter     = slideInVertically { it },
+                exit      = slideOutVertically { it }
             ) {
-                NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ) {
-                    val hierarchy = navBackStack?.destination?.hierarchy
+                NavigationBar {
                     bottomNavItems.forEach { item ->
-                        val selected = hierarchy?.any { it.route == item.screen.route } == true
+                        val selected = currentDestination?.hierarchy?.any {
+                            it.route == item.screen.route
+                        } == true
                         NavigationBarItem(
-                            selected = selected,
-                            onClick  = {
+                            selected  = selected,
+                            onClick   = {
                                 navController.navigate(item.screen.route) {
                                     popUpTo(navController.graph.findStartDestination().id) {
                                         saveState = true
@@ -89,28 +89,23 @@ fun GeetaNexusScaffold() {
                                     restoreState    = true
                                 }
                             },
-                            icon = {
+                            icon      = {
                                 Icon(
-                                    imageVector         = item.icon,
-                                    contentDescription  = item.contentDescription
+                                    imageVector = if (selected) item.selectedIcon else item.icon,
+                                    contentDescription = item.label
                                 )
                             },
-                            label = {
-                                Text(
-                                    text = item.label,
-                                    style = MaterialTheme.typography.labelLarge
-                                )
-                            },
-                            alwaysShowLabel = false
+                            label     = { Text(item.label) }
                         )
                     }
                 }
             }
         }
-    ) { innerPadding ->
+    ) { padding ->
         GeetaNexusNavGraph(
-            navController    = navController,
-            startDestination = Screen.Home.route
+            navController     = navController,
+            audioViewModel    = audioViewModel,
+            modifier          = Modifier.padding(padding)
         )
     }
 }

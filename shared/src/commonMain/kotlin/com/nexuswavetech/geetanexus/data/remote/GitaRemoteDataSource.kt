@@ -6,7 +6,6 @@ import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
-import io.ktor.client.request.forms.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
@@ -19,15 +18,15 @@ class GitaRemoteDataSource(
         install(ContentNegotiation) { json(json) }
     }
 
-    // ── Gita content (GitHub DharmicData) ────────────────────────────────────
+    // ── Gita content (DharmicData GitHub) ─────────────────────────────────────
 
     suspend fun fetchChapters(): List<ChapterDto> =
-        httpClient.get(AppConfig.DharmicData.CHAPTER_LIST).body()
+        httpClient.get(AppConfig.DharmicData.CHAPTERS).body()
 
     suspend fun fetchVerses(chapterNumber: Int): List<VerseDto> =
-        httpClient.get(AppConfig.DharmicData.chapterVerses(chapterNumber)).body()
+        httpClient.get(AppConfig.DharmicData.chapter(chapterNumber)).body()
 
-    // ── AI — routes through FastAPI backend ──────────────────────────────────
+    // ── AI routes via FastAPI backend ─────────────────────────────────────────
 
     suspend fun askAi(request: AskRequest): AskResponse {
         val apiKey = gatewayClient.getApiKey(AppConfig.ApiKeyName.GEMINI)

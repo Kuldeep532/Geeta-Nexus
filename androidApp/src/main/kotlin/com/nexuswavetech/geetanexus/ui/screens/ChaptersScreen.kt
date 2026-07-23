@@ -31,20 +31,14 @@ fun ChaptersScreen(
             TopAppBar(
                 title = { Text("Bhagavad Gita") },
                 navigationIcon = {
-                    IconButton(
-                        onClick = { navController.popBackStack() },
-                        modifier = Modifier.semantics { contentDescription = "Go back" }
-                    ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
         }
     ) { padding ->
-        Box(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentAlignment = Alignment.Center
-        ) {
+        Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
             when (val s = state) {
                 is GitaUiState.Loading -> CircularProgressIndicator()
                 is GitaUiState.Error   -> ErrorState(s.message) { viewModel.loadChapters() }
@@ -59,9 +53,9 @@ fun ChaptersScreen(
 @Composable
 private fun ChaptersGrid(chapters: List<Chapter>, onClick: (Chapter) -> Unit) {
     LazyVerticalGrid(
-        columns             = GridCells.Fixed(2),
-        modifier            = Modifier.fillMaxSize(),
-        contentPadding      = PaddingValues(12.dp),
+        columns               = GridCells.Fixed(2),
+        modifier              = Modifier.fillMaxSize(),
+        contentPadding        = PaddingValues(12.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement   = Arrangement.spacedBy(12.dp)
     ) {
@@ -74,45 +68,30 @@ private fun ChaptersGrid(chapters: List<Chapter>, onClick: (Chapter) -> Unit) {
 @Composable
 private fun ChapterCard(chapter: Chapter, onClick: () -> Unit) {
     Card(
-        onClick   = onClick,
-        modifier  = Modifier
-            .fillMaxWidth()
-            .semantics(mergeDescendants = true) {
-                contentDescription =
-                    "Chapter ${chapter.number}: ${chapter.name}, ${chapter.versesCount} verses"
-            }
+        onClick  = onClick,
+        modifier = Modifier.fillMaxWidth().semantics(mergeDescendants = true) {
+            contentDescription = "Chapter ${chapter.number}: ${chapter.name}, ${chapter.verseCount} verses"
+        }
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Text(
-                text  = "Chapter ${chapter.number}",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text     = chapter.name,
-                style    = MaterialTheme.typography.titleMedium,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text  = "${chapter.versesCount} verses",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("Chapter ${chapter.number}", style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary)
+            Text(chapter.name, style = MaterialTheme.typography.titleMedium,
+                maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text("${chapter.verseCount} verses", style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChapterDetailScreen(
     chapterNumber: Int,
     navController: NavController,
     viewModel: GitaViewModel = koinViewModel()
 ) {
-    val versesState by viewModel.versesState.collectAsState()
+    val versesState  by viewModel.versesState.collectAsState()
     val chaptersState by viewModel.chaptersState.collectAsState()
 
     LaunchedEffect(chapterNumber) { viewModel.loadVerses(chapterNumber) }
@@ -123,7 +102,7 @@ fun ChapterDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title  = { Text(chapter?.let { "Ch. $chapterNumber: ${it.name}" } ?: "Chapter $chapterNumber") },
+                title = { Text(chapter?.let { "Ch. $chapterNumber: ${it.name}" } ?: "Chapter $chapterNumber") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -132,10 +111,7 @@ fun ChapterDetailScreen(
             )
         }
     ) { padding ->
-        Box(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentAlignment = Alignment.Center
-        ) {
+        Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
             when (val s = versesState) {
                 is com.nexuswavetech.geetanexus.ui.viewmodel.VerseUiState.Loading ->
                     CircularProgressIndicator()
@@ -143,20 +119,17 @@ fun ChapterDetailScreen(
                     ErrorState(s.message) { viewModel.loadVerses(chapterNumber) }
                 is com.nexuswavetech.geetanexus.ui.viewmodel.VerseUiState.Success -> {
                     androidx.compose.foundation.lazy.LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
+                        modifier            = Modifier.fillMaxSize(),
+                        contentPadding      = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         chapter?.summary?.takeIf { it.isNotBlank() }?.let { summary ->
                             item {
-                                Card(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors   = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                                    )
-                                ) {
+                                Card(modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
                                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        Text("Chapter Summary", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                                        Text("Chapter Summary", style = MaterialTheme.typography.labelLarge,
+                                            color = MaterialTheme.colorScheme.primary)
                                         Text(summary, style = MaterialTheme.typography.bodyMedium)
                                     }
                                 }
@@ -166,18 +139,18 @@ fun ChapterDetailScreen(
                         items(s.verses.size) { idx ->
                             val verse = s.verses[idx]
                             Card(
-                                onClick  = {
-                                    navController.navigate(Screen.VerseReader.route(chapterNumber, verse.verseNumber))
-                                },
-                                modifier = Modifier.fillMaxWidth().semantics {
-                                    contentDescription = "Verse ${verse.verseNumber}"
-                                }
+                                onClick  = { navController.navigate(Screen.VerseReader.route(chapterNumber, verse.verseNumber)) },
+                                modifier = Modifier.fillMaxWidth()
                             ) {
                                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Text("BG ${verse.chapterNumber}.${verse.verseNumber}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                                    Text(verse.sanskrit, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                    Text("BG ${verse.chapterNumber}.${verse.verseNumber}",
+                                        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                    Text(verse.text, style = MaterialTheme.typography.bodySmall,
+                                        maxLines = 2, overflow = TextOverflow.Ellipsis)
                                     if (verse.translation.isNotBlank()) {
-                                        Text(verse.translation, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                        Text(verse.translation, style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 2, overflow = TextOverflow.Ellipsis)
                                     }
                                 }
                             }
@@ -196,7 +169,7 @@ fun ErrorState(message: String, onRetry: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier            = Modifier.padding(32.dp)
     ) {
-        Text(text = message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+        Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
         Button(onClick = onRetry) { Text("Retry") }
     }
 }

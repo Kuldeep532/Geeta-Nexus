@@ -3,24 +3,21 @@ package com.nexuswavetech.geetanexus.ui.screens
 import androidx.compose.animation.*
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.nexuswavetech.geetanexus.domain.models.Verse
+import com.nexuswavetech.geetanexus.ui.viewmodel.AudioViewModel
 import com.nexuswavetech.geetanexus.ui.viewmodel.GitaViewModel
-import com.nexuswavetech.geetanexus.ui.viewmodel.VerseUiState
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,182 +26,247 @@ fun VerseReaderScreen(
     chapterNumber: Int,
     verseNumber: Int,
     navController: NavController,
-    viewModel: GitaViewModel = koinViewModel()
+    audioViewModel: AudioViewModel,
+    gitaViewModel: GitaViewModel = koinViewModel()
 ) {
-    val versesState   by viewModel.versesState.collectAsState()
-    val bookmarkedIds by viewModel.bookmarkedIds.collectAsState()
+    val verseState by gitaViewModel.currentVerseState.collectAsState()
+    val isBookmarked by gitaViewModel.isCurrentVerseBookmarked.collectAsState()
+    val isPlaying   by audioViewModel.isPlaying.collectAsState()
+    val isLoading   by audioViewModel.isLoading.collectAsState()
+    val currentAudioId by audioViewModel.currentId.collectAsState()
+    val position    by audioViewModel.position.collectAsState()
+    val duration    by audioViewModel.duration.collectAsState()
 
-    LaunchedEffect(chapterNumber) { viewModel.loadVerses(chapterNumber) }
+    var dragDelta by remember { mutableStateOf(0f) }
+    var slideDirection by remember { mutableStateOf(1) }
 
-    // Once loaded, jump to the requested verse
-    LaunchedEffect(versesState, verseNumber) {
-        val s = versesState
-        if (s is VerseUiState.Success) {
-            val idx = s.verses.indexOfFirst { it.verseNumber == verseNumber }
-            if (idx >= 0) viewModel.goToVerse(idx)
-        }
+    LaunchedEffect(chapterNumber, verseNumber) {
+        gitaViewModel.loadVerse(chapterNumber, verseNumber)
     }
 
-    when (val s = versesState) {
-        is VerseUiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-        is VerseUiState.Error   -> ErrorState(s.message) { viewModel.loadVerses(chapterNumber) }
-        is VerseUiState.Success -> {
-            val verse = s.verses.getOrNull(s.currentIndex) ?: return
-            val isBookmarked = bookmarkedIds.contains(verse.id)
+    val verse = (verseState as? com.nexuswavetech.geetanexus.ui.viewmodel.VerseUiState.Success)?.verse
+    val verseId = verse?.id ?: "$chapterNumber.$verseNumber"
+    val isThisAudioPlaying = currentAudioId == verseId && isPlaying
 
-            Scaffold(
-                topBar = {
-                    TopAppBar(
-                        title = { Text(verse.displayNumber) },
-                        navigationIcon = {
-                            IconButton(
-                                onClick = { navController.popBackStack() },
-                                modifier = Modifier.semantics { contentDescription = "Go back" }
-                            ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) }
-                        },
-                        actions = {
-                            IconButton(
-                                onClick = { viewModel.toggleBookmark(verse) },
-                                modifier = Modifier.semantics {
-                                    contentDescription = if (isBookmarked) "Remove bookmark" else "Add bookmark"
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("Chapter $chapterNumber · Verse $verseNumber", fontWeight = FontWeight.SemiBold)
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    // Bookmark toggle
+                    IconButton(onClick = { verse?.let { gitaViewModel.toggleBookmark(it) } }) {
+                        Icon(
+                            imageVector  = if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                            contentDescription = "Bookmark",
+                            tint = if (isBookmarked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    // Share
+                    IconButton(onClick = { /* share intent */ }) {
+                        Icon(Icons.Default.Share, contentDescription = "Share")
+                    }
+                }
+            )
+        },
+        // Unified audio mini-player at bottom
+        bottomBar = {
+            if (verse != null) {
+                Surface(shadowElevation = 8.dp) {
+                    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                        // Progress bar (only when audio active for this verse)
+                        if (currentAudioId == verseId && duration > 0) {
+                            LinearProgressIndicator(
+                                progress = { (position.toFloat() / duration).coerceIn(0f, 1f) },
+                                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                            )
+                        }
+                        Row(
+                            modifier              = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment     = Alignment.CenterVertically
+                        ) {
+                            // Navigation
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                IconButton(
+                                    onClick = {
+                                        if (verseNumber > 1)
+                                            navController.navigate(
+                                                com.nexuswavetech.geetanexus.ui.navigation.Screen.VerseReader.route(chapterNumber, verseNumber - 1)
+                                            ) { popUpTo(navController.currentBackStackEntry?.destination?.route ?: "") { inclusive = true } }
+                                    },
+                                    enabled = verseNumber > 1
+                                ) {
+                                    Icon(Icons.Default.SkipPrevious, contentDescription = "Previous verse")
                                 }
+                                IconButton(
+                                    onClick = {
+                                        navController.navigate(
+                                            com.nexuswavetech.geetanexus.ui.navigation.Screen.VerseReader.route(chapterNumber, verseNumber + 1)
+                                        ) { popUpTo(navController.currentBackStackEntry?.destination?.route ?: "") { inclusive = true } }
+                                    }
+                                ) {
+                                    Icon(Icons.Default.SkipNext, contentDescription = "Next verse")
+                                }
+                            }
+
+                            // Audio controls
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment     = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    if (isBookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
-                                    contentDescription = null,
-                                    tint = if (isBookmarked) MaterialTheme.colorScheme.primary
-                                           else MaterialTheme.colorScheme.onSurface
-                                )
+                                if (currentAudioId == verseId) {
+                                    IconButton(onClick = { audioViewModel.skipBackward() }) {
+                                        Icon(Icons.Default.Replay10, contentDescription = "-10s")
+                                    }
+                                }
+                                FilledTonalIconButton(
+                                    onClick = {
+                                        val text = "${verse.text} ${verse.translation}"
+                                        audioViewModel.playVerseAudio(verseId, text)
+                                    }
+                                ) {
+                                    if (isLoading && currentAudioId == verseId) {
+                                        CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                                    } else {
+                                        Icon(
+                                            imageVector  = if (isThisAudioPlaying) Icons.Default.Pause else Icons.Default.RecordVoiceOver,
+                                            contentDescription = "Play audio"
+                                        )
+                                    }
+                                }
+                                if (currentAudioId == verseId) {
+                                    IconButton(onClick = { audioViewModel.skipForward() }) {
+                                        Icon(Icons.Default.Forward10, contentDescription = "+10s")
+                                    }
+                                }
                             }
                         }
-                    )
-                },
-                bottomBar = {
-                    VerseNavigationBar(
-                        currentIndex = s.currentIndex,
-                        total        = s.verses.size,
-                        onPrevious   = { viewModel.goToVerse(s.currentIndex - 1) },
-                        onNext       = { viewModel.goToVerse(s.currentIndex + 1) }
-                    )
-                }
-            ) { padding ->
-                AnimatedContent(
-                    targetState = verse,
-                    label       = "verse-transition",
-                    transitionSpec = {
-                        slideInHorizontally { it } + fadeIn() togetherWith
-                        slideOutHorizontally { -it } + fadeOut()
                     }
-                ) { currentVerse ->
-                    VerseContent(
-                        verse    = currentVerse,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding)
-                            .pointerInput(Unit) {
-                                detectHorizontalDragGestures { _, dragAmount ->
-                                    if (dragAmount < -50) viewModel.goToVerse(s.currentIndex + 1)
-                                    else if (dragAmount > 50) viewModel.goToVerse(s.currentIndex - 1)
-                                }
-                            }
-                    )
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun VerseContent(verse: Verse, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
-    ) {
-        // Sanskrit
-        VerseSection(
-            heading = "Sanskrit",
-            body    = verse.sanskrit,
-            fontStyle = FontStyle.Italic
-        )
-
-        // Transliteration
-        if (verse.transliteration.isNotBlank()) {
-            VerseSection(heading = "Transliteration", body = verse.transliteration)
-        }
-
-        // Word meanings
-        if (verse.wordMeanings.isNotBlank()) {
-            VerseSection(heading = "Word by Word", body = verse.wordMeanings)
-        }
-
-        // Translation
-        if (verse.translation.isNotBlank()) {
-            HorizontalDivider()
-            VerseSection(heading = "Translation", body = verse.translation)
-        }
-
-        // Commentary
-        if (verse.commentary.isNotBlank()) {
-            HorizontalDivider()
-            VerseSection(heading = "Commentary", body = verse.commentary)
-        }
-
-        Spacer(Modifier.height(8.dp))
-    }
-}
-
-@Composable
-private fun VerseSection(heading: String, body: String, fontStyle: FontStyle = FontStyle.Normal) {
-    Column(
-        modifier            = Modifier.semantics(mergeDescendants = true) {},
-        verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        Text(
-            text  = heading,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            text      = body,
-            style     = MaterialTheme.typography.bodyLarge,
-            fontStyle = fontStyle
-        )
-    }
-}
-
-@Composable
-private fun VerseNavigationBar(
-    currentIndex: Int,
-    total: Int,
-    onPrevious: () -> Unit,
-    onNext: () -> Unit
-) {
-    BottomAppBar {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment     = Alignment.CenterVertically
+    ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .pointerInput(chapterNumber, verseNumber) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            if (dragDelta < -80f && verseNumber > 1) {
+                                slideDirection = -1
+                                navController.navigate(
+                                    com.nexuswavetech.geetanexus.ui.navigation.Screen.VerseReader.route(chapterNumber, verseNumber - 1)
+                                ) { popUpTo(navController.currentBackStackEntry?.destination?.route ?: "") { inclusive = true } }
+                            } else if (dragDelta > 80f) {
+                                slideDirection = 1
+                                navController.navigate(
+                                    com.nexuswavetech.geetanexus.ui.navigation.Screen.VerseReader.route(chapterNumber, verseNumber + 1)
+                                ) { popUpTo(navController.currentBackStackEntry?.destination?.route ?: "") { inclusive = true } }
+                            }
+                            dragDelta = 0f
+                        },
+                        onHorizontalDrag = { _, delta -> dragDelta += delta }
+                    )
+                }
         ) {
-            IconButton(
-                onClick  = onPrevious,
-                enabled  = currentIndex > 0,
-                modifier = Modifier.semantics { contentDescription = "Previous verse" }
-            ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) }
+            when (val state = verseState) {
+                is com.nexuswavetech.geetanexus.ui.viewmodel.VerseUiState.Loading -> {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                }
+                is com.nexuswavetech.geetanexus.ui.viewmodel.VerseUiState.Error -> {
+                    Column(modifier = Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(state.message, style = MaterialTheme.typography.bodyLarge)
+                        TextButton(onClick = { gitaViewModel.loadVerse(chapterNumber, verseNumber) }) { Text("Retry") }
+                    }
+                }
+                is com.nexuswavetech.geetanexus.ui.viewmodel.VerseUiState.Success -> {
+                    val v = state.verse
+                    LazyColumn(
+                        modifier       = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // Sanskrit
+                        item {
+                            ElevatedCard(shape = RoundedCornerShape(20.dp)) {
+                                Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Icon(Icons.Default.AutoStories, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                                        Text("Sanskrit", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                                    }
+                                    Text(v.text, style = MaterialTheme.typography.bodyLarge, fontStyle = FontStyle.Italic, lineHeight = MaterialTheme.typography.bodyLarge.lineHeight * 1.4f)
+                                }
+                            }
+                        }
 
-            Text(
-                text  = "${currentIndex + 1} / $total",
-                style = MaterialTheme.typography.bodyMedium
-            )
+                        // Transliteration
+                        if (v.transliteration.isNotBlank()) {
+                            item {
+                                Card(shape = RoundedCornerShape(16.dp)) {
+                                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text("Transliteration", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
+                                        Text(v.transliteration, style = MaterialTheme.typography.bodyMedium, fontStyle = FontStyle.Italic)
+                                    }
+                                }
+                            }
+                        }
 
-            IconButton(
-                onClick  = onNext,
-                enabled  = currentIndex < total - 1,
-                modifier = Modifier.semantics { contentDescription = "Next verse" }
-            ) { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = null) }
+                        // Word meanings
+                        if (v.wordMeanings.isNotBlank()) {
+                            item {
+                                Card(shape = RoundedCornerShape(16.dp)) {
+                                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text("Word Meanings", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.SemiBold)
+                                        Text(v.wordMeanings, style = MaterialTheme.typography.bodySmall)
+                                    }
+                                }
+                            }
+                        }
+
+                        // Translation
+                        item {
+                            ElevatedCard(shape = RoundedCornerShape(16.dp)) {
+                                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Icon(Icons.Default.Translate, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(18.dp))
+                                        Text("Translation", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.tertiary, fontWeight = FontWeight.SemiBold)
+                                    }
+                                    Text(v.translation, style = MaterialTheme.typography.bodyMedium, lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.5f)
+                                }
+                            }
+                        }
+
+                        // Commentary
+                        if (v.commentary.isNotBlank()) {
+                            item {
+                                Card(shape = RoundedCornerShape(16.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Icon(Icons.Default.Lightbulb, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                            Text("Commentary", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                                        }
+                                        Text(v.commentary, style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.5f)
+                                    }
+                                }
+                            }
+                        }
+
+                        item { Spacer(modifier = Modifier.height(8.dp)) }
+                    }
+                }
+                else -> {}
+            }
         }
     }
 }

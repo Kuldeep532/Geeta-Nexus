@@ -6,14 +6,11 @@ import com.nexuswavetech.geetanexus.domain.repository.*
 import com.nexuswavetech.geetanexus.network.AskRequest
 import com.nexuswavetech.geetanexus.network.TtsRequest
 import com.nexuswavetech.geetanexus.network.SttRequest
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 class GitaRepositoryImpl(
     private val remote: GitaRemoteDataSource
 ) : GitaRepository {
 
-    // Simple in-memory cache
     private val chapterCache = mutableListOf<Chapter>()
     private val verseCache   = mutableMapOf<Int, List<Verse>>()
 
@@ -22,12 +19,11 @@ class GitaRepositoryImpl(
         val dtos = remote.fetchChapters()
         val chapters = dtos.map { dto ->
             Chapter(
-                number             = dto.chapter_number,
-                name               = dto.name_translated,
-                nameTransliterated = dto.name_transliterated,
-                nameTranslated     = dto.name_translated,
-                versesCount        = dto.verses_count,
-                summary            = dto.chapter_summary ?: ""
+                number     = dto.chapter_number,
+                name       = dto.name_translated,
+                nameMeaning= dto.name_transliterated,
+                summary    = dto.chapter_summary ?: "",
+                verseCount = dto.verses_count
             )
         }
         chapterCache.addAll(chapters)
@@ -41,7 +37,7 @@ class GitaRepositoryImpl(
             Verse(
                 chapterNumber   = dto.chapter_number,
                 verseNumber     = dto.verse_number,
-                sanskrit        = dto.text,
+                text            = dto.text,
                 transliteration = dto.transliteration ?: "",
                 wordMeanings    = dto.word_meanings ?: "",
                 translation     = dto.translation ?: "",
@@ -59,13 +55,10 @@ class GitaRepositoryImpl(
         }
 
     override suspend fun searchVerses(query: String): Result<List<Verse>> = runCatching {
-        // Search cached chapters first; if cache empty, fetch all
-        if (verseCache.isEmpty()) {
-            (1..18).forEach { ch -> getVerses(ch) }
-        }
+        if (verseCache.isEmpty()) (1..18).forEach { ch -> getVerses(ch) }
         val lower = query.lowercase()
         verseCache.values.flatten().filter { verse ->
-            verse.sanskrit.lowercase().contains(lower) ||
+            verse.text.lowercase().contains(lower) ||
             verse.translation.lowercase().contains(lower) ||
             verse.transliteration.lowercase().contains(lower)
         }
@@ -77,9 +70,7 @@ class AiRepositoryImpl(
 ) : AiRepository {
 
     override suspend fun ask(query: String, sessionId: String?): Result<String> =
-        runCatching {
-            remote.askAi(AskRequest(query, sessionId)).response
-        }
+        runCatching { remote.askAi(AskRequest(query, sessionId)).response }
 
     override suspend fun textToSpeech(text: String): Result<ByteArray> =
         runCatching {
@@ -94,6 +85,5 @@ class AiRepositoryImpl(
         }
 }
 
-// Platform-provided Base64 helpers (expect/actual)
 expect fun encodeBase64(bytes: ByteArray): String
 expect fun decodeBase64(base64: String): ByteArray

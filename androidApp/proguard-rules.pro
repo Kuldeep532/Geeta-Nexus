@@ -1,37 +1,44 @@
-# Gita Nexus — ProGuard rules
-
-# Keep all KMP shared classes
+# ── KMP / Kotlin ──────────────────────────────────────────────────────────────
+-keep class kotlin.** { *; }
+-keep class kotlinx.** { *; }
 -keep class com.nexuswavetech.geetanexus.** { *; }
 
-# Ktor — keep serialization machinery
--keep class io.ktor.** { *; }
+# ── Kotlinx Serialization ─────────────────────────────────────────────────────
 -keepattributes *Annotation*, InnerClasses
 -dontnote kotlinx.serialization.AnnotationsKt
-
-# Kotlinx Serialization
--keepattributes Signature
--keepclassmembers class kotlinx.serialization.json.** {
-    *** Companion;
-}
--keepclasseswithmembers class **$$serializer {
-    *** INSTANCE;
-}
+-keepclassmembers class kotlinx.serialization.json.** { *** Companion; }
+-keepclasseswithmembers class **$$serializer { *; }
 -keep @kotlinx.serialization.Serializable class * { *; }
 
-# BouncyCastle
+# ── Ktor ─────────────────────────────────────────────────────────────────────
+-keep class io.ktor.** { *; }
+-keep class okhttp3.** { *; }
+-dontwarn io.ktor.**
+
+# ── Koin ─────────────────────────────────────────────────────────────────────
+-keep class org.koin.** { *; }
+-keepnames class * implements org.koin.core.component.KoinComponent
+
+# ── BouncyCastle ─────────────────────────────────────────────────────────────
 -keep class org.bouncycastle.** { *; }
 -dontwarn org.bouncycastle.**
 
-# Koin
--keep class org.koin.** { *; }
+# ── Media3 / ExoPlayer ────────────────────────────────────────────────────────
+-keep class androidx.media3.** { *; }
+-dontwarn androidx.media3.**
 
-# Google Credential Manager
+# ── Credential Manager / Google ───────────────────────────────────────────────
 -keep class androidx.credentials.** { *; }
 -keep class com.google.android.libraries.identity.googleid.** { *; }
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.android.gms.**
 
-# Preserve coroutines debug info in crash reports
--keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
--keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
+# ── Coil ─────────────────────────────────────────────────────────────────────
+-keep class coil.** { *; }
 
-# DataStore
--keep class androidx.datastore.** { *; }
+# ── Compose ──────────────────────────────────────────────────────────────────
+-keep class androidx.compose.** { *; }
+
+# ── General ──────────────────────────────────────────────────────────────────
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile

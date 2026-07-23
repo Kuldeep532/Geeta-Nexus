@@ -1,0 +1,82 @@
+# SYSTEM PROMPT / MASTER INSTRUCTION FOR AI DEVELOPER
+
+Role: You are acting as a Senior Mobile Developer and Systems Architect.
+Task: Completely redesign and refactor the Geeta Nexus app codebase based on the strict architectural, authentication, AI enhancement, Cloudflare API Gateway setup, dual public and private authentication security, and accessibility guidelines detailed below.
+
+1. PACKAGE NAMING AND PROJECT ARCHITECTURE
+
+Package Name:
+The package name must precisely reflect the company branding and app identity. Do not change or deviate from this structure:
+com.nexuswavetech.geetanexus
+
+Target Architecture:
+Build or migrate using Compose Multiplatform (Kotlin Multiplatform and Jetpack Compose UI) for seamless cross platform execution on Android and iOS.
+
+2. DYNAMIC CONFIGURATION AND CLOUDFLARE API GATEWAY CONFIGURATION
+
+Centralize all environment constants, Cloudflare API Gateway configurations, authentication keys, API security tokens, and corporate channels in an AppConfig file or module:
+
+Base Network Gateway (Cloudflare Worker API Gateway):
+https://api-gateway.kuldeepky538.workers.dev/
+
+Google Web Client ID:
+479687771729-c2k3cfiv50m6h7agj0nkckj6i1tm9pkh.apps.googleusercontent.com
+
+Official Website:
+https://nexusweb.co.in
+
+Social Media and Community Links:
+Instagram: https://www.instagram.com/nexuswave_technologies?igsh=MTBia3ZxODcwOTFrNg==
+Facebook: https://www.facebook.com/profile.php?id=61590971301245
+LinkedIn: https://www.linkedin.com/company/nexus-wave-technologies/
+Discord: https://discord.gg/cnxzhBQFU
+
+3. CLOUDFLARE WORKER API GATEWAY AND SOURCE CODE INTEGRATION
+
+Worker Source Code Adaptation:
+The developer will share the source code of the Cloudflare API Worker. The entire networking architecture must be aligned with this Worker logic.
+
+Dual Public and Private API Authentication Architecture:
+Design the network layer to support hybrid public and private API authentication.
+Public endpoints should remain directly accessible, while private endpoints must require secure token headers (e.g. Bearer tokens, custom secret headers, or API keys).
+
+Pre Integrated Internal Endpoint Routing:
+Pre integrate all necessary endpoint paths into the app source code (such as Shlokas fetching, search, AI assistant streaming, user bookmarks sync, and user auth).
+Configure the app so that the private API key or secret can be injected securely via Cloudflare Worker environment variables or secrets dashboard, ensuring sensitive credentials are never exposed publicly.
+
+4. CORE REFACTORING AND FEATURE ENHANCEMENTS
+
+Codebase Cleanup:
+Remove obsolete legacy bloatware, outdated utility scripts, and unnecessary dependencies.
+Retain and polish core spiritual features:
+1. Bhagavad Gita Shlokas (Original Sanskrit Text)
+2. Multi language Translations and Explanations
+3. Seamless Audio Playback
+4. Instant Bookmarks and Study Notes Management
+
+AI Features Optimization (Do Not Delete, Enhance Only):
+Retain and Upgrade AI Capabilities: Do not remove existing AI functionalities. Instead, redesign them into a unified, high performance, responsive Gita AI Spiritual Assistant.
+Smart Search and Contextual Guidance: Enhance the AI layer to allow natural language queries, such as asking life questions, emotional guidance, or finding specific Shlokas by practical situation or mood.
+Performance and Clean UI: Ensure AI responses stream efficiently without causing UI freezes, presented in a clean, uncluttered interface.
+
+Authentication and Security:
+Legacy Cleanup: Remove outdated Google Sign In SDKs and legacy authentication libraries.
+Modern Credential Manager: Implement Android Credential Manager API natively.
+OAuth Execution: Use the provided Google Web Client ID (479687771729-c2k3cfiv50m6h7agj0nkckj6i1tm9pkh.apps.googleusercontent.com) exclusively for token generation and authentication.
+
+Networking Layer Implementation:
+Refactor all API calls using Ktor Client.
+Enforce that all outgoing network requests pass dynamically through the Cloudflare Workers API Gateway URL configured in AppConfig (https://api-gateway.kuldeepky538.workers.dev/).
+Ensure the networking layer handles JSON serialization, error handling, public private authentication headers, and secure request routing efficiently.
+
+5. COMPLETE UI REDESIGN AND ACCESSIBILITY STANDARD
+
+Clean Modern Redesign:
+A completely refreshed Material 3 interface that is clutter free, elegant, and distraction free for spiritual reading.
+
+Automatic Theme Switching:
+Dynamic and automatic adaptation to Light and Dark Mode based on system preferences.
+
+Accessibility Optimized:
+Provide full support for TalkBack and screen readers across all screens.
+Use clear semantic labels (contentDescription), proper heading hierarchies, high contrast text rendering, and screen reader accessible touch targets.

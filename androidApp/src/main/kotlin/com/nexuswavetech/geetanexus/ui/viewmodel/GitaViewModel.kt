@@ -9,7 +9,7 @@ import com.nexuswavetech.geetanexus.domain.repository.GitaRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-// ── State ────────────────────────────────────────────────────────────────────
+// ── State ─────────────────────────────────────────────────────────────────────
 
 sealed interface GitaUiState {
     data object Loading : GitaUiState
@@ -23,7 +23,7 @@ sealed interface VerseUiState {
     data class Error(val message: String) : VerseUiState
 }
 
-// ── ViewModel ────────────────────────────────────────────────────────────────
+// ── ViewModel ─────────────────────────────────────────────────────────────────
 
 class GitaViewModel(
     private val gitaRepository: GitaRepository,
@@ -36,8 +36,20 @@ class GitaViewModel(
     private val _versesState = MutableStateFlow<VerseUiState>(VerseUiState.Loading)
     val versesState: StateFlow<VerseUiState> = _versesState.asStateFlow()
 
+    // Single-verse state (used by VerseReaderScreen)
+    private val _currentVerseState = MutableStateFlow<VerseUiState>(VerseUiState.Loading)
+    val currentVerseState: StateFlow<VerseUiState> = _currentVerseState.asStateFlow()
+
     private val _bookmarkedIds = MutableStateFlow<Set<String>>(emptySet())
     val bookmarkedIds: StateFlow<Set<String>> = _bookmarkedIds.asStateFlow()
+
+    // Is the currently displayed single verse bookmarked?
+    val isCurrentVerseBookmarked: StateFlow<Boolean> = combine(
+        _currentVerseState, _bookmarkedIds
+    ) { state, ids ->
+        val verse = (state as? VerseUiState.Success)?.verses?.firstOrNull()
+        verse?.let { ids.contains(it.id) } ?: false
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val _searchResults = MutableStateFlow<List<Verse>>(emptyList())
     val searchResults: StateFlow<List<Verse>> = _searchResults.asStateFlow()
@@ -59,6 +71,14 @@ class GitaViewModel(
         gitaRepository.getVerses(chapterNumber)
             .onSuccess { _versesState.value = VerseUiState.Success(it) }
             .onFailure { _versesState.value = VerseUiState.Error(it.message ?: "Failed to load verses") }
+    }
+
+    /** Load a single verse for the VerseReaderScreen. */
+    fun loadVerse(chapterNumber: Int, verseNumber: Int) = viewModelScope.launch {
+        _currentVerseState.value = VerseUiState.Loading
+        gitaRepository.getVerse(chapterNumber, verseNumber)
+            .onSuccess { _currentVerseState.value = VerseUiState.Success(listOf(it)) }
+            .onFailure { _currentVerseState.value = VerseUiState.Error(it.message ?: "Failed to load verse") }
     }
 
     fun goToVerse(index: Int) {

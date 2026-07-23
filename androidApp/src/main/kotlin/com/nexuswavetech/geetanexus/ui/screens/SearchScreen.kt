@@ -134,9 +134,9 @@ private fun SearchResultCard(verse: Verse, onClick: () -> Unit) {
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary
             )
-            if (verse.sanskrit.isNotBlank()) {
+            if (verse.text.isNotBlank()) {
                 Text(
-                    text     = verse.sanskrit,
+                    text     = verse.text,
                     style    = MaterialTheme.typography.bodySmall,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis

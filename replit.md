@@ -1,6 +1,6 @@
 # Gita Nexus — KMP Edition
 
-**Gita Nexus** is a cross-platform spiritual + AI assistant built around the Bhagavad Gita, by Nexus Wave Technologies.
+**Gita Nexus** is a cross-platform spiritual + AI assistant for the Bhagavad Gita, Shiva Mahapurana, and Ramcharitmanas, by **Nexus Waves Technologies**.
 
 ## Platform
 
@@ -11,8 +11,7 @@
 | **iOS** | SwiftUI wrapping shared KMP framework — `iosApp/` |
 | **Backend** | FastAPI (Python) — `backend/` |
 
-> The original Flutter source code is preserved in `lib/`, `pubspec.yaml`, and `android/` for reference.  
-> The KMP project is the active development target.
+> Flutter source code has been removed. KMP is the sole development target.
 
 ---
 
@@ -20,38 +19,46 @@
 
 ```
 shared/                         KMP shared module (business logic, network)
-  src/commonMain/               Platform-independent Kotlin
+  src/commonMain/
     AppConfig.kt                All URLs, keys, constants — single source of truth
+    data/ScriptureData.kt       Bundled metadata for Shiva Mahapurana & Ramcharitmanas
     network/
-      CloudflareGatewayClient   Ed25519-signed API key broker via Cloudflare Workers
-      SignatureProvider.kt      expect/actual — platform crypto interface
-    domain/models/              Core data models (Verse, Chapter, UserProfile…)
+      CloudflareGatewayClient   Ed25519-signed API key broker
+      SignatureProvider.kt      expect/actual — platform crypto
+    domain/models/              Core models (Verse, Chapter, ScriptureType, UserProfile…)
     domain/repository/          Repository interfaces
-    data/                       Repository implementations
-    di/SharedModule.kt          Koin DI setup (shared)
-  src/androidMain/              Android-specific actuals (BouncyCastle, Android Base64)
-  src/iosMain/                  iOS-specific actuals (Security framework, CryptoKit)
+    data/                       GitaRepositoryImpl, AiRepositoryImpl
+    di/SharedModule.kt          Koin DI
 
-androidApp/                     Android application module
-  build.gradle.kts              Reads ed25519.private.key from local.properties
-  src/main/kotlin/…/
-    GeetaNexusApp.kt            Application class — Koin startup, key injection
-    MainActivity.kt             Edge-to-edge scaffold + bottom navigation
-    ui/theme/                   Material 3 theme (saffron/gold, auto dark/light)
-    ui/navigation/NavGraph.kt   Compose Navigation routes
-    ui/screens/                 HomeScreen, ChaptersScreen, VerseReaderScreen,
-                                AiChatScreen, BookmarksScreen, SearchScreen,
-                                ProfileScreen, MoreScreen, OnboardingScreen
-    ui/viewmodel/               HomeViewModel, GitaViewModel, AiChatViewModel
-    di/AndroidModule.kt         Koin: LocalBookmarkRepository, LocalUserRepository, ViewModels
-    data/                       DataStore-backed BookmarkRepository & UserRepository
-
-iosApp/                         iOS application (SwiftUI + KMP framework)
-  iosApp/iOSApp.swift           App entry point — calls initKoin()
-  iosApp/ContentView.swift      Tab navigation (placeholder screens)
-
-backend/                        FastAPI backend (AI chat, TTS, STT)
-local.properties.template       Copy → local.properties and fill secrets
+androidApp/                     Android application
+  src/main/kotlin/.../
+    GeetaNexusApp.kt            Application — Koin startup, key injection
+    MainActivity.kt             Edge-to-edge scaffold + bottom nav
+    ui/theme/                   Material 3 (saffron/gold, auto dark/light)
+    ui/navigation/NavGraph.kt   All Compose Navigation routes
+    ui/screens/
+      HomeScreen.kt             Daily verse, quick actions, scripture teaser
+      ScripturesScreen.kt       Hub for all 3 scriptures + detail screens
+      ChaptersScreen.kt         Bhagavad Gita chapter grid + detail
+      VerseReaderScreen.kt      Swipe navigation + unified audio controls
+      AiChatScreen.kt           Aira AI (Gemini-powered) chat
+      BookmarksScreen.kt        Saved verses
+      SearchScreen.kt           Debounced verse search
+      ProfileScreen.kt          Google Sign-In via Credential Manager
+      MoreScreen.kt             Social links, community, legal
+      AboutScreen.kt            About Nexus Waves Technologies
+      PrivacyPolicyScreen.kt    Full privacy policy
+      TermsScreen.kt            Full terms of service
+      OnboardingScreen.kt       First-launch onboarding
+    ui/viewmodel/
+      HomeViewModel.kt          Daily verse, user load/signOut
+      GitaViewModel.kt          Chapter/verse loading, search, bookmarks
+      AiChatViewModel.kt        Gemini API chat (via Cloudflare gateway)
+      AudioViewModel.kt         ExoPlayer — unified TTS/audio player
+    di/AndroidModule.kt         Koin: repositories + all ViewModels
+    data/
+      LocalBookmarkRepository   DataStore-backed bookmarks
+      LocalUserRepository       DataStore + Credential Manager sign-in
 ```
 
 ---
@@ -61,101 +68,85 @@ local.properties.template       Copy → local.properties and fill secrets
 ### Android (Android Studio)
 
 1. Copy `local.properties.template` → `local.properties`
-2. Fill in `sdk.dir` and `ed25519.private.key` (see below)
-3. Open the **root** project in Android Studio (not `android/`)
-4. Run the `androidApp` configuration on an emulator or device (API 26+)
+2. Fill in `sdk.dir`, `ed25519.private.key`, and (optionally) `google.web.client.id`
+3. Open **root** project in Android Studio (not `android/`)
+4. Sync Gradle → Run `androidApp` on emulator or device (API 26+, Android 8.0)
 
-### iOS (Xcode on macOS)
+### iOS (Xcode — macOS only)
 
-1. Build the KMP XCFramework:
-   ```bash
-   ./gradlew shared:assembleReleaseXCFramework
-   ```
-2. Open `iosApp/iosApp.xcodeproj` in Xcode, link the generated XCFramework
-3. Add `ED25519PrivateKey` to the Xcode scheme's environment variables
-4. Run on simulator or device (iOS 16+)
+```bash
+./gradlew shared:assembleReleaseXCFramework
+```
+Open `iosApp/iosApp.xcodeproj`, link the XCFramework, run on simulator/device.
 
 ---
 
-## Required Secrets
+## API Keys to Add to Cloudflare Worker
 
-### Ed25519 Private Key (gateway signing)
+Add these as **Secrets** (or KV entries) in your Cloudflare Worker dashboard.  
+The variable name must match **exactly** — the app requests keys by these names:
 
-The Cloudflare Worker at `https://api-gateway.kuldeepky538.workers.dev/` verifies every request with Ed25519. The app signs requests; the Worker verifies with its embedded public key:
+| Variable Name | Where to Get It | Purpose |
+|---|---|---|
+| `GEMINI_AI_API_KEY` | [Google AI Studio](https://aistudio.google.com/) → API keys | Gemini 1.5 Flash — Aira AI chat |
+| `HF_TTS_API_KEY` | [Hugging Face](https://huggingface.co/settings/tokens) → New token (Read) | SpeechT5 text-to-speech |
+| `HF_STT_API_KEY` | [Hugging Face](https://huggingface.co/settings/tokens) → New token (Read) | Whisper speech-to-text |
+| `HF_CHAT_API_KEY` | [Hugging Face](https://huggingface.co/settings/tokens) → New token (Read) | Mistral chat fallback |
 
-```
-MCowBQYDK2VwAyEAa4ZxuobCuaSe+HMbCc7YW7AG/W5SELvpc7NNBVX9ab4=
-```
+> In Cloudflare dashboard → Workers & Pages → your Worker → Settings → Variables → Add secret.
 
-**To set up the signing key:**
+---
+
+## Ed25519 Key Setup
+
 ```bash
-# Generate a new key pair
+# 1. Generate private key
 openssl genpkey -algorithm ed25519 -out private.pem
 
-# Export the 32-byte private seed as base64 → put in local.properties
+# 2. Get 32-byte seed as base64 → paste into local.properties
 openssl pkey -in private.pem -outform DER | tail -c 32 | base64
 
-# Verify the public key matches what's in the Worker
+# 3. Verify public key matches Worker (or update Worker with new public key)
 openssl pkey -in private.pem -pubout | openssl pkey -pubin -outform DER | base64
 ```
 
-Add to `local.properties`:
+`local.properties`:
 ```
-ed25519.private.key=<your-base64-seed>
+sdk.dir=/path/to/sdk
+ed25519.private.key=<your-32-byte-seed-base64>
 ```
 
-> ⚠️ The Worker's current public key was pre-deployed. If you generate a **new** key pair you must also update the `PUBLIC_KEY_BASE64` constant in the Cloudflare Worker (`index.js`).
-
-### Backend API Keys (Cloudflare Worker environment)
-
-Store these in the Cloudflare Worker's **Secrets/KV** so the gateway can serve them:
-
-| Key name (X-API-Name) | Purpose |
-|---|---|
-| `GEMINI_AI_API_KEY` | Google Gemini 1.5 Flash — AI chat |
-| `HF_TTS_API_KEY` | Hugging Face TTS (`microsoft/speecht5_tts`) |
-| `HF_STT_API_KEY` | Hugging Face STT (`openai/whisper-base`) |
-| `HF_CHAT_API_KEY` | Hugging Face chat fallback |
-
-### Google Sign-In
-
-Web Client ID is already set in `AppConfig.GOOGLE_WEB_CLIENT_ID`. No additional secret needed for the app — just ensure the SHA-1 fingerprint of your release keystore is registered in Google Cloud Console.
+Worker public key already deployed: `MCowBQYDK2VwAyEAa4ZxuobCuaSe+HMbCc7YW7AG/W5SELvpc7NNBVX9ab4=`
 
 ---
 
-## Architecture Overview
+## Architecture
 
 ```
 Android/iOS App
-      │
-      │  Ed25519-signed request (X-API-Name, X-Timestamp, X-Nonce, X-Signature)
+      │  Ed25519-signed request (X-API-Name + X-Timestamp + X-Nonce + X-Signature)
       ▼
-Cloudflare Workers Gateway  ←──── API keys stored as Worker Secrets/KV
-      │
+Cloudflare Workers Gateway  ←── Secrets: GEMINI_AI_API_KEY, HF_TTS_API_KEY, etc.
       │  Returns { api_key: "..." }
-      │
       ▼
 App uses key to call:
-  • FastAPI backend (/ask, /tts, /stt)  ← backend/ directory
-  • Gemini API directly (if needed)
-  • Hugging Face Inference API
+  ├─ Google Gemini 1.5 Flash  → Aira AI chat
+  ├─ FastAPI backend /tts     → Text-to-speech (streamed to ExoPlayer)
+  ├─ FastAPI backend /stt     → Voice input
+  └─ FastAPI backend /ask     → AI Q&A fallback
 ```
 
----
+## Features
 
-## Key Constants (AppConfig.kt)
-
-| Constant | Value |
-|---|---|
-| `GATEWAY_BASE_URL` | `https://api-gateway.kuldeepky538.workers.dev/` |
-| `GOOGLE_WEB_CLIENT_ID` | `479687771729-c2k3...` |
-| `WEBSITE_URL` | `https://nexusweb.co.in` |
-| `DISCORD_URL` | `https://discord.gg/cnxzhBQFU` |
-| `TOTAL_CHAPTERS` | 18 |
-| `TOTAL_VERSES` | 700 |
-
----
+- 📖 **Bhagavad Gita** — 18 chapters, 700 verses, Sanskrit + transliteration + commentary
+- 🔱 **Shiva Mahapurana** — 7 Samhitas with descriptions and AI audio
+- 🙏 **Ramcharitmanas** — 7 Kandas by Goswami Tulsidas with AI audio
+- 🤖 **Aira AI** — Gemini 1.5 Flash spiritual guide; falls back to FastAPI → local KB
+- 🎧 **Unified Audio Player** — single ExoPlayer for TTS + reading; no multiple instances
+- 🔖 **Bookmarks** — DataStore-persisted locally
+- 🔐 **Google Sign-In** — Credential Manager (One Tap)
+- 📜 **Legal pages** — Privacy Policy, Terms of Service, About Us
 
 ## User Preferences
 
-<!-- Add user preferences here as they are expressed -->
+<!-- Add here as expressed -->
