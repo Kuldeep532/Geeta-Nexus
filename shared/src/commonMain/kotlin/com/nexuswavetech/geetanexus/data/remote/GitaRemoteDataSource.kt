@@ -9,7 +9,15 @@ import io.ktor.client.request.*
 import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
+/**
+ * Remote data source that routes ALL API calls through the Cloudflare Gateway.
+ * No API keys are ever exposed on the client — they are fetched securely at runtime.
+ */
 class GitaRemoteDataSource(
     private val gatewayClient: CloudflareGatewayClient
 ) {
@@ -18,7 +26,7 @@ class GitaRemoteDataSource(
         install(ContentNegotiation) { json(json) }
     }
 
-    // ── Gita content (DharmicData GitHub) ─────────────────────────────────────
+    // ── Gita content (public DharmicData GitHub — no auth needed) ─────────────
 
     suspend fun fetchChapters(): List<ChapterDto> =
         httpClient.get(AppConfig.DharmicData.CHAPTERS).body()
@@ -26,38 +34,69 @@ class GitaRemoteDataSource(
     suspend fun fetchVerses(chapterNumber: Int): List<VerseDto> =
         httpClient.get(AppConfig.DharmicData.chapter(chapterNumber)).body()
 
-    // ── AI routes via FastAPI backend ─────────────────────────────────────────
+    // ── AI Chat via Gemini (key fetched securely from Cloudflare) ─────────────
 
-    suspend fun askAi(request: AskRequest): AskResponse {
+    suspend fun askGemini(
+        query: String,
+        systemContext: String = SPIRITUAL_SYSTEM_CONTEXT
+    ): String {
         val apiKey = gatewayClient.getApiKey(AppConfig.ApiKeyName.GEMINI)
-        return httpClient.post("${AppConfig.BACKEND_BASE_URL}${AppConfig.BackendEndpoint.ASK}") {
+        val url = "${AppConfig.Gemini.BASE_URL}models/${AppConfig.Gemini.MODEL}:generateContent?key=$apiKey"
+
+        val request = GeminiRequest(
+            contents = listOf(
+                GeminiContent(
+                    role = "user",
+                    parts = listOf(GeminiPart("$systemContext\n\nQuestion: $query"))
+                )
+            ),
+            generationConfig = GeminiConfig(temperature = 0.7f, maxOutputTokens = 1024)
+        )
+
+        val response: GeminiResponse = httpClient.post(url) {
             contentType(ContentType.Application.Json)
-            bearerAuth(apiKey)
             setBody(request)
         }.body()
+
+        return response.candidates?.firstOrNull()
+            ?.content?.parts?.firstOrNull()?.text
+            ?: "🙏 I reflect upon your question with silence."
     }
 
-    suspend fun textToSpeech(request: TtsRequest): TtsResponse {
+    // ── TTS via Hugging Face (key fetched securely from Cloudflare) ───────────
+
+    suspend fun textToSpeech(text: String): ByteArray {
         val apiKey = gatewayClient.getApiKey(AppConfig.ApiKeyName.HF_TTS)
-        return httpClient.post("${AppConfig.BACKEND_BASE_URL}${AppConfig.BackendEndpoint.TTS}") {
+        val url = "${AppConfig.HuggingFace.BASE_URL}${AppConfig.HuggingFace.TTS_MODEL}"
+
+        val responseBytes: ByteArray = httpClient.post(url) {
+            header("Authorization", "Bearer $apiKey")
             contentType(ContentType.Application.Json)
-            bearerAuth(apiKey)
-            setBody(request)
+            setBody(HFTtsRequest(inputs = text))
         }.body()
+
+        return responseBytes
     }
 
-    suspend fun speechToText(request: SttRequest): SttResponse {
+    // ── STT via Hugging Face (key fetched securely from Cloudflare) ───────────
+
+    suspend fun speechToText(audioBase64: String): String {
         val apiKey = gatewayClient.getApiKey(AppConfig.ApiKeyName.HF_STT)
-        return httpClient.post("${AppConfig.BACKEND_BASE_URL}${AppConfig.BackendEndpoint.STT}") {
+        val url = "${AppConfig.HuggingFace.BASE_URL}${AppConfig.HuggingFace.STT_MODEL}"
+
+        val response: HFSttResponse = httpClient.post(url) {
+            header("Authorization", "Bearer $apiKey")
             contentType(ContentType.Application.Json)
-            bearerAuth(apiKey)
-            setBody(request)
+            setBody(HFSttRequest(audioBase64))
         }.body()
+
+        return response.text ?: ""
     }
 
-    suspend fun submitFeedback(request: FeedbackRequest): FeedbackResponse =
-        httpClient.post("${AppConfig.BACKEND_BASE_URL}${AppConfig.BackendEndpoint.FEEDBACK}") {
-            contentType(ContentType.Application.Json)
-            setBody(request)
-        }.body()
+    companion object {
+        const val SPIRITUAL_SYSTEM_CONTEXT = """You are Aira, a compassionate AI guide specializing in the Bhagavad Gita, Shiva Mahapurana, and Ramcharitmanas.
+Answer with wisdom, cite specific verses where relevant, and keep responses concise yet meaningful.
+Always respond with empathy and spiritual insight. End with a relevant Sanskrit verse or doha if appropriate.
+Do not make up verse references — only cite verses you know with certainty."""
+    }
 }

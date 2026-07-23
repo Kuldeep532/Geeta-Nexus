@@ -15,52 +15,58 @@ data class GatewayResponse(
     @SerialName("message_hn")    val messageHn: String? = null
 )
 
-// ── AI Chat ──────────────────────────────────────────────────────────────────
+// ── AI Chat (direct Gemini via Cloudflare-fetched key) ───────────────────────
 
 @Serializable
-data class AskRequest(
-    val query: String,
-    @SerialName("session_id") val sessionId: String? = null
+data class GeminiRequest(
+    val contents: List<GeminiContent>,
+    @SerialName("generationConfig") val generationConfig: GeminiConfig? = null
 )
 
 @Serializable
-data class AskResponse(
-    val response: String,
-    val source: String? = null,          // "local_kb" | "gemini" | "huggingface"
-    val confidence: Float? = null
-)
-
-// ── TTS / STT ────────────────────────────────────────────────────────────────
-
-@Serializable
-data class TtsRequest(val text: String, val voice: String? = null)
-
-@Serializable
-data class TtsResponse(
-    @SerialName("audio_base64") val audioBase64: String,
-    val format: String = "wav"
+data class GeminiContent(
+    val role: String = "user",
+    val parts: List<GeminiPart>
 )
 
 @Serializable
-data class SttRequest(@SerialName("audio_base64") val audioBase64: String)
+data class GeminiPart(val text: String)
 
 @Serializable
-data class SttResponse(val transcript: String)
-
-// ── Feedback ─────────────────────────────────────────────────────────────────
+data class GeminiConfig(
+    val temperature: Float = 0.7f,
+    @SerialName("maxOutputTokens") val maxOutputTokens: Int = 1024
+)
 
 @Serializable
-data class FeedbackRequest(
-    val name: String,
-    val email: String,
+data class GeminiResponse(
+    val candidates: List<GeminiCandidate>? = null,
+    val error: GeminiError? = null
+)
+
+@Serializable
+data class GeminiCandidate(
+    val content: GeminiContent? = null
+)
+
+@Serializable
+data class GeminiError(
     val message: String,
-    val rating: Int? = null
+    val code: Int = 0
 )
 
-@Serializable
-data class FeedbackResponse(val status: String, val message: String)
+// ── TTS / STT (Hugging Face via Cloudflare-fetched key) ──────────────────────
 
-// ── Gita Domain ──────────────────────────────────────────────────────────────
+@Serializable
+data class HFTtsRequest(val inputs: String)
+
+@Serializable
+data class HFSttRequest(@SerialName("inputs") val audioBase64: String)
+
+@Serializable
+data class HFSttResponse(val text: String? = null)
+
+// ── Gita Domain ───────────────────────────────────────────────────────────────
 
 @Serializable
 data class ChapterDto(
@@ -76,9 +82,23 @@ data class ChapterDto(
 data class VerseDto(
     val chapter_number: Int,
     val verse_number: Int,
-    val text: String,                    // Sanskrit
+    val text: String,
     val transliteration: String? = null,
     val word_meanings: String? = null,
     val translation: String? = null,
     val commentary: String? = null
 )
+
+// ── Legacy (kept for compatibility) ──────────────────────────────────────────
+
+@Serializable
+data class AskRequest(
+    val query: String,
+    @SerialName("session_id") val sessionId: String? = null
+)
+
+@Serializable
+data class TtsRequest(val text: String, val voice: String? = null)
+
+@Serializable
+data class SttRequest(@SerialName("audio_base64") val audioBase64: String)

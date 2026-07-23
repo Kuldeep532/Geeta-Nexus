@@ -15,7 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.*
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -31,15 +31,16 @@ data class BottomNavItem(
     val screen: Screen,
     val label: String,
     val icon: ImageVector,
-    val selectedIcon: ImageVector = icon
+    val selectedIcon: ImageVector = icon,
+    val contentDescription: String
 )
 
 val bottomNavItems = listOf(
-    BottomNavItem(Screen.Home,       "Home",       Icons.Default.Home,        Icons.Filled.Home),
-    BottomNavItem(Screen.Scriptures, "Scriptures", Icons.Default.MenuBook,    Icons.Filled.MenuBook),
-    BottomNavItem(Screen.AiChat,     "Aira",       Icons.Default.AutoAwesome, Icons.Filled.AutoAwesome),
-    BottomNavItem(Screen.Bookmarks,  "Saved",      Icons.Default.Bookmark,    Icons.Filled.Bookmark),
-    BottomNavItem(Screen.More,       "More",       Icons.Default.MoreHoriz,   Icons.Filled.MoreHoriz),
+    BottomNavItem(Screen.Home,       "Home",       Icons.Default.Home,        Icons.Filled.Home,       "Home screen"),
+    BottomNavItem(Screen.Scriptures, "Scriptures", Icons.Default.MenuBook,    Icons.Filled.MenuBook,   "Sacred scriptures"),
+    BottomNavItem(Screen.AiChat,     "Aira AI",    Icons.Default.AutoAwesome, Icons.Filled.AutoAwesome,"Aira spiritual AI"),
+    BottomNavItem(Screen.Quiz,       "Quiz",       Icons.Default.Quiz,        Icons.Filled.Quiz,       "Spiritual quiz"),
+    BottomNavItem(Screen.More,       "More",       Icons.Default.MoreHoriz,   Icons.Filled.MoreHoriz,  "More options"),
 )
 
 class MainActivity : ComponentActivity() {
@@ -48,7 +49,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             GeetaNexusTheme {
-                GeetaNexusApp()
+                GeetaNexusAppRoot()
             }
         }
     }
@@ -56,7 +57,7 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GeetaNexusApp() {
+fun GeetaNexusAppRoot() {
     val navController      = rememberNavController()
     val audioViewModel     = koinViewModel<AudioViewModel>()
     val backStackEntry     by navController.currentBackStackEntryAsState()
@@ -69,9 +70,9 @@ fun GeetaNexusApp() {
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             AnimatedVisibility(
-                visible   = showBottomBar,
-                enter     = slideInVertically { it },
-                exit      = slideOutVertically { it }
+                visible = showBottomBar,
+                enter   = slideInVertically { it },
+                exit    = slideOutVertically { it }
             ) {
                 NavigationBar {
                     bottomNavItems.forEach { item ->
@@ -89,13 +90,21 @@ fun GeetaNexusApp() {
                                     restoreState    = true
                                 }
                             },
-                            icon      = {
+                            icon = {
                                 Icon(
-                                    imageVector = if (selected) item.selectedIcon else item.icon,
-                                    contentDescription = item.label
+                                    imageVector        = if (selected) item.selectedIcon else item.icon,
+                                    contentDescription = null   // label handles accessibility
                                 )
                             },
-                            label     = { Text(item.label) }
+                            label = {
+                                Text(
+                                    text = item.label,
+                                    modifier = Modifier.semantics {
+                                        contentDescription = item.contentDescription +
+                                            if (selected) ", selected" else ""
+                                    }
+                                )
+                            }
                         )
                     }
                 }
@@ -103,9 +112,9 @@ fun GeetaNexusApp() {
         }
     ) { padding ->
         GeetaNexusNavGraph(
-            navController     = navController,
-            audioViewModel    = audioViewModel,
-            modifier          = Modifier.padding(padding)
+            navController  = navController,
+            audioViewModel = audioViewModel,
+            modifier       = Modifier.padding(padding)
         )
     }
 }

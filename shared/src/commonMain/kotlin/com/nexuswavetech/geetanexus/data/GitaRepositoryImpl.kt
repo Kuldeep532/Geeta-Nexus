@@ -3,9 +3,6 @@ package com.nexuswavetech.geetanexus.data
 import com.nexuswavetech.geetanexus.data.remote.GitaRemoteDataSource
 import com.nexuswavetech.geetanexus.domain.models.*
 import com.nexuswavetech.geetanexus.domain.repository.*
-import com.nexuswavetech.geetanexus.network.AskRequest
-import com.nexuswavetech.geetanexus.network.TtsRequest
-import com.nexuswavetech.geetanexus.network.SttRequest
 
 class GitaRepositoryImpl(
     private val remote: GitaRemoteDataSource
@@ -70,18 +67,15 @@ class AiRepositoryImpl(
 ) : AiRepository {
 
     override suspend fun ask(query: String, sessionId: String?): Result<String> =
-        runCatching { remote.askAi(AskRequest(query, sessionId)).response }
+        runCatching { remote.askGemini(query) }
 
     override suspend fun textToSpeech(text: String): Result<ByteArray> =
-        runCatching {
-            val b64 = remote.textToSpeech(TtsRequest(text)).audioBase64
-            decodeBase64(b64)
-        }
+        runCatching { remote.textToSpeech(text) }
 
     override suspend fun speechToText(audioBytes: ByteArray): Result<String> =
         runCatching {
             val b64 = encodeBase64(audioBytes)
-            remote.speechToText(SttRequest(b64)).transcript
+            remote.speechToText(b64)
         }
 }
 

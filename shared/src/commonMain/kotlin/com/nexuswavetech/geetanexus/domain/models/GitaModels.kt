@@ -36,18 +36,18 @@ data class ScriptureSection(
     val id: String,
     val scripture: ScriptureType,
     val number: Int,
-    val title: String,           // Samhita / Kanda / Chapter name
-    val subtitle: String,        // Short description
-    val description: String,     // Full summary
+    val title: String,
+    val subtitle: String,
+    val description: String,
     val verseCount: Int,
-    val audioUrl: String? = null // Pre-recorded audio URL if available
+    val audioUrl: String? = null
 )
 
 data class ScriptureVerse(
     val id: String,
     val sectionId: String,
     val number: Int,
-    val originalText: String,    // Sanskrit / Avadhi
+    val originalText: String,
     val transliteration: String,
     val translation: String,
     val commentary: String = ""
@@ -77,6 +77,19 @@ data class BookmarkEntry(
     val savedAt: Long = 0L
 )
 
+// ── Personal Notes ────────────────────────────────────────────────────────────
+
+@Serializable
+data class VerseNote(
+    val id: String,
+    val verseId: String,           // e.g. "2.47"
+    val verseTitle: String,        // e.g. "BG 2.47"
+    val content: String,
+    val mood: Mood = Mood.CONTEMPLATIVE,
+    val createdAt: Long = 0L,
+    val updatedAt: Long = 0L
+)
+
 // ── Journal ───────────────────────────────────────────────────────────────────
 
 data class JournalEntry(
@@ -96,6 +109,38 @@ enum class Mood(val emoji: String, val label: String) {
     TROUBLED("😔", "Troubled")
 }
 
+// ── Reading Plan ──────────────────────────────────────────────────────────────
+
+@Serializable
+data class ReadingPlan(
+    val id: String,
+    val title: String,
+    val description: String,
+    val scripture: String = "BHAGAVAD_GITA",
+    val totalDays: Int,
+    val completedDays: Int = 0,
+    val currentChapter: Int = 1,
+    val currentVerse: Int = 1,
+    val startedAt: Long = 0L,
+    val lastReadAt: Long = 0L
+) {
+    val progressPercent: Float get() =
+        if (totalDays == 0) 0f else (completedDays.toFloat() / totalDays).coerceIn(0f, 1f)
+    val isCompleted: Boolean get() = completedDays >= totalDays
+}
+
+// Predefined reading plan templates
+object ReadingPlanTemplates {
+    val plans = listOf(
+        ReadingPlan("gita_18days", "Gita in 18 Days",
+            "One chapter per day — align with the 18 chapters of the Bhagavad Gita", "BHAGAVAD_GITA", 18),
+        ReadingPlan("gita_30days", "Gita in 30 Days",
+            "A gentle pace through the Bhagavad Gita with reflection time", "BHAGAVAD_GITA", 30),
+        ReadingPlan("gita_700verses", "700 Verses Journey",
+            "One verse per day with deep contemplation", "BHAGAVAD_GITA", 700)
+    )
+}
+
 // ── Sadhana ───────────────────────────────────────────────────────────────────
 
 data class SadhanaTask(
@@ -106,7 +151,12 @@ data class SadhanaTask(
     val streak: Int = 0
 )
 
-// ── Quiz ─────────────────────────────────────────────────────────────────────
+data class DailySadhanaRecord(
+    val date: String,
+    val tasks: List<SadhanaTask> = emptyList()
+)
+
+// ── Quiz ──────────────────────────────────────────────────────────────────────
 
 data class QuizQuestion(
     val id: String,
@@ -114,8 +164,33 @@ data class QuizQuestion(
     val options: List<String>,
     val correctIndex: Int,
     val explanation: String,
-    val verseRef: String? = null
+    val verseRef: String? = null,
+    val category: QuizCategory = QuizCategory.GENERAL
 )
+
+enum class QuizCategory(val displayName: String, val emoji: String) {
+    GENERAL("General Knowledge", "📚"),
+    KARMA("Karma & Action", "⚡"),
+    DHARMA("Dharma", "☯️"),
+    BHAKTI("Bhakti & Devotion", "🙏"),
+    JNANA("Jnana & Wisdom", "💡"),
+    SHIVA("Shiva Mahapurana", "🔱"),
+    RAMCHARITMANAS("Ramcharitmanas", "🏹")
+}
+
+data class QuizSession(
+    val questions: List<QuizQuestion>,
+    val answers: Map<String, Int> = emptyMap(),  // questionId → chosen option index
+    val currentIndex: Int = 0,
+    val isComplete: Boolean = false
+) {
+    val score: Int get() = answers.count { (id, ans) ->
+        questions.firstOrNull { it.id == id }?.correctIndex == ans
+    }
+    val totalQuestions: Int get() = questions.size
+    val scorePercent: Float get() =
+        if (totalQuestions == 0) 0f else score.toFloat() / totalQuestions
+}
 
 // ── User ──────────────────────────────────────────────────────────────────────
 
@@ -129,7 +204,8 @@ data class UserProfile(
     val level: Int = 1,
     val chaptersRead: Set<Int> = emptySet(),
     val bookmarkedVerseIds: Set<String> = emptySet(),
-    val streakDays: Int = 0
+    val streakDays: Int = 0,
+    val isAnonymous: Boolean = false
 ) {
     val levelTitle: String get() = when (level) {
         1    -> "Seeker"

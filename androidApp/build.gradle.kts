@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.compose.compiler)
+    // NOTE: No google-services plugin — Firebase initialized programmatically
 }
 
 val localProps = Properties().apply {
@@ -12,30 +13,52 @@ val localProps = Properties().apply {
     if (f.exists()) load(f.inputStream())
 }
 
+// Resolve secrets: CI/CD env vars take priority over local.properties
+fun secret(envKey: String, localKey: String, default: String = "") =
+    System.getenv(envKey) ?: localProps.getProperty(localKey, default)
+
 android {
     namespace   = "com.nexuswavetech.geetanexus"
     compileSdk  = 35
 
     defaultConfig {
         applicationId = "com.nexuswavetech.geetanexus"
-        minSdk        = 26
+        minSdk        = 24
         targetSdk     = 35
         versionCode   = 2
         versionName   = "2.0.0"
 
+        // Ed25519 private key (PKCS8 Base64) — injected from CI/CD secret or local.properties
+        // NEVER hardcode this value here
         buildConfigField("String", "ED25519_PRIVATE_KEY",
-            "\"${localProps.getProperty("ed25519.private.key", "")}\"")
+            "\"${secret("ED25519_PRIVATE_KEY", "ed25519.private.key")}\"")
+
+        // Google Credential Manager
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID",
-            "\"${localProps.getProperty("google.web.client.id",
-                "479687771729-c2k3skqr1j5c7l4k9p2m8r6n0e5f3b1x.apps.googleusercontent.com")}\"")
+            "\"${secret("GOOGLE_WEB_CLIENT_ID", "google.web.client.id")}\"")
+
+        // Firebase config — stored in CI/CD secrets, no google-services.json committed
+        buildConfigField("String", "FIREBASE_API_KEY",
+            "\"${secret("FIREBASE_API_KEY", "firebase.api.key")}\"")
+        buildConfigField("String", "FIREBASE_APP_ID",
+            "\"${secret("FIREBASE_APP_ID", "firebase.app.id")}\"")
+        buildConfigField("String", "FIREBASE_GCM_SENDER_ID",
+            "\"${secret("FIREBASE_GCM_SENDER_ID", "firebase.gcm.sender.id")}\"")
+        buildConfigField("String", "FIREBASE_PROJECT_ID", "\"geeta-nexus\"")
+        buildConfigField("String", "FIREBASE_STORAGE_BUCKET", "\"geeta-nexus.firebasestorage.app\"")
     }
 
     buildTypes {
+        debug {
+            isMinifyEnabled = false
+        }
         release {
             isMinifyEnabled   = true
             isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro")
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 
@@ -71,12 +94,12 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.datastore.prefs)
 
-    // Credentials / Google Sign-In
+    // Credentials / Google Sign-In (Credential Manager)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play)
     implementation(libs.googleid)
 
-    // Media3 / ExoPlayer (unified audio player)
+    // Media3 / ExoPlayer
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.ui)
     implementation(libs.media3.session)
@@ -89,9 +112,20 @@ dependencies {
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
-    // Crypto
+    // Crypto (Ed25519 signing)
     implementation(libs.bouncycastle)
 
     // Image
     implementation(libs.coil.compose)
+
+    // Firebase BOM — no google-services plugin; initialized with FirebaseOptions.Builder
+    val firebaseBom = platform(libs.firebase.bom)
+    implementation(firebaseBom)
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.messaging)
+    implementation(libs.firebase.analytics)
+
+    // WorkManager (daily verse notifications)
+    implementation(libs.work.manager)
 }

@@ -12,18 +12,22 @@ import com.nexuswavetech.geetanexus.ui.viewmodel.AudioViewModel
 import org.koin.androidx.compose.koinViewModel
 
 sealed class Screen(val route: String) {
-    object Home        : Screen("home")
-    object Scriptures  : Screen("scriptures")
-    object Chapters    : Screen("chapters")       // Bhagavad Gita chapter list
-    object AiChat      : Screen("ai_chat")
-    object Bookmarks   : Screen("bookmarks")
-    object Profile     : Screen("profile")
-    object Search      : Screen("search")
-    object Onboarding  : Screen("onboarding")
-    object More        : Screen("more")
-    object About       : Screen("about")
-    object Privacy     : Screen("privacy_policy")
-    object Terms       : Screen("terms")
+    object Home           : Screen("home")
+    object Scriptures     : Screen("scriptures")
+    object Chapters       : Screen("chapters")
+    object AiChat         : Screen("ai_chat")
+    object Bookmarks      : Screen("bookmarks")
+    object Quiz           : Screen("quiz")
+    object Notes          : Screen("notes")
+    object ReadingPlan    : Screen("reading_plan")
+    object Profile        : Screen("profile")
+    object Auth           : Screen("auth")
+    object Search         : Screen("search")
+    object Onboarding     : Screen("onboarding")
+    object More           : Screen("more")
+    object About          : Screen("about")
+    object Privacy        : Screen("privacy_policy")
+    object Terms          : Screen("terms")
 
     object ChapterDetail : Screen("chapter_detail/{chapterNumber}") {
         fun route(n: Int) = "chapter_detail/$n"
@@ -42,6 +46,7 @@ sealed class Screen(val route: String) {
 /** Routes where the bottom nav bar is hidden. */
 val fullScreenRoutes = setOf(
     Screen.Onboarding.route,
+    Screen.Auth.route,
     "verse_reader/",
     "scripture_section/"
 )
@@ -54,9 +59,9 @@ fun GeetaNexusNavGraph(
     startDestination: String = Screen.Home.route
 ) {
     NavHost(
-        navController     = navController,
-        startDestination  = startDestination,
-        modifier          = modifier
+        navController    = navController,
+        startDestination = startDestination,
+        modifier         = modifier
     ) {
         composable(Screen.Home.route) {
             HomeScreen(navController = navController)
@@ -120,14 +125,23 @@ fun GeetaNexusNavGraph(
             )
         }
 
-        composable(Screen.AiChat.route)    { AiChatScreen(navController = navController) }
-        composable(Screen.Bookmarks.route) { BookmarksScreen(navController = navController) }
-        composable(Screen.Search.route)    { SearchScreen(navController = navController) }
-        composable(Screen.Profile.route)   { ProfileScreen(navController = navController) }
-        composable(Screen.More.route)      { MoreScreen(navController = navController) }
-        composable(Screen.About.route)     { AboutScreen(navController = navController) }
-        composable(Screen.Privacy.route)   { PrivacyPolicyScreen(navController = navController) }
-        composable(Screen.Terms.route)     { TermsScreen(navController = navController) }
-        composable(Screen.Onboarding.route){ OnboardingScreen(navController = navController) }
+        composable(Screen.AiChat.route)     { AiChatScreen(navController = navController) }
+        composable(Screen.Bookmarks.route)  { BookmarksScreen(navController = navController) }
+        composable(Screen.Quiz.route)       { QuizScreen(navController = navController) }
+        composable(Screen.Notes.route)      { NotesScreen(navController = navController) }
+        composable(Screen.ReadingPlan.route){ ReadingPlanScreen(navController = navController) }
+        composable(Screen.Search.route)     { SearchScreen(navController = navController) }
+        composable(Screen.Profile.route)    { ProfileScreen(navController = navController) }
+        composable(Screen.More.route)       { MoreScreen(navController = navController) }
+        composable(Screen.About.route)      { AboutScreen(navController = navController) }
+        composable(Screen.Privacy.route)    { PrivacyPolicyScreen(navController = navController) }
+        composable(Screen.Terms.route)      { TermsScreen(navController = navController) }
+        composable(Screen.Onboarding.route) { OnboardingScreen(navController = navController) }
+        composable(Screen.Auth.route) {
+            AuthScreen(
+                navController = navController,
+                onAuthSuccess = { navController.popBackStack() }
+            )
+        }
     }
 }

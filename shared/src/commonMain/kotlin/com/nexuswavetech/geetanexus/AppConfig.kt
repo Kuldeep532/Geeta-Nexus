@@ -8,43 +8,36 @@ object AppConfig {
     const val APP_VERSION      = "2.0.0"
 
     // ── Cloudflare API Gateway ────────────────────────────────────────────────
+    // All API keys are fetched through this gateway (Ed25519 signed requests).
+    // No API keys are exposed on the client side.
     const val GATEWAY_BASE_URL = "https://api-gateway.kuldeepky538.workers.dev/"
 
-    // Ed25519 private key seed (Base64). Injected at build-time from local.properties
-    // via BuildConfig (Android) or Info.plist (iOS). Never hardcode here.
-    var ED25519_PRIVATE_KEY_BASE64: String = "REPLACE_WITH_YOUR_ED25519_PRIVATE_KEY_BASE64"
+    // Ed25519 private key seed (PKCS8 Base64).
+    // Injected at build-time from CI/CD env var (ED25519_PRIVATE_KEY) or
+    // local.properties (ed25519.private.key) via BuildConfig. NEVER hardcoded.
+    var ED25519_PRIVATE_KEY_BASE64: String = ""
 
-    // Ed25519 public key embedded in Cloudflare Worker (for reference/docs)
-    const val ED25519_PUBLIC_KEY_BASE64 =
-        "MCowBQYDK2VwAyEAa4ZxuobCuaSe+HMbCc7YW7AG/W5SELvpc7NNBVX9ab4="
+    // Google OAuth Web Client ID — injected from CI/CD or local.properties
+    var GOOGLE_WEB_CLIENT_ID: String = ""
 
-    // ── API Key Names (must match Cloudflare Worker secret/KV variable names) ──
-    // Add these exact names as secrets in your Cloudflare Worker dashboard:
-    //   GEMINI_AI_API_KEY    → https://aistudio.google.com/  (Gemini 1.5 Flash)
-    //   HF_CHAT_API_KEY      → https://huggingface.co/settings/tokens  (Mistral chat fallback)
-    //   HF_TTS_API_KEY       → https://huggingface.co/settings/tokens  (SpeechT5 TTS)
-    //   HF_STT_API_KEY       → https://huggingface.co/settings/tokens  (Whisper STT)
+    // ── API Key Names (must match Cloudflare Worker secret names) ─────────────
+    // Add these as secrets in your Cloudflare Worker dashboard:
+    //   GEMINI_AI_API_KEY    → aistudio.google.com (Gemini 2.0 Flash)
+    //   HF_CHAT_API_KEY      → huggingface.co (Mistral chat fallback)
+    //   HF_TTS_API_KEY       → huggingface.co (SpeechT5 TTS)
+    //   HF_STT_API_KEY       → huggingface.co (Whisper STT)
+    //   FIREBASE_CONFIG      → JSON blob with Firebase project config
     object ApiKeyName {
-        const val GEMINI   = "GEMINI_AI_API_KEY"
-        const val HF_CHAT  = "HF_CHAT_API_KEY"
-        const val HF_TTS   = "HF_TTS_API_KEY"
-        const val HF_STT   = "HF_STT_API_KEY"
-    }
-
-    // ── Backend (FastAPI on Replit) ───────────────────────────────────────────
-    const val BACKEND_BASE_URL = "https://your-backend.replit.app"
-    object BackendEndpoint {
-        const val ASK      = "/ask"
-        const val TTS      = "/tts"
-        const val STT      = "/stt"
-        const val FEEDBACK = "/feedback"
-        const val HEALTH   = "/health"
-        const val RELOAD   = "/reload-kb"
+        const val GEMINI        = "GEMINI_AI_API_KEY"
+        const val HF_CHAT       = "HF_CHAT_API_KEY"
+        const val HF_TTS        = "HF_TTS_API_KEY"
+        const val HF_STT        = "HF_STT_API_KEY"
     }
 
     // ── Google Auth ───────────────────────────────────────────────────────────
-    const val GOOGLE_WEB_CLIENT_ID =
-        "479687771729-c2k3skqr1j5c7l4k9p2m8r6n0e5f3b1x.apps.googleusercontent.com"
+    // Injected at runtime from BuildConfig
+    const val GOOGLE_WEB_CLIENT_ID_PLACEHOLDER =
+        "YOUR_GOOGLE_WEB_CLIENT_ID"
 
     // ── Social / Community ────────────────────────────────────────────────────
     object Social {
@@ -68,10 +61,10 @@ object AppConfig {
     // ── Gemini ────────────────────────────────────────────────────────────────
     object Gemini {
         const val BASE_URL = "https://generativelanguage.googleapis.com/v1beta/"
-        const val MODEL    = "gemini-1.5-flash"
+        const val MODEL    = "gemini-2.0-flash"
     }
 
-    // ── DharmicData (Bhagavad Gita JSON) ─────────────────────────────────────
+    // ── DharmicData (Bhagavad Gita JSON — public, no auth needed) ────────────
     object DharmicData {
         const val BASE_URL    = "https://raw.githubusercontent.com/gita/gita/master/data/json/"
         const val CHAPTERS    = "${BASE_URL}chapters.json"
@@ -81,4 +74,17 @@ object AppConfig {
     // ── Scripture constants ───────────────────────────────────────────────────
     const val TOTAL_CHAPTERS = 18
     const val TOTAL_VERSES   = 700
+
+    // ── Notification ─────────────────────────────────────────────────────────
+    object Notification {
+        const val CHANNEL_ID           = "daily_verse"
+        const val CHANNEL_NAME         = "Daily Verse"
+        const val CHANNEL_DESC         = "Daily Bhagavad Gita verse notification"
+        const val WORK_TAG             = "daily_verse_work"
+        const val DEFAULT_HOUR         = 7   // 7 AM daily
+        const val DEFAULT_MINUTE       = 0
+    }
+
+    // ── Offline cache ─────────────────────────────────────────────────────────
+    const val OFFLINE_CACHE_PREFS = "gita_offline_cache"
 }

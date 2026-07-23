@@ -2,7 +2,9 @@ package com.nexuswavetech.geetanexus.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.nexuswavetech.geetanexus.domain.models.BookmarkEntry
 import com.nexuswavetech.geetanexus.domain.models.Chapter
+import com.nexuswavetech.geetanexus.domain.models.ScriptureType
 import com.nexuswavetech.geetanexus.domain.models.Verse
 import com.nexuswavetech.geetanexus.domain.repository.BookmarkRepository
 import com.nexuswavetech.geetanexus.domain.repository.GitaRepository
@@ -36,14 +38,12 @@ class GitaViewModel(
     private val _versesState = MutableStateFlow<VerseUiState>(VerseUiState.Loading)
     val versesState: StateFlow<VerseUiState> = _versesState.asStateFlow()
 
-    // Single-verse state (used by VerseReaderScreen)
     private val _currentVerseState = MutableStateFlow<VerseUiState>(VerseUiState.Loading)
     val currentVerseState: StateFlow<VerseUiState> = _currentVerseState.asStateFlow()
 
     private val _bookmarkedIds = MutableStateFlow<Set<String>>(emptySet())
     val bookmarkedIds: StateFlow<Set<String>> = _bookmarkedIds.asStateFlow()
 
-    // Is the currently displayed single verse bookmarked?
     val isCurrentVerseBookmarked: StateFlow<Boolean> = combine(
         _currentVerseState, _bookmarkedIds
     ) { state, ids ->
@@ -73,7 +73,6 @@ class GitaViewModel(
             .onFailure { _versesState.value = VerseUiState.Error(it.message ?: "Failed to load verses") }
     }
 
-    /** Load a single verse for the VerseReaderScreen. */
     fun loadVerse(chapterNumber: Int, verseNumber: Int) = viewModelScope.launch {
         _currentVerseState.value = VerseUiState.Loading
         gitaRepository.getVerse(chapterNumber, verseNumber)
@@ -92,7 +91,16 @@ class GitaViewModel(
         if (bookmarkRepository.isBookmarked(verse.id)) {
             bookmarkRepository.removeBookmark(verse.id)
         } else {
-            bookmarkRepository.addBookmark(verse.id)
+            val entry = BookmarkEntry(
+                verseId       = verse.id,
+                scripture     = ScriptureType.BHAGAVAD_GITA,
+                title         = "BG ${verse.chapterNumber}.${verse.verseNumber}",
+                preview       = verse.translation.take(120),
+                chapterNumber = verse.chapterNumber,
+                verseNumber   = verse.verseNumber,
+                savedAt       = System.currentTimeMillis()
+            )
+            bookmarkRepository.addBookmark(entry)
         }
         loadBookmarks()
     }
@@ -106,6 +114,6 @@ class GitaViewModel(
 
     private fun loadBookmarks() = viewModelScope.launch {
         bookmarkRepository.getBookmarks()
-            .onSuccess { _bookmarkedIds.value = it.map { v -> v.id }.toSet() }
+            .onSuccess { entries -> _bookmarkedIds.value = entries.map { it.verseId }.toSet() }
     }
 }
