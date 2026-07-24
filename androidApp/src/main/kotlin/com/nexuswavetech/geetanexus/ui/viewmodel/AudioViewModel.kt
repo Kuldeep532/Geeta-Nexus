@@ -7,36 +7,27 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
-import com.nexuswavetech.geetanexus.AppConfig
-import com.nexuswavetech.geetanexus.network.CloudflareGatewayClient
-import io.ktor.client.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
-import io.ktor.serialization.kotlinx.json.*
+import com.nexuswavetech.geetanexus.domain.repository.AiRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
+import java.io.File
 
 /**
- * Manages audio playback (TTS + streaming) for the app.
+ * Manages audio playback for the app.
  *
- * TTS flow:
- *   1. Fetch HuggingFace TTS API key from Cloudflare Gateway (no key on device)
- *   2. POST text to HF Inference API → get audio bytes
- *   3. Write to temp cache file → feed to ExoPlayer
+ * TTS Flow (fully API-free on client):
+ *   [AiRepository.textToSpeech] → [AiRepositoryImpl] → [GitaRemoteDataSource.textToSpeech]
+ *       → Cloudflare Gateway (fetch HuggingFace key) → HuggingFace TTS API
  *
- * FastAPI backend has been removed — all API calls go through Cloudflare Worker.
+ * No API keys ever touch this ViewModel.
  */
 class AudioViewModel(
     application: Application,
-    private val gatewayClient: CloudflareGatewayClient
+    private val aiRepository: AiRepository
 ) : AndroidViewModel(application) {
 
     private val tag = "AudioViewModel"
@@ -71,12 +62,6 @@ class AudioViewModel(
     val duration:    StateFlow<Long>     = _duration.asStateFlow()
     val currentId:   StateFlow<String?>  = _currentId.asStateFlow()
 
-    // ── HTTP client for TTS ───────────────────────────────────────────────────
-    private val httpClient = HttpClient(OkHttp) {
-        install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
-    }
-
-    // Progress polling
     init {
         viewModelScope.launch {
             while (isActive) {
@@ -92,63 +77,52 @@ class AudioViewModel(
     // ── Public API ────────────────────────────────────────────────────────────
 
     /**
-     * Play TTS for the given text.
-     * Calls HuggingFace TTS API directly using a key fetched from Cloudflare Gateway.
+     * Generate TTS audio for [text] and play it via ExoPlayer.
+     * Toggle pause/resume if the same [verseId] is already playing.
      */
     fun playVerseAudio(verseId: String, text: String) {
         if (_currentId.value == verseId && exoPlayer.isPlaying) {
-            exoPlayer.pause(); return
+            exoPlayer.pause()
+            return
         }
+        if (_currentId.value == verseId && !exoPlayer.isPlaying && exoPlayer.playbackState != Player.STATE_IDLE) {
+            exoPlayer.play()
+            return
+        }
+
         viewModelScope.launch(Dispatchers.IO) {
             _isLoading.value = true
             _error.value     = null
             _currentId.value = verseId
+
             try {
-                val ttsApiKey = runCatching {
-                    gatewayClient.getApiKey(AppConfig.ApiKeyName.HF_TTS)
-                }.getOrNull()
-
-                if (ttsApiKey.isNullOrBlank()) {
-                    _error.value = "TTS unavailable: API key not configured"
-                    return@launch
-                }
-
-                val hfUrl = "${AppConfig.HuggingFace.BASE_URL}${AppConfig.HuggingFace.TTS_MODEL}"
-                val sanitizedText = text.replace("\"", "\\\"").take(500)
-
-                val response: HttpResponse = httpClient.post(hfUrl) {
-                    contentType(ContentType.Application.Json)
-                    header("Authorization", "Bearer $ttsApiKey")
-                    setBody("""{"inputs":"$sanitizedText"}""")
-                }
-
-                if (response.status == HttpStatusCode.OK) {
-                    val bytes   = response.readBytes()
-                    val tmpFile = java.io.File(
+                val result = aiRepository.textToSpeech(text.take(500))
+                result.onSuccess { bytes ->
+                    val cacheFile = File(
                         getApplication<Application>().cacheDir,
-                        "tts_${verseId.replace("/", "_")}.mp3"
+                        "tts_${verseId.replace(".", "_")}.mp3"
                     )
-                    tmpFile.writeBytes(bytes)
+                    cacheFile.writeBytes(bytes)
 
                     withContext(Dispatchers.Main) {
-                        exoPlayer.setMediaItem(MediaItem.fromUri(tmpFile.toURI().toString()))
+                        exoPlayer.setMediaItem(MediaItem.fromUri(cacheFile.toURI().toString()))
                         exoPlayer.prepare()
                         exoPlayer.play()
                     }
-                } else {
-                    _error.value = "TTS service unavailable (${response.status.value})"
-                    Log.w(tag, "HF TTS returned ${response.status}")
+                }.onFailure { e ->
+                    Log.w(tag, "TTS failed: ${e.message}")
+                    _error.value = "Audio unavailable — check internet connection."
                 }
             } catch (e: Exception) {
                 Log.e(tag, "TTS error", e)
-                _error.value = "Audio unavailable: ${e.message}"
+                _error.value = "Could not load audio: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
         }
     }
 
-    /** Stream from a direct URL (e.g., pre-recorded chapter audio). */
+    /** Stream from a direct URL (pre-recorded audio). */
     fun playUrl(url: String, trackId: String) {
         _currentId.value = trackId
         _error.value     = null
@@ -166,11 +140,11 @@ class AudioViewModel(
         _position.value = positionMs
     }
 
-    fun skipForward()  {
-        exoPlayer.seekTo((exoPlayer.currentPosition + 10_000).coerceAtMost(exoPlayer.duration))
+    fun skipForward(ms: Long = 10_000L) {
+        exoPlayer.seekTo((exoPlayer.currentPosition + ms).coerceAtMost(exoPlayer.duration))
     }
-    fun skipBackward() {
-        exoPlayer.seekTo((exoPlayer.currentPosition - 10_000).coerceAtLeast(0L))
+    fun skipBackward(ms: Long = 10_000L) {
+        exoPlayer.seekTo((exoPlayer.currentPosition - ms).coerceAtLeast(0L))
     }
 
     fun setPlaybackSpeed(speed: Float) { exoPlayer.setPlaybackSpeed(speed) }
@@ -186,7 +160,6 @@ class AudioViewModel(
 
     override fun onCleared() {
         exoPlayer.release()
-        httpClient.close()
         super.onCleared()
     }
 }

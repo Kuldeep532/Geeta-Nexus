@@ -58,12 +58,20 @@ fun MoreScreen(navController: NavController) {
         CommunityItem("Email",     AppConfig.COMPANY_EMAIL,  "✉️", AppConfig.Social.EMAIL),
     )
 
+    val featureItems = listOf(
+        InfoItem("Quiz",             Icons.Default.Quiz,           route = Screen.Quiz.route),
+        InfoItem("My Notes",         Icons.Default.Edit,           route = Screen.Notes.route),
+        InfoItem("Reading Plan",     Icons.Default.CalendarMonth,  route = Screen.ReadingPlan.route),
+        InfoItem("My Profile",       Icons.Default.AccountCircle,  route = Screen.Profile.route),
+        InfoItem("Bookmarks",        Icons.Default.Bookmark,       route = Screen.Bookmarks.route),
+    )
+
     val infoItems = listOf(
-        InfoItem("About Us",       Icons.Default.Info,           route = Screen.About.route),
-        InfoItem("Privacy Policy", Icons.Default.Security,       route = Screen.Privacy.route),
-        InfoItem("Terms of Service",Icons.Default.Gavel,         route = Screen.Terms.route),
-        InfoItem("Rate the App",   Icons.Default.StarRate,       url = "market://details?id=com.nexuswavetech.geetanexus"),
-        InfoItem("Share App",      Icons.Default.Share,          url = null),
+        InfoItem("About Us",          Icons.Default.Info,          route = Screen.About.route),
+        InfoItem("Privacy Policy",    Icons.Default.Security,      route = Screen.Privacy.route),
+        InfoItem("Terms of Service",  Icons.Default.Gavel,         route = Screen.Terms.route),
+        InfoItem("Rate the App",      Icons.Default.StarRate,      url = "market://details?id=com.nexuswavetech.geetanexus"),
+        InfoItem("Share App",         Icons.Default.Share,         url = null),
     )
 
     Scaffold(
