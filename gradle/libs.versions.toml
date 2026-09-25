@@ -18,6 +18,7 @@ googleid              = "1.1.1"
 coil                  = "2.7.0"
 firebase-bom          = "33.7.0"
 work-manager          = "2.9.1"
+supabase              = "3.2.3"
 
 [libraries]
 # Ktor
@@ -70,6 +71,8 @@ firebase-auth        = { module = "com.google.firebase:firebase-auth-ktx" }
 firebase-firestore   = { module = "com.google.firebase:firebase-firestore-ktx" }
 firebase-messaging   = { module = "com.google.firebase:firebase-messaging-ktx" }
 firebase-analytics   = { module = "com.google.firebase:firebase-analytics-ktx" }
+supabase-auth         = { module = "io.github.jan-tennert.supabase:auth-kt", version.ref = "supabase" }
+supabase-postgrest    = { module = "io.github.jan-tennert.supabase:postgrest-kt", version.ref = "supabase" }
 
 # WorkManager (daily verse notifications)
 work-manager = { module = "androidx.work:work-runtime-ktx", version.ref = "work-manager" }
