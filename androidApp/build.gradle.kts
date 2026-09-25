@@ -37,15 +37,11 @@ android {
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID",
             "\"${secret("GOOGLE_WEB_CLIENT_ID", "google.web.client.id")}\"")
 
-        // Firebase config — stored in CI/CD secrets, no google-services.json committed
-        buildConfigField("String", "FIREBASE_API_KEY",
-            "\"${secret("FIREBASE_API_KEY", "firebase.api.key")}\"")
-        buildConfigField("String", "FIREBASE_APP_ID",
-            "\"${secret("FIREBASE_APP_ID", "firebase.app.id")}\"")
-        buildConfigField("String", "FIREBASE_GCM_SENDER_ID",
-            "\"${secret("FIREBASE_GCM_SENDER_ID", "firebase.gcm.sender.id")}\"")
-        buildConfigField("String", "FIREBASE_PROJECT_ID", "\"geeta-nexus\"")
-        buildConfigField("String", "FIREBASE_STORAGE_BUCKET", "\"geeta-nexus.firebasestorage.app\"")
+        buildConfigField("String", "SUPABASE_URL",
+            "\"https://cpbwiarqlvtlnwbkmpws.supabase.co\"")
+        buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY",
+            "\"${secret("SUPABASE_PUBLISHABLE_KEY", "supabase.publishable.key")}\"")
+
     }
 
     buildTypes {
@@ -121,8 +117,6 @@ dependencies {
     // Firebase BOM — no google-services plugin; initialized with FirebaseOptions.Builder
     val firebaseBom = platform(libs.firebase.bom)
     implementation(firebaseBom)
-    implementation(libs.firebase.auth)
-    implementation(libs.firebase.firestore)
     implementation(libs.firebase.messaging)
     implementation(libs.firebase.analytics)
 
