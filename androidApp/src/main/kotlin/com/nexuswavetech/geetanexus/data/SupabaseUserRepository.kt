@@ -81,7 +81,7 @@ class SupabaseUserRepository(private val context: Context) : UserRepository {
         val token = (credential as? CustomCredential)
             ?.takeIf { it.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL }
             ?.let { GoogleIdTokenCredential.createFrom(it.data).idToken }
-            ?: error("Google sign-in was not completed")
+            ?: error("Google sign-in could not be completed. Please try again.")
 
         supabase.auth.loginWith(IDToken) {
             idToken = token
@@ -89,7 +89,7 @@ class SupabaseUserRepository(private val context: Context) : UserRepository {
             nonce = rawNonce
         }
 
-        val user = supabase.auth.currentUserOrNull() ?: error("Supabase sign-in failed")
+        val user = supabase.auth.currentUserOrNull() ?: error("We couldn't complete your sign-in. Please try again.")
         user.toProfile().also { persistUser(it) }
     }
 
@@ -98,7 +98,7 @@ class SupabaseUserRepository(private val context: Context) : UserRepository {
             this.idToken = idToken
             provider = Google
         }
-        val user = supabase.auth.currentUserOrNull() ?: error("Supabase sign-in failed")
+        val user = supabase.auth.currentUserOrNull() ?: error("We couldn't complete your sign-in. Please try again.")
         user.toProfile().also { persistUser(it) }
     }
 
@@ -107,7 +107,7 @@ class SupabaseUserRepository(private val context: Context) : UserRepository {
             this.email = email.trim()
             this.password = password
         }
-        val user = supabase.auth.currentUserOrNull() ?: error("Sign-in failed")
+        val user = supabase.auth.currentUserOrNull() ?: error("We couldn't sign you in. Please check your details and try again.")
         user.toProfile().also { persistUser(it) }
     }
 
@@ -124,7 +124,7 @@ class SupabaseUserRepository(private val context: Context) : UserRepository {
 
     override suspend fun signInAsGuest(): Result<UserProfile> = runCatching {
         supabase.auth.signInAnonymously()
-        val user = supabase.auth.currentUserOrNull() ?: error("Guest sign-in failed")
+        val user = supabase.auth.currentUserOrNull() ?: error("Guest access is unavailable right now.")
         user.toProfile().also { persistUser(it) }
     }
 
@@ -144,7 +144,7 @@ class SupabaseUserRepository(private val context: Context) : UserRepository {
     }
 
     override suspend fun deleteAccount(): Result<Unit> =
-        Result.failure(UnsupportedOperationException("Account deletion requires a secure server-side flow."))
+        Result.failure(UnsupportedOperationException("Account deletion is temporarily unavailable. Please contact support for help."))
 
     private suspend fun persistUser(profile: UserProfile) {
         context.supabaseUserStore.edit { it[userJsonKey] = json.encodeToString(profile) }
