@@ -33,17 +33,17 @@ class LocalUserRepository(private val context: Context) : UserRepository {
     }
 
     override suspend fun signInWithGoogle(idToken: String): Result<UserProfile> =
-        Result.failure(UnsupportedOperationException("Requires Firebase. Use FirebaseUserRepository."))
+        Result.failure(UnsupportedOperationException("This sign-in option is currently unavailable. Please try again later."))
 
     override suspend fun signInWithEmailPassword(
         email: String, password: String
     ): Result<UserProfile> =
-        Result.failure(UnsupportedOperationException("Requires Firebase. Use FirebaseUserRepository."))
+        Result.failure(UnsupportedOperationException("This sign-in option is currently unavailable. Please try again later."))
 
     override suspend fun signUpWithEmailPassword(
         email: String, password: String, name: String
     ): Result<UserProfile> =
-        Result.failure(UnsupportedOperationException("Requires Firebase. Use FirebaseUserRepository."))
+        Result.failure(UnsupportedOperationException("This sign-in option is currently unavailable. Please try again later."))
 
     override suspend fun signInAsGuest(): Result<UserProfile> = runCatching {
         val profile = UserProfile(
