@@ -144,31 +144,18 @@ fun MoreScreen(navController: NavController) {
                 }
             }
 
-            // API keys info card
+            // Helpful app message
             item {
                 Card(
-                    shape  = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
                 ) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Key, contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onTertiaryContainer, modifier = Modifier.size(18.dp))
-                            Text("Cloudflare API Keys Required", style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onTertiaryContainer)
-                        }
-                        Text("Add these secrets to your Cloudflare Worker for full AI features:",
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onTertiaryContainer)
-                        listOf(
-                            "GEMINI_AI_API_KEY → aistudio.google.com",
-                            "HF_TTS_API_KEY → huggingface.co/settings/tokens",
-                            "HF_STT_API_KEY → huggingface.co/settings/tokens",
-                            "HF_CHAT_API_KEY → huggingface.co/settings/tokens"
-                        ).forEach { key ->
-                            Text("• $key", style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onTertiaryContainer)
-                        }
-                    }
+                    Text(
+                        "AI features are securely managed by Nexus. No setup is required from you.",
+                        modifier = Modifier.padding(16.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
                 }
             }
 
