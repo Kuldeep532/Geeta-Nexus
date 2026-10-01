@@ -102,7 +102,7 @@ class FirebaseUserRepository(private val context: Context) : UserRepository {
         email: String, password: String
     ): Result<UserProfile> = runCatching {
         val authResult = auth.signInWithEmailAndPassword(email, password).await()
-        val user = authResult.user ?: throw Exception("We couldn't sign you in. Please check your details and try again.")
+        val user = authResult.user ?: throw Exception("We couldn't sign you in. Please check your email and password and try again.")
         val profile = user.toProfile()
         persistUser(profile)
         profile
