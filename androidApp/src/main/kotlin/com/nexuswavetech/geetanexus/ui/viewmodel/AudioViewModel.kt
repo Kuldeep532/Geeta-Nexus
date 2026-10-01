@@ -111,7 +111,7 @@ class AudioViewModel(
                     }
                 }.onFailure { e ->
                     Log.w(tag, "TTS failed: ${e.message}")
-                    _error.value = "Audio unavailable — check internet connection."
+                    _error.value = "Audio isn't available right now. Please check your internet connection and try again."
                 }
             } catch (e: Exception) {
                 Log.e(tag, "TTS error", e)
