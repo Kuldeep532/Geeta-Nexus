@@ -115,7 +115,7 @@ class AudioViewModel(
                 }
             } catch (e: Exception) {
                 Log.e(tag, "TTS error", e)
-                _error.value = "Could not load audio: ${e.message}"
+                _error.value = "We couldn't play this audio right now. Please try again."
             } finally {
                 _isLoading.value = false
             }
