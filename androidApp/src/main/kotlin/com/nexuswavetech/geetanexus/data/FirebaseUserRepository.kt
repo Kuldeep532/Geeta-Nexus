@@ -83,7 +83,7 @@ class FirebaseUserRepository(private val context: Context) : UserRepository {
             googleIdTokenCredential.idToken, null
         )
         val authResult = auth.signInWithCredential(firebaseCredential).await()
-        val user = authResult.user ?: throw Exception("Authentication failed")
+        val user = authResult.user ?: throw Exception("We couldn't complete your sign-in. Please try again.")
         val profile = user.toProfile()
         persistUser(profile)
         profile
@@ -92,7 +92,7 @@ class FirebaseUserRepository(private val context: Context) : UserRepository {
     override suspend fun signInWithGoogle(idToken: String): Result<UserProfile> = runCatching {
         val firebaseCredential = GoogleAuthProvider.getCredential(idToken, null)
         val authResult = auth.signInWithCredential(firebaseCredential).await()
-        val user = authResult.user ?: throw Exception("Authentication failed")
+        val user = authResult.user ?: throw Exception("We couldn't complete your sign-in. Please try again.")
         val profile = user.toProfile()
         persistUser(profile)
         profile
@@ -102,7 +102,7 @@ class FirebaseUserRepository(private val context: Context) : UserRepository {
         email: String, password: String
     ): Result<UserProfile> = runCatching {
         val authResult = auth.signInWithEmailAndPassword(email, password).await()
-        val user = authResult.user ?: throw Exception("Sign-in failed")
+        val user = authResult.user ?: throw Exception("We couldn't sign you in. Please check your details and try again.")
         val profile = user.toProfile()
         persistUser(profile)
         profile
@@ -112,7 +112,7 @@ class FirebaseUserRepository(private val context: Context) : UserRepository {
         email: String, password: String, name: String
     ): Result<UserProfile> = runCatching {
         val authResult = auth.createUserWithEmailAndPassword(email, password).await()
-        val user = authResult.user ?: throw Exception("Sign-up failed")
+        val user = authResult.user ?: throw Exception("We couldn't create your account. Please try again.")
         user.updateProfile(
             com.google.firebase.auth.userProfileChangeRequest { displayName = name }
         ).await()
@@ -124,7 +124,7 @@ class FirebaseUserRepository(private val context: Context) : UserRepository {
 
     override suspend fun signInAsGuest(): Result<UserProfile> = runCatching {
         val authResult = auth.signInAnonymously().await()
-        val user = authResult.user ?: throw Exception("Guest sign-in failed")
+        val user = authResult.user ?: throw Exception("Guest access is unavailable right now.")
         val profile = user.toProfile()
         persistUser(profile)
         profile
