@@ -124,7 +124,7 @@ class FirebaseUserRepository(private val context: Context) : UserRepository {
 
     override suspend fun signInAsGuest(): Result<UserProfile> = runCatching {
         val authResult = auth.signInAnonymously().await()
-        val user = authResult.user ?: throw Exception("Guest access is unavailable right now.")
+        val user = authResult.user ?: throw Exception("Guest access isn't available right now. Please try again later.")
         val profile = user.toProfile()
         persistUser(profile)
         profile
