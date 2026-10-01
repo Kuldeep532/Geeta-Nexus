@@ -124,7 +124,7 @@ class SupabaseUserRepository(private val context: Context) : UserRepository {
 
     override suspend fun signInAsGuest(): Result<UserProfile> = runCatching {
         supabase.auth.signInAnonymously()
-        val user = supabase.auth.currentUserOrNull() ?: error("Guest access is unavailable right now.")
+        val user = supabase.auth.currentUserOrNull() ?: error("Guest access isn't available right now. Please try again later.")
         user.toProfile().also { persistUser(it) }
     }
 
