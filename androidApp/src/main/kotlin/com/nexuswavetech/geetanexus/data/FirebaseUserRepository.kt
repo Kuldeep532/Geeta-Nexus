@@ -112,7 +112,7 @@ class FirebaseUserRepository(private val context: Context) : UserRepository {
         email: String, password: String, name: String
     ): Result<UserProfile> = runCatching {
         val authResult = auth.createUserWithEmailAndPassword(email, password).await()
-        val user = authResult.user ?: throw Exception("We couldn't create your account. Please try again.")
+        val user = authResult.user ?: throw Exception("We couldn't create your account right now. Please try again.")
         user.updateProfile(
             com.google.firebase.auth.userProfileChangeRequest { displayName = name }
         ).await()
