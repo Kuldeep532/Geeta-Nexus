@@ -69,7 +69,7 @@ class CloudflareGatewayClient(
 
         if (response.status != "success" || response.apiKey == null) {
             throw GatewayException(
-                response.messageEn ?: response.error ?: "Unknown gateway error"
+                "The service is temporarily unavailable. Please try again shortly."
             )
         }
 
