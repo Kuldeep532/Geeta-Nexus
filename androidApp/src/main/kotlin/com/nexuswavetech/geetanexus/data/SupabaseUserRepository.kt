@@ -107,7 +107,7 @@ class SupabaseUserRepository(private val context: Context) : UserRepository {
             this.email = email.trim()
             this.password = password
         }
-        val user = supabase.auth.currentUserOrNull() ?: error("We couldn't sign you in. Please check your details and try again.")
+        val user = supabase.auth.currentUserOrNull() ?: error("We couldn't sign you in. Please check your email and password and try again.")
         user.toProfile().also { persistUser(it) }
     }
 
