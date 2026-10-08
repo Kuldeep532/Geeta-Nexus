@@ -1,11 +1,16 @@
 package com.nexuswavetech.geetanexus.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -52,6 +57,8 @@ private data class DarshanActivity(val text: String)
 @Composable
 fun MandirScreen(navController: NavController) {
     var activeTab by remember { mutableIntStateOf(0) }
+    var showThaliMenu by remember { mutableStateOf(false) }
+    var showCustomThali by remember { mutableStateOf(false) }
     var showPurityNotice by remember { mutableStateOf(true) }
     if (showPurityNotice) {
         AlertDialog(
@@ -85,6 +92,40 @@ fun MandirScreen(navController: NavController) {
         )
     }
 
+    if (showThaliMenu) {
+        ModalBottomSheet(
+            onDismissRequest = { showThaliMenu = false }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("पूजा थाल", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                Text("तैयार थाल चुनें या अपनी थाल स्वयं सजाएँ।")
+                Button(
+                    onClick = { showCustomThali = true; showThaliMenu = false },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text("कस्टम थाल बनाएँ")
+                }
+                OutlinedButton(
+                    onClick = { showThaliMenu = false },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("तैयार थाल देखें")
+                }
+            }
+        }
+    }
+
+    if (showCustomThali) {
+        CustomThaliSheet(onDismiss = { showCustomThali = false })
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -100,6 +141,10 @@ fun MandirScreen(navController: NavController) {
                         onClick = { },
                         modifier = Modifier.semantics { contentDescription = "मंदिर की घंटी बजाएँ" }
                     ) { Icon(Icons.Default.Notifications, contentDescription = null) }
+                    IconButton(
+                        onClick = { showThaliMenu = true },
+                        modifier = Modifier.semantics { contentDescription = "पूजा थाल मेन्यू खोलें" }
+                    ) { Icon(Icons.Default.Restaurant, contentDescription = null) }
                 }
             )
         }
@@ -149,6 +194,9 @@ private fun DarshanTab(modifier: Modifier) {
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            item {
+                ReadyMadeThaliCard()
+            }
             items(activity) { activityItem ->
                 ElevatedCard(Modifier.fillMaxWidth()) {
                     Text(activityItem.text, Modifier.padding(14.dp), style = MaterialTheme.typography.bodyLarge)
@@ -195,6 +243,87 @@ private fun AartiTab(modifier: Modifier) {
                         item.description?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReadyMadeThaliCard() {
+    var rotation by remember { mutableFloatStateOf(0f) }
+
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp)
+            .semantics { contentDescription = "तैयार पूजा थाल। उंगली से घुमाएँ" }
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("तैयार पूजा थाल", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .pointerInput(Unit) {
+                        detectDragGestures { _, dragAmount ->
+                            rotation += dragAmount.x * 0.7f
+                        }
+                    }
+                    .semantics { contentDescription = "थाल को उंगली से घुमाएँ" }
+                    .graphicsLayer {
+                        rotationY = rotation
+                        cameraDistance = 12f * density
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    shape = MaterialTheme.shapes.extraLarge,
+                    tonalElevation = 6.dp,
+                    modifier = Modifier.size(150.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("पूजा थाल", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text("दीप • पुष्प • अक्षत", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
+            Text("थाल पर उंगली रखें और उसे घुमाएँ।", style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CustomThaliSheet(onDismiss: () -> Unit) {
+    var diya by remember { mutableStateOf(true) }
+    var flowers by remember { mutableStateOf(true) }
+    var rice by remember { mutableStateOf(true) }
+
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text("कस्टम थाल", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text("जिस सामग्री से पूजा करना चाहते हैं, उसे चुनें।")
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("दीप")
+                Switch(checked = diya, onCheckedChange = { diya = it })
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("पुष्प")
+                Switch(checked = flowers, onCheckedChange = { flowers = it })
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("अक्षत")
+                Switch(checked = rice, onCheckedChange = { rice = it })
+            }
+            Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+                Text("थाल तैयार करें")
             }
         }
     }
