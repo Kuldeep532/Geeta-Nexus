@@ -52,6 +52,39 @@ private data class DarshanActivity(val text: String)
 @Composable
 fun MandirScreen(navController: NavController) {
     var activeTab by remember { mutableIntStateOf(0) }
+    var showPurityNotice by remember { mutableStateOf(true) }
+    if (showPurityNotice) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("A Note Before Entering the Mandir", fontWeight = FontWeight.Bold) },
+            text = {
+                Text(
+                    "This digital mandir is intended to be approached with the same reverence as a physical place of worship. Please use this feature after bathing and when you are clean and prepared for prayer."
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showPurityNotice = false },
+                    modifier = Modifier.semantics {
+                        contentDescription = "I understand and wish to enter the mandir"
+                    }
+                ) {
+                    Text("I Understand")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { navController.popBackStack() },
+                    modifier = Modifier.semantics {
+                        contentDescription = "Leave the mandir"
+                    }
+                ) {
+                    Text("Leave")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
