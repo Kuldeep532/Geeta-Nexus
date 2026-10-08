@@ -114,6 +114,9 @@ dependencies {
     // Image
     implementation(libs.coil.compose)
 
+    // Lightweight Jetpack Compose 3D rendering with Google Filament
+    implementation(libs.sceneview)
+
     // Firebase BOM — no google-services plugin; initialized with FirebaseOptions.Builder
     val firebaseBom = platform(libs.firebase.bom)
     implementation(firebaseBom)
