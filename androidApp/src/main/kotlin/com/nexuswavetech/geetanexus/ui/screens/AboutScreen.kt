@@ -125,6 +125,14 @@ fun AboutScreen(navController: NavController) {
                 )
             }
 
+            item {
+                InfoCard(
+                    icon = Icons.Default.ViewInAr,
+                    title = "3D Pooja / Aarti Thali Credit",
+                    body = "3D Pooja / Aarti Thali model by Kreeda Dev. Licensed under CC BY 4.0. Creator attribution is provided here outside the Mandir experience."
+                )
+            }
+
             // Legal links
             item {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
