@@ -36,11 +36,11 @@ data class BottomNavItem(
 )
 
 val bottomNavItems = listOf(
-    BottomNavItem(Screen.Home,       "Home",       Icons.Default.Home,        Icons.Filled.Home,       "Home screen"),
-    BottomNavItem(Screen.Scriptures, "Scriptures", Icons.Default.MenuBook,    Icons.Filled.MenuBook,   "Sacred scriptures"),
-    BottomNavItem(Screen.AiChat,     "Aira AI",    Icons.Default.AutoAwesome, Icons.Filled.AutoAwesome,"Aira spiritual AI"),
-    BottomNavItem(Screen.Quiz,       "Quiz",       Icons.Default.Quiz,        Icons.Filled.Quiz,       "Spiritual quiz"),
-    BottomNavItem(Screen.More,       "More",       Icons.Default.MoreHoriz,   Icons.Filled.MoreHoriz,  "More options"),
+    BottomNavItem(Screen.Profile, "Profile", Icons.Default.AccountCircle, Icons.Filled.AccountCircle, "My profile"),
+    BottomNavItem(Screen.Mandir, "मंदिर", Icons.Default.TempleHindu, Icons.Filled.TempleHindu, "Radha Krishna Mandir"),
+    BottomNavItem(Screen.ReadingHistory, "History", Icons.Default.History, Icons.Filled.History, "Reading history"),
+    BottomNavItem(Screen.DeityIdentity, "भगवान की पहचान", Icons.Default.AutoAwesome, Icons.Filled.AutoAwesome, "पहचानिए और जानिए भगवान के बारे में"),
+    BottomNavItem(Screen.Reading, "Reading", Icons.Default.MenuBook, Icons.Filled.MenuBook, "Reading"),
 )
 
 class MainActivity : ComponentActivity() {
