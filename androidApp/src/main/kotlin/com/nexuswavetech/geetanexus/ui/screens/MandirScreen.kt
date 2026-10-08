@@ -227,13 +227,10 @@ private fun RotatingThali3D(
     val engine = rememberEngine()
     val modelLoader = rememberModelLoader(engine)
     val cameraManipulator = rememberCameraManipulator()
-    var autoRotate by remember { mutableStateOf(true) }
+    var modelAvailable by remember { mutableStateOf<Boolean?>(null) }
 
-    LaunchedEffect(autoRotate) {
-        cameraManipulator.orbitHomePosition = io.github.sceneview.math.Position(0f, 0f, 4.2f)
-        while (autoRotate && isActive) {
-            delay(16)
-        }
+    LaunchedEffect(Unit) {
+        modelAvailable = true
     }
 
     Column(
@@ -248,16 +245,20 @@ private fun RotatingThali3D(
                     contentDescription = "वास्तविक 3D पूजा थाल। उंगली से घुमाएँ।"
                 }
         ) {
-            SceneView(
-                modifier = Modifier.fillMaxSize(),
-                engine = engine,
-                modelLoader = modelLoader,
-                cameraManipulator = cameraManipulator
-            ) {
-                createModelNode(
+            if (modelAvailable == true) {
+                SceneView(
+                    modifier = Modifier.fillMaxSize(),
+                    engine = engine,
                     modelLoader = modelLoader,
-                    glbFileLocation = "models/puja_thali.glb"
-                )?.let { addChildNode(it) }
+                    cameraManipulator = cameraManipulator
+                ) {
+                    createModelNode(
+                        modelLoader = modelLoader,
+                        glbFileLocation = "models/puja_thali.glb"
+                    )?.let { addChildNode(it) }
+                }
+            } else {
+                CircularProgressIndicator(Modifier.align(Alignment.Center))
             }
         }
 
