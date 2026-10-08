@@ -28,6 +28,10 @@ sealed class Screen(val route: String) {
     object About          : Screen("about")
     object Privacy        : Screen("privacy_policy")
     object Terms          : Screen("terms")
+    object Mandir         : Screen("mandir")
+    object ReadingHistory : Screen("reading_history")
+    object DeityIdentity  : Screen("deity_identity")
+    object Reading        : Screen("reading")
 
     object ChapterDetail : Screen("chapter_detail/{chapterNumber}") {
         fun route(n: Int) = "chapter_detail/$n"
@@ -136,6 +140,10 @@ fun GeetaNexusNavGraph(
         composable(Screen.About.route)      { AboutScreen(navController = navController) }
         composable(Screen.Privacy.route)    { PrivacyPolicyScreen(navController = navController) }
         composable(Screen.Terms.route)      { TermsScreen(navController = navController) }
+        composable(Screen.Mandir.route)      { MandirScreen(navController = navController) }
+        composable(Screen.ReadingHistory.route) { ReadingHistoryScreen(navController = navController) }
+        composable(Screen.DeityIdentity.route) { DeityIdentityScreen(navController = navController) }
+        composable(Screen.Reading.route) { ReadingScreen(navController = navController) }
         composable(Screen.Onboarding.route) { OnboardingScreen(navController = navController) }
         composable(Screen.Auth.route) {
             AuthScreen(
