@@ -1,18 +1,15 @@
 package com.nexuswavetech.geetanexus.ui.screens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.Spa
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import kotlinx.coroutines.isActive
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -138,20 +135,13 @@ fun MandirScreen(navController: NavController) {
     }
 }
 
+
 @Composable
 private fun DarshanTab(modifier: Modifier) {
     val engine = rememberEngine()
     val modelLoader = rememberModelLoader(engine)
     val cameraManipulator = rememberCameraManipulator()
-    val activity = remember {
-        listOf(
-            DarshanActivity("आज के दर्शन"),
-            DarshanActivity("आज की पूजा और अर्पण की जानकारी"),
-            DarshanActivity("मंदिर की आज की प्रमुख गतिविधियाँ")
-        )
-    }
-
-    Column(modifier) {
+    Column(modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
         Box(Modifier.fillMaxWidth().weight(1f)) {
             SceneView(
                 modifier = Modifier.fillMaxSize(),
@@ -159,119 +149,70 @@ private fun DarshanTab(modifier: Modifier) {
                 modelLoader = modelLoader,
                 cameraManipulator = cameraManipulator
             ) {
-                createModelNode(
-                    modelLoader = modelLoader,
-                    glbFileLocation = "models/radha_krishna_mandir.glb"
-                )?.let { addChildNode(it) }
-            }
-        }
-        Text(
-            "आज की मंदिर गतिविधियाँ",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
-        )
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth().heightIn(max = 220.dp),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(activity) { item ->
-                ElevatedCard(Modifier.fillMaxWidth()) {
-                    Text(item.text, Modifier.padding(14.dp), style = MaterialTheme.typography.bodyLarge)
+                createModelNode(modelLoader = modelLoader, glbFileLocation = "models/radha_krishna_mandir.glb")?.let { addChildNode(it) }
+                createModelNode(modelLoader = modelLoader, glbFileLocation = "models/puja_thali.glb")?.let {
+                    it.position = io.github.sceneview.math.Position(0f, -1f, 0.25f)
+                    it.scale = io.github.sceneview.math.Scale(0.65f)
+                    addChildNode(it)
                 }
             }
         }
+        ThaliActionBar(Modifier.fillMaxWidth(), false)
     }
 }
 
 @Composable
-private fun PujaSevaTab(
-    modifier: Modifier,
-    thaliState: ThaliState,
-    onCustomizeThali: () -> Unit
-) {
-    Column(
-        modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
+private fun PujaSevaTab(modifier: Modifier, thaliState: ThaliState, onCustomizeThali: () -> Unit) {
+    Column(modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("पूजा सेवा", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text("रेडीमेड पूजा थाल के साथ पूजा करें। कस्टम थाल केवल इसी जगह उपलब्ध है।")
+        RealThali3D(Modifier.fillMaxWidth().weight(1f))
         Text(
-            "पूजा सेवा",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
+            "सामग्री: " + listOfNotNull(
+                if (thaliState.diya) "दीप" else null,
+                if (thaliState.flowers) "पुष्प" else null,
+                if (thaliState.rice) "अक्षत" else null,
+                if (thaliState.kumkum) "कुमकुम" else null,
+                if (thaliState.incense) "धूप" else null
+            ).joinToString(" • ").ifBlank { "कोई सामग्री नहीं चुनी गई" }
         )
-        Text(
-            "यहाँ अपनी पूजा थाल को देखिए, घुमाइए और सामग्री चुनिए।",
-            style = MaterialTheme.typography.bodyLarge
-        )
-        RotatingThali3D(
-            state = thaliState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-        )
-        Button(
-            onClick = onCustomizeThali,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("कस्टम थाल")
-        }
+        Button(onClick = onCustomizeThali, modifier = Modifier.fillMaxWidth()) { Text("कस्टम थाल") }
     }
 }
 
 @Composable
-private fun RotatingThali3D(
-    state: ThaliState,
-    modifier: Modifier
-) {
+private fun RealThali3D(modifier: Modifier) {
     val engine = rememberEngine()
     val modelLoader = rememberModelLoader(engine)
     val cameraManipulator = rememberCameraManipulator()
-    var modelAvailable by remember { mutableStateOf<Boolean?>(null) }
-
-    LaunchedEffect(Unit) {
-        modelAvailable = true
-    }
-
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+    SceneView(
+        modifier = modifier.semantics { contentDescription = "3D पूजा थाल" },
+        engine = engine,
+        modelLoader = modelLoader,
+        cameraManipulator = cameraManipulator
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .semantics {
-                    contentDescription = "वास्तविक 3D पूजा थाल। उंगली से घुमाएँ।"
-                }
-        ) {
-            if (modelAvailable == true) {
-                SceneView(
-                    modifier = Modifier.fillMaxSize(),
-                    engine = engine,
-                    modelLoader = modelLoader,
-                    cameraManipulator = cameraManipulator
-                ) {
-                    createModelNode(
-                        modelLoader = modelLoader,
-                        glbFileLocation = "models/puja_thali.glb"
-                    )?.let { addChildNode(it) }
-                }
-            } else {
-                CircularProgressIndicator(Modifier.align(Alignment.Center))
-            }
+        createModelNode(modelLoader = modelLoader, glbFileLocation = "models/puja_thali.glb")?.let {
+            it.scale = io.github.sceneview.math.Scale(0.72f)
+            addChildNode(it)
         }
+    }
+}
 
-        Text(
-            "चुनी गई सामग्री: " + listOfNotNull(
-                if (state.diya) "दीप" else null,
-                if (state.flowers) "पुष्प" else null,
-                if (state.rice) "अक्षत" else null,
-                if (state.kumkum) "कुमकुम" else null,
-                if (state.incense) "धूप" else null
-            ).joinToString(" • ").ifBlank { "कोई सामग्री नहीं चुनी गई" },
-            style = MaterialTheme.typography.bodyMedium
-        )
+@Composable
+private fun ThaliActionBar(modifier: Modifier, active: Boolean) {
+    Card(modifier = modifier) {
+        Row(Modifier.fillMaxWidth().padding(8.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { }, modifier = Modifier.semantics { contentDescription = "घंटी बजाएँ" }) {
+                Icon(Icons.Default.Notifications, contentDescription = null)
+            }
+            IconButton(onClick = { }, modifier = Modifier.semantics { contentDescription = "शंख बजाएँ" }) {
+                Icon(Icons.Default.Spa, contentDescription = null)
+            }
+            IconButton(onClick = { }, modifier = Modifier.semantics { contentDescription = "अगरबत्ती जलाएँ" }) {
+                Icon(Icons.Default.VolumeUp, contentDescription = null)
+            }
+            Text(if (active) "आरती चल रही है" else "पूजा थाल")
+        }
     }
 }
 
@@ -293,30 +234,53 @@ private fun AartiTab(modifier: Modifier) {
         } finally { loading = false }
     }
     LaunchedEffect(Unit) {
-        while (true) { now = LocalTime.now(ZoneId.of("Asia/Kolkata")); delay(30000) }
+        while (true) {
+            now = LocalTime.now(ZoneId.of("Asia/Kolkata"))
+            delay(1000)
+        }
     }
-    Column(modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("आज की आरती", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         when {
-            loading -> { LinearProgressIndicator(Modifier.fillMaxWidth()); Text("आरती का समय देखा जा रहा है।") }
-            message != null -> Text(message!!, style = MaterialTheme.typography.bodyLarge)
-            schedule.isEmpty() -> Text("अभी आरती का समय उपलब्ध नहीं है।", style = MaterialTheme.typography.bodyLarge)
-            else -> schedule.forEach { item ->
-                val start = runCatching { LocalTime.parse(item.start_time) }.getOrNull()
-                val end = start?.plusMinutes(item.duration_minutes.toLong())
-                val live = start != null && end != null && now >= start && now < end
-                ElevatedCard(Modifier.fillMaxWidth().semantics { contentDescription = if (live) "${item.title}, आरती अभी चल रही है" else "${item.title}, समय ${item.start_time}" }) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text(item.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-                        Text(if (live) "अभी आरती चल रही है" else "समय: ${item.start_time}", style = MaterialTheme.typography.bodyLarge)
-                        item.description?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
+            loading -> {
+                LinearProgressIndicator(Modifier.fillMaxWidth())
+                Text("आरती का समय देखा जा रहा है।")
+            }
+            message != null -> Text(message!!)
+            else -> {
+                val live = schedule.firstOrNull { item ->
+                    val start = runCatching { LocalTime.parse(item.start_time) }.getOrNull()
+                    val end = start?.plusMinutes(item.duration_minutes.toLong())
+                    start != null && end != null && now >= start && now < end
+                }
+                Text(
+                    if (live != null) live.title + " अभी चल रही है"
+                    else if (schedule.isEmpty()) "अभी आरती का समय उपलब्ध नहीं है।"
+                    else "अभी आरती का समय नहीं है。",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Box(Modifier.fillMaxWidth().weight(1f)) {
+                    RealThali3D(Modifier.fillMaxSize())
+                }
+                ThaliActionBar(Modifier.fillMaxWidth(), live != null)
+                schedule.forEach { item ->
+                    val start = runCatching { LocalTime.parse(item.start_time) }.getOrNull()
+                    val end = start?.plusMinutes(item.duration_minutes.toLong())
+                    val isLive = start != null && end != null && now >= start && now < end
+                    ElevatedCard(Modifier.fillMaxWidth().semantics {
+                        contentDescription = if (isLive) item.title + ", आरती अभी चल रही है" else item.title + ", समय " + item.start_time
+                    }) {
+                        Column(Modifier.padding(14.dp)) {
+                            Text(item.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text(if (isLive) "अभी चल रही है" else "समय: " + item.start_time)
+                        }
                     }
                 }
             }
         }
     }
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun CustomThaliSheet(
