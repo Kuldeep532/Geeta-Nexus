@@ -194,7 +194,7 @@ private fun DarshanTab(modifier: Modifier, onCustomizeThali: () -> Unit) {
                 )?.let { addChildNode(it) }
             }
         }
-        ReadyMadeThaliPreview()\n\n        ReadyMadeThaliCard(onCustomize = onCustomizeThali)
+        ReadyMadeThaliCard(onCustomize = onCustomizeThali)
         Text("आज की मंदिर गतिविधियाँ", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp))
         LazyColumn(
             modifier = Modifier.fillMaxWidth().heightIn(max = 220.dp),
