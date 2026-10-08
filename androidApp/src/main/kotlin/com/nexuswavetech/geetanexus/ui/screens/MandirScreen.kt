@@ -55,7 +55,8 @@ private data class ThaliState(
     val diya: Boolean = true,
     val flowers: Boolean = true,
     val rice: Boolean = true,
-    val kumkum: Boolean = true
+    val kumkum: Boolean = true,
+    val incense: Boolean = false
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -296,12 +297,19 @@ private fun ReadyMadeThaliCard(
                         if (state.flowers) Text("फूल", style = MaterialTheme.typography.bodySmall)
                         if (state.rice) Text("अक्षत", style = MaterialTheme.typography.bodySmall)
                         if (state.kumkum) Text("कुमकुम", style = MaterialTheme.typography.bodySmall)
+                        if (state.incense) Text("धूप", style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
 
             Text(
-                "बेसिक सामग्री: दीप, फूल, अक्षत और कुमकुम।",
+                "सामग्री: " + listOfNotNull(
+                    if (state.diya) "दीप" else null,
+                    if (state.flowers) "फूल" else null,
+                    if (state.rice) "अक्षत" else null,
+                    if (state.kumkum) "कुमकुम" else null,
+                    if (state.incense) "धूप" else null
+                ).joinToString(" • ").ifBlank { "कोई सामग्री नहीं चुनी गई" },
                 style = MaterialTheme.typography.bodyMedium
             )
 
@@ -317,11 +325,12 @@ private fun ReadyMadeThaliCard(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun CustomThaliSheet(onDismiss: () -> Unit) {
-    var diya by remember { mutableStateOf(true) }
-    var flowers by remember { mutableStateOf(true) }
-    var rice by remember { mutableStateOf(true) }
-    var incense by remember { mutableStateOf(false) }
+private fun CustomThaliSheet(
+    state: ThaliState,
+    onStateChanged: (ThaliState) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var draft by remember(state) { mutableStateOf(state) }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -330,27 +339,57 @@ private fun CustomThaliSheet(onDismiss: () -> Unit) {
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text("कस्टम थाल", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(
+                "कस्टम थाल",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
             Text("जिस सामग्री से पूजा करना चाहते हैं, उसे चुनें।")
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("दीप")
-                Switch(checked = diya, onCheckedChange = { diya = it })
+
+            ThaliOptionRow("दीप", draft.diya) {
+                draft = draft.copy(diya = it)
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("पुष्प")
-                Switch(checked = flowers, onCheckedChange = { flowers = it })
+            ThaliOptionRow("पुष्प", draft.flowers) {
+                draft = draft.copy(flowers = it)
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("अक्षत")
-                Switch(checked = rice, onCheckedChange = { rice = it })
+            ThaliOptionRow("अक्षत", draft.rice) {
+                draft = draft.copy(rice = it)
             }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("धूप")
-                Switch(checked = incense, onCheckedChange = { incense = it })
+            ThaliOptionRow("कुमकुम", draft.kumkum) {
+                draft = draft.copy(kumkum = it)
             }
-            Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+            ThaliOptionRow("धूप", draft.incense) {
+                draft = draft.copy(incense = it)
+            }
+
+            Button(
+                onClick = {
+                    onStateChanged(draft)
+                    onDismiss()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("थाल तैयार करें")
             }
         }
+    }
+}
+
+@Composable
+private fun ThaliOptionRow(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(label)
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            modifier = Modifier.semantics { contentDescription = label }
+        )
     }
 }
