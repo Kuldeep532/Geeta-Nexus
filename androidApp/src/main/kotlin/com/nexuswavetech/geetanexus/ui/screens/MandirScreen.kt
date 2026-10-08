@@ -53,6 +53,49 @@ private data class AartiSchedule(
 
 private data class DarshanActivity(val text: String)
 
+@Composable
+private fun ReadyMadeThaliPreview() {
+    var rotation by remember { mutableFloatStateOf(0f) }
+    ElevatedCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .semantics { contentDescription = "तैयार पूजा थाल" }
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("तैयार पूजा थाल", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text("यह थाल मंदिर खुलते ही तैयार रहती है।", style = MaterialTheme.typography.bodyMedium)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(170.dp)
+                    .pointerInput(Unit) {
+                        detectDragGestures { _, amount -> rotation += amount.x * 0.8f }
+                    }
+                    .graphicsLayer {
+                        rotationY = rotation
+                        cameraDistance = 12f * density
+                    }
+                    .semantics { contentDescription = "थाल को उंगली से घुमाएँ" },
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    modifier = Modifier.size(145.dp),
+                    shape = RoundedCornerShape(100.dp),
+                    tonalElevation = 8.dp
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text("पूजा थाल", fontWeight = FontWeight.Bold)
+                            Text("दीप • पुष्प • अक्षत", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MandirScreen(navController: NavController) {
@@ -188,7 +231,7 @@ private fun DarshanTab(modifier: Modifier) {
                 )?.let { addChildNode(it) }
             }
         }
-        Text("आज की मंदिर गतिविधियाँ", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp))
+        ReadyMadeThaliPreview()\n\n        Text("आज की मंदिर गतिविधियाँ", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp))
         LazyColumn(
             modifier = Modifier.fillMaxWidth().heightIn(max = 220.dp),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
