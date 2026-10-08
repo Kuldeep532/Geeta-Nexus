@@ -2,6 +2,7 @@ package com.nexuswavetech.geetanexus.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.lazy.LazyColumn
@@ -11,6 +12,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.isActive
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -98,14 +100,6 @@ fun MandirScreen(navController: NavController) {
         )
     }
 
-    if (showCustomThali) {
-        CustomThaliSheet(
-            state = thaliState,
-            onStateChanged = { thaliState = it },
-            onDismiss = { showCustomThali = false }
-        )
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -129,35 +123,34 @@ fun MandirScreen(navController: NavController) {
             TabRow(selectedTabIndex = activeTab) {
                 Tab(selected = activeTab == 0, onClick = { activeTab = 0 }, text = { Text("दर्शन") })
                 Tab(selected = activeTab == 1, onClick = { activeTab = 1 }, text = { Text("आरती") })
+                Tab(selected = activeTab == 2, onClick = { activeTab = 2 }, text = { Text("पूजा सेवा") })
             }
             when (activeTab) {
-                0 -> DarshanTab(
-                    Modifier.fillMaxSize(),
+                0 -> DarshanTab(Modifier.fillMaxSize())
+                1 -> AartiTab(Modifier.fillMaxSize())
+                2 -> PujaSevaTab(
+                    modifier = Modifier.fillMaxSize(),
                     thaliState = thaliState,
                     onCustomizeThali = { showCustomThali = true }
                 )
-                1 -> AartiTab(Modifier.fillMaxSize())
             }
         }
     }
 }
 
 @Composable
-private fun DarshanTab(
-    modifier: Modifier,
-    thaliState: ThaliState,
-    onCustomizeThali: () -> Unit
-) {
+private fun DarshanTab(modifier: Modifier) {
     val engine = rememberEngine()
     val modelLoader = rememberModelLoader(engine)
     val cameraManipulator = rememberCameraManipulator()
     val activity = remember {
         listOf(
             DarshanActivity("आज के दर्शन"),
-            DarshanActivity("आज भक्तों द्वारा की गई पूजा और अर्पण यहाँ दिखाई देंगे"),
-            DarshanActivity("आज की घंटी और अन्य मंदिर गतिविधियाँ यहाँ दिखाई देंगी")
+            DarshanActivity("आज की पूजा और अर्पण की जानकारी"),
+            DarshanActivity("मंदिर की आज की प्रमुख गतिविधियाँ")
         )
     }
+
     Column(modifier) {
         Box(Modifier.fillMaxWidth().weight(1f)) {
             SceneView(
@@ -172,20 +165,117 @@ private fun DarshanTab(
                 )?.let { addChildNode(it) }
             }
         }
-        ReadyMadeThaliCard(
-            state = thaliState,
-            onCustomize = onCustomizeThali
+        Text(
+            "आज की मंदिर गतिविधियाँ",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
         )
-        Text("आज की मंदिर गतिविधियाँ", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp))
         LazyColumn(
             modifier = Modifier.fillMaxWidth().heightIn(max = 220.dp),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(activity) { activityItem ->
+            items(activity) { item ->
                 ElevatedCard(Modifier.fillMaxWidth()) {
-                    Text(activityItem.text, Modifier.padding(14.dp), style = MaterialTheme.typography.bodyLarge)
+                    Text(item.text, Modifier.padding(14.dp), style = MaterialTheme.typography.bodyLarge)
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PujaSevaTab(
+    modifier: Modifier,
+    thaliState: ThaliState,
+    onCustomizeThali: () -> Unit
+) {
+    Column(
+        modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            "पूजा सेवा",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            "यहाँ अपनी पूजा थाल को देखिए, घुमाइए और सामग्री चुनिए।",
+            style = MaterialTheme.typography.bodyLarge
+        )
+        RotatingThali3D(
+            state = thaliState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        )
+        Button(
+            onClick = onCustomizeThali,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("कस्टम थाल")
+        }
+    }
+}
+
+@Composable
+private fun RotatingThali3D(
+    state: ThaliState,
+    modifier: Modifier
+) {
+    var rotation by remember { mutableFloatStateOf(0f) }
+    var autoRotate by remember { mutableStateOf(false) }
+
+    LaunchedEffect(autoRotate) {
+        while (autoRotate && isActive) {
+            rotation += 1.2f
+            delay(16)
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .pointerInput(Unit) {
+                detectDragGestures { _, dragAmount ->
+                    rotation += dragAmount.x * 0.8f
+                }
+            }
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = {
+                        autoRotate = true
+                        tryAwaitRelease()
+                    }
+                )
+            }
+            .graphicsLayer {
+                rotationY = rotation
+                rotationZ = rotation * 0.04f
+                cameraDistance = 18f * density
+            }
+            .semantics {
+                contentDescription = "3D पूजा थाल, उंगली रखकर घुमाएँ"
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            modifier = Modifier.size(250.dp),
+            shape = MaterialTheme.shapes.extraLarge,
+            tonalElevation = 10.dp
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text("पूजा थाल", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(10.dp))
+                if (state.diya) Text("दीप")
+                if (state.flowers) Text("पुष्प")
+                if (state.rice) Text("अक्षत")
+                if (state.kumkum) Text("कुमकुम")
+                if (state.incense) Text("धूप")
             }
         }
     }
