@@ -283,7 +283,7 @@ private fun ReadyMadeThaliCard(onCustomize: () -> Unit) {
                 onClick = onCustomize,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("कस्टम थाल सजाएँ")
+                Text("कस्टम थाल")
             }
         }
     }
