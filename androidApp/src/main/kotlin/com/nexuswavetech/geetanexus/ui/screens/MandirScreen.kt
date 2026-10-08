@@ -85,7 +85,7 @@ private fun ReadyMadeThaliPreview() {
                     Box(contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text("पूजा थाल", fontWeight = FontWeight.Bold)
-                            Text("दीप • पुष्प • अक्षत", style = MaterialTheme.typography.bodySmall)
+                            Text("दीप • फूल • अक्षत • कुमकुम", style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }
@@ -293,7 +293,7 @@ private fun ReadyMadeThaliCard(onCustomize: () -> Unit) {
                     }
                 }
             }
-            Text("थाल को घुमाकर देखें।", style = MaterialTheme.typography.bodyMedium)
+            Text("मंदिर की तैयार थाल: दीप, फूल, अक्षत और कुमकुम।", style = MaterialTheme.typography.bodyMedium)
             Button(
                 onClick = onCustomize,
                 modifier = Modifier.fillMaxWidth()
