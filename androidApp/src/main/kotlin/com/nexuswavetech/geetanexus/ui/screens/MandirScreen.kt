@@ -244,6 +244,7 @@ private fun ReadyMadeThaliCard(onCustomize: () -> Unit) {
                     }
                     .graphicsLayer {
                         rotationY = rotation
+                        rotationZ = rotation * 0.08f
                         cameraDistance = 12f * density
                     }
                     .semantics { contentDescription = "थाल को उंगली से घुमाएँ" },
