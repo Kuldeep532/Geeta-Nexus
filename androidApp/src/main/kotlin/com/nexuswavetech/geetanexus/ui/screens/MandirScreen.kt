@@ -51,11 +51,19 @@ private data class AartiSchedule(
 
 private data class DarshanActivity(val text: String)
 
+private data class ThaliState(
+    val diya: Boolean = true,
+    val flowers: Boolean = true,
+    val rice: Boolean = true,
+    val kumkum: Boolean = true
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MandirScreen(navController: NavController) {
     var activeTab by remember { mutableIntStateOf(0) }
     var showCustomThali by remember { mutableStateOf(false) }
+    var thaliState by remember { mutableStateOf(ThaliState()) }
     var showPurityNotice by remember { mutableStateOf(true) }
     if (showPurityNotice) {
         AlertDialog(
@@ -90,7 +98,11 @@ fun MandirScreen(navController: NavController) {
     }
 
     if (showCustomThali) {
-        CustomThaliSheet(onDismiss = { showCustomThali = false })
+        CustomThaliSheet(
+            state = thaliState,
+            onStateChanged = { thaliState = it },
+            onDismiss = { showCustomThali = false }
+        )
     }
 
     Scaffold(
@@ -118,7 +130,11 @@ fun MandirScreen(navController: NavController) {
                 Tab(selected = activeTab == 1, onClick = { activeTab = 1 }, text = { Text("आरती") })
             }
             when (activeTab) {
-                0 -> DarshanTab(Modifier.fillMaxSize(), onCustomizeThali = { showCustomThali = true })
+                0 -> DarshanTab(
+                    Modifier.fillMaxSize(),
+                    thaliState = thaliState,
+                    onCustomizeThali = { showCustomThali = true }
+                )
                 1 -> AartiTab(Modifier.fillMaxSize())
             }
         }
@@ -126,7 +142,11 @@ fun MandirScreen(navController: NavController) {
 }
 
 @Composable
-private fun DarshanTab(modifier: Modifier, onCustomizeThali: () -> Unit) {
+private fun DarshanTab(
+    modifier: Modifier,
+    thaliState: ThaliState,
+    onCustomizeThali: () -> Unit
+) {
     val engine = rememberEngine()
     val modelLoader = rememberModelLoader(engine)
     val cameraManipulator = rememberCameraManipulator()
@@ -151,7 +171,10 @@ private fun DarshanTab(modifier: Modifier, onCustomizeThali: () -> Unit) {
                 )?.let { addChildNode(it) }
             }
         }
-        ReadyMadeThaliCard(onCustomize = onCustomizeThali)
+        ReadyMadeThaliCard(
+            state = thaliState,
+            onCustomize = onCustomizeThali
+        )
         Text("आज की मंदिर गतिविधियाँ", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp))
         LazyColumn(
             modifier = Modifier.fillMaxWidth().heightIn(max = 220.dp),
@@ -210,7 +233,10 @@ private fun AartiTab(modifier: Modifier) {
 }
 
 @Composable
-private fun ReadyMadeThaliCard(onCustomize: () -> Unit) {
+private fun ReadyMadeThaliCard(
+    state: ThaliState,
+    onCustomize: () -> Unit
+) {
     var rotation by remember { mutableFloatStateOf(0f) }
 
     ElevatedCard(
@@ -266,10 +292,10 @@ private fun ReadyMadeThaliCard(onCustomize: () -> Unit) {
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(Modifier.height(8.dp))
-                        Text("दीप", style = MaterialTheme.typography.bodySmall)
-                        Text("फूल", style = MaterialTheme.typography.bodySmall)
-                        Text("अक्षत", style = MaterialTheme.typography.bodySmall)
-                        Text("कुमकुम", style = MaterialTheme.typography.bodySmall)
+                        if (state.diya) Text("दीप", style = MaterialTheme.typography.bodySmall)
+                        if (state.flowers) Text("फूल", style = MaterialTheme.typography.bodySmall)
+                        if (state.rice) Text("अक्षत", style = MaterialTheme.typography.bodySmall)
+                        if (state.kumkum) Text("कुमकुम", style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
