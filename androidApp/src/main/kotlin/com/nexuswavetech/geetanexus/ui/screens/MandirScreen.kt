@@ -224,60 +224,53 @@ private fun RotatingThali3D(
     state: ThaliState,
     modifier: Modifier
 ) {
-    var rotation by remember { mutableFloatStateOf(0f) }
-    var autoRotate by remember { mutableStateOf(false) }
+    val engine = rememberEngine()
+    val modelLoader = rememberModelLoader(engine)
+    val cameraManipulator = rememberCameraManipulator()
+    var autoRotate by remember { mutableStateOf(true) }
 
     LaunchedEffect(autoRotate) {
+        cameraManipulator.orbitHomePosition = io.github.sceneview.math.Position(0f, 0f, 4.2f)
         while (autoRotate && isActive) {
-            rotation += 1.2f
             delay(16)
         }
     }
 
-    Box(
-        modifier = modifier
-            .pointerInput(Unit) {
-                detectDragGestures { _, dragAmount ->
-                    rotation += dragAmount.x * 0.8f
-                }
-            }
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onPress = {
-                        autoRotate = true
-                        tryAwaitRelease()
-                    }
-                )
-            }
-            .graphicsLayer {
-                rotationY = rotation
-                rotationZ = rotation * 0.04f
-                cameraDistance = 18f * density
-            }
-            .semantics {
-                contentDescription = "3D पूजा थाल, उंगली रखकर घुमाएँ"
-            },
-        contentAlignment = Alignment.Center
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Surface(
-            modifier = Modifier.size(250.dp),
-            shape = MaterialTheme.shapes.extraLarge,
-            tonalElevation = 10.dp
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .semantics {
+                    contentDescription = "वास्तविक 3D पूजा थाल। उंगली से घुमाएँ।"
+                }
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize().padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+            SceneView(
+                modifier = Modifier.fillMaxSize(),
+                engine = engine,
+                modelLoader = modelLoader,
+                cameraManipulator = cameraManipulator
             ) {
-                Text("पूजा थाल", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(10.dp))
-                if (state.diya) Text("दीप")
-                if (state.flowers) Text("पुष्प")
-                if (state.rice) Text("अक्षत")
-                if (state.kumkum) Text("कुमकुम")
-                if (state.incense) Text("धूप")
+                createModelNode(
+                    modelLoader = modelLoader,
+                    glbFileLocation = "models/puja_thali.glb"
+                )?.let { addChildNode(it) }
             }
         }
+
+        Text(
+            "चुनी गई सामग्री: " + listOfNotNull(
+                if (state.diya) "दीप" else null,
+                if (state.flowers) "पुष्प" else null,
+                if (state.rice) "अक्षत" else null,
+                if (state.kumkum) "कुमकुम" else null,
+                if (state.incense) "धूप" else null
+            ).joinToString(" • ").ifBlank { "कोई सामग्री नहीं चुनी गई" },
+            style = MaterialTheme.typography.bodyMedium
+        )
     }
 }
 
@@ -318,96 +311,6 @@ private fun AartiTab(modifier: Modifier) {
                         item.description?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ReadyMadeThaliCard(
-    state: ThaliState,
-    onCustomize: () -> Unit
-) {
-    var rotation by remember { mutableFloatStateOf(0f) }
-
-    ElevatedCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .semantics { contentDescription = "तैयार पूजा थाल" }
-    ) {
-        Column(
-            Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Text(
-                "तैयार पूजा थाल",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                "मंदिर में पहले से सजी हुई बेसिक पूजा थाल।",
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(190.dp)
-                    .pointerInput(Unit) {
-                        detectDragGestures { _, dragAmount ->
-                            rotation += dragAmount.x * 0.7f
-                        }
-                    }
-                    .graphicsLayer {
-                        rotationY = rotation
-                        rotationZ = rotation * 0.08f
-                        cameraDistance = 12f * density
-                    }
-                    .semantics { contentDescription = "थाल को उंगली से घुमाएँ" },
-                contentAlignment = Alignment.Center
-            ) {
-                Surface(
-                    modifier = Modifier.size(160.dp),
-                    shape = MaterialTheme.shapes.extraLarge,
-                    tonalElevation = 8.dp
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxSize().padding(14.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            "पूजा थाल",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        if (state.diya) Text("दीप", style = MaterialTheme.typography.bodySmall)
-                        if (state.flowers) Text("फूल", style = MaterialTheme.typography.bodySmall)
-                        if (state.rice) Text("अक्षत", style = MaterialTheme.typography.bodySmall)
-                        if (state.kumkum) Text("कुमकुम", style = MaterialTheme.typography.bodySmall)
-                        if (state.incense) Text("धूप", style = MaterialTheme.typography.bodySmall)
-                    }
-                }
-            }
-
-            Text(
-                "सामग्री: " + listOfNotNull(
-                    if (state.diya) "दीप" else null,
-                    if (state.flowers) "फूल" else null,
-                    if (state.rice) "अक्षत" else null,
-                    if (state.kumkum) "कुमकुम" else null,
-                    if (state.incense) "धूप" else null
-                ).joinToString(" • ").ifBlank { "कोई सामग्री नहीं चुनी गई" },
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            Button(
-                onClick = onCustomize,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("कस्टम थाल")
             }
         }
     }
