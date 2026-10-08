@@ -51,49 +51,6 @@ private data class AartiSchedule(
 
 private data class DarshanActivity(val text: String)
 
-@Composable
-private fun ReadyMadeThaliPreview() {
-    var rotation by remember { mutableFloatStateOf(0f) }
-    ElevatedCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .semantics { contentDescription = "तैयार पूजा थाल" }
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("तैयार पूजा थाल", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Text("यह थाल मंदिर खुलते ही तैयार रहती है।", style = MaterialTheme.typography.bodyMedium)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(170.dp)
-                    .pointerInput(Unit) {
-                        detectDragGestures { _, amount -> rotation += amount.x * 0.8f }
-                    }
-                    .graphicsLayer {
-                        rotationY = rotation
-                        cameraDistance = 12f * density
-                    }
-                    .semantics { contentDescription = "थाल को उंगली से घुमाएँ" },
-                contentAlignment = Alignment.Center
-            ) {
-                Surface(
-                    modifier = Modifier.size(145.dp),
-                    shape = RoundedCornerShape(100.dp),
-                    tonalElevation = 8.dp
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("पूजा थाल", fontWeight = FontWeight.Bold)
-                            Text("दीप • फूल • अक्षत • कुमकुम", style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MandirScreen(navController: NavController) {
@@ -259,41 +216,68 @@ private fun ReadyMadeThaliCard(onCustomize: () -> Unit) {
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp)
-            .semantics { contentDescription = "तैयार पूजा थाल। उंगली से घुमाएँ" }
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .semantics { contentDescription = "तैयार पूजा थाल" }
     ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("तैयार पूजा थाल", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        Column(
+            Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                "तैयार पूजा थाल",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                "मंदिर में पहले से सजी हुई बेसिक पूजा थाल।",
+                style = MaterialTheme.typography.bodyMedium
+            )
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp)
+                    .height(190.dp)
                     .pointerInput(Unit) {
                         detectDragGestures { _, dragAmount ->
                             rotation += dragAmount.x * 0.7f
                         }
                     }
-                    .semantics { contentDescription = "थाल को उंगली से घुमाएँ" }
                     .graphicsLayer {
                         rotationY = rotation
                         cameraDistance = 12f * density
-                    },
+                    }
+                    .semantics { contentDescription = "थाल को उंगली से घुमाएँ" },
                 contentAlignment = Alignment.Center
             ) {
                 Surface(
+                    modifier = Modifier.size(160.dp),
                     shape = MaterialTheme.shapes.extraLarge,
-                    tonalElevation = 6.dp,
-                    modifier = Modifier.size(150.dp)
+                    tonalElevation = 8.dp
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("पूजा थाल", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            Text("दीप • पुष्प • अक्षत", style = MaterialTheme.typography.bodySmall)
-                        }
+                    Column(
+                        modifier = Modifier.fillMaxSize().padding(14.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            "पूजा थाल",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text("दीप", style = MaterialTheme.typography.bodySmall)
+                        Text("फूल", style = MaterialTheme.typography.bodySmall)
+                        Text("अक्षत", style = MaterialTheme.typography.bodySmall)
+                        Text("कुमकुम", style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
-            Text("मंदिर की तैयार थाल: दीप, फूल, अक्षत और कुमकुम।", style = MaterialTheme.typography.bodyMedium)
+
+            Text(
+                "बेसिक सामग्री: दीप, फूल, अक्षत और कुमकुम।",
+                style = MaterialTheme.typography.bodyMedium
+            )
+
             Button(
                 onClick = onCustomize,
                 modifier = Modifier.fillMaxWidth()
@@ -302,6 +286,7 @@ private fun ReadyMadeThaliCard(onCustomize: () -> Unit) {
             }
         }
     }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
